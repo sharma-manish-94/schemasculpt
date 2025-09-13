@@ -8,7 +8,7 @@ import {
 import SwaggerUI from 'swagger-ui-react';
 import "swagger-ui-react/swagger-ui.css";
 import yaml from 'js-yaml'
-import { validateSpec } from '../../api/validationService';
+import { validateSpec, applyQuickFix } from '../../api/validationService';
 import './editor.css';
 
 // The sampleSpec constant remains the same...
@@ -96,6 +96,18 @@ function SpecEditor() {
     }
   }
 
+  const handleQuickFix = async (suggestion) => {
+    const result = await applyQuickFix({
+      specText: specText,
+      ruleId: suggestion.ruleId,
+      context: suggestion.context,
+      format: format
+    });
+    if (result && result.updatedSpecText) {
+      setSpecText(result.updatedSpecText);
+    }
+  }
+
   const renderValidationContent = () => {
     if (isLoading) {
       return <p className="loading-text">Validating...</p>;
@@ -116,7 +128,16 @@ function SpecEditor() {
         {hasSuggestions && (
           <div className="result-section">
             <h3 className="result-title-suggestion">Suggestions</h3>
-            <ul>{suggestions.map((sug, index) => (<li className="suggestion-item" key={`sug-${index}`}>{sug.message}</li>))}</ul>
+            <ul>
+              {suggestions.map((sug, index) => (
+                <li className="suggestion-item" key={`sug-${index}`}>
+                  {sug.message}
+                  {sug.ruleId && (
+                    <button className="fix-button" onClick={() => handleQuickFix(sug)}>Fix</button>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </>

@@ -18,3 +18,15 @@ export const validateSpec = async (specText) => {
         return { success: false, data: [], error: "Failed to connect to the validation service." };
     }
 }
+
+// Add this function to validationService.js
+
+export const applyQuickFix = async (fixRequest) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/fix`, fixRequest);
+        return response.data; // Should be { updatedSpecText: "..." }
+    } catch (error) {
+        console.error("Error applying fix:", error);
+        return null;
+    }
+};
