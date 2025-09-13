@@ -5,6 +5,8 @@ import {
   PanelGroup,
   PanelResizeHandle,
 } from "react-resizable-panels";
+import SwaggerUI from 'swagger-ui-react';
+import "swagger-ui-react/swagger-ui.css";
 import { validateSpec } from '../../api/validationService';
 import './editor.css';
 
@@ -44,8 +46,8 @@ function SpecEditor() {
   const [errors, setErrors] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('validation');
 
-  // The useEffect hook for validation remains exactly the same...
   useEffect(() => {
     const handleValidation = async () => {
       setIsLoading(true);
@@ -63,7 +65,7 @@ function SpecEditor() {
     return () => clearTimeout(timer);
   }, [specText]);
 
-  const renderPanelContent = () => {
+  const renderValidationContent = () => {
     if (isLoading) {
       return <p className="loading-text">Validating...</p>;
     }
@@ -105,10 +107,14 @@ function SpecEditor() {
         </Panel>
         <PanelResizeHandle className="resize-handle" />
         <Panel defaultSize={40} minSize={20}>
-          <div className="error-panel">
-            <div className="panel-header">Validation Results</div>
+          <div className="right-panel-container">
+            <div className="panel-tabs">
+              <button onClick={() => setActiveTab('validation')} className={activeTab === 'validation' ? 'active' : ''}>Validation</button>
+              <button onClick={() => setActiveTab('visualize')} className={activeTab === 'visualize' ? 'active' : ''}>Visualize</button>
+            </div>
             <div className="panel-content">
-              {renderPanelContent()}
+              {activeTab === 'validation' && renderValidationContent()}
+              {activeTab === 'visualize' && <SwaggerUI spec={specText} />}
             </div>
           </div>
         </Panel>

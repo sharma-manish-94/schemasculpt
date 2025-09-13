@@ -1,6 +1,5 @@
 .spec-editor-layout {
     height: calc(100vh - 150px);
-    /* Adjust height to fill the screen below the header */
     width: 100%;
 }
 
@@ -13,9 +12,6 @@
     width: 8px;
     background-color: #111;
     cursor: col-resize;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     border-left: 1px solid #444;
     border-right: 1px solid #444;
 }
@@ -24,21 +20,36 @@
     background-color: #007acc;
 }
 
-.error-panel {
+.right-panel-container {
     display: flex;
     flex-direction: column;
     background-color: #252526;
     border: 1px solid #444;
     height: 100%;
-    /* Make panel fill its container */
 }
 
-.panel-header {
-    background-color: #333;
-    padding: 8px 15px;
-    font-weight: bold;
+.panel-tabs {
+    display: flex;
+    background-color: #1e1e1e;
     border-bottom: 1px solid #444;
-    flex-shrink: 0;
+}
+
+.panel-tabs button {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.panel-tabs button:hover {
+    color: #ffffff;
+}
+
+.panel-tabs button.active {
+    color: #0098ff;
+    border-bottom: 2px solid #0098ff;
 }
 
 .panel-content {
@@ -47,7 +58,38 @@
     flex-grow: 1;
 }
 
-/* --- Styles for the content inside the panel --- */
+/* Make Swagger UI fit the dark theme and container */
+.swagger-ui .wrapper {
+    padding: 0;
+}
+
+.swagger-ui {
+    background-color: #252526;
+    color: #d4d4d4;
+}
+
+.swagger-ui .opblock-tag {
+    border-bottom: 1px solid #444;
+}
+
+.swagger-ui .opblock .opblock-summary {
+    border-color: #444;
+}
+
+.swagger-ui .opblock-summary-description {
+    color: #d4d4d4;
+}
+
+.swagger-ui .info .title {
+    color: #d4d4d4;
+}
+
+.swagger-ui .scheme-container,
+.swagger-ui .info {
+    background-color: #252526;
+}
+
+/* --- Styles for the content inside the validation panel --- */
 .result-section {
     margin-bottom: 10px;
 }
