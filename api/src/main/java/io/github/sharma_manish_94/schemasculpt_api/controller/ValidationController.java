@@ -1,19 +1,14 @@
 package io.github.sharma_manish_94.schemasculpt_api.controller;
 
-import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationError;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationResult;
 import io.github.sharma_manish_94.schemasculpt_api.service.ValidationService;
-import io.swagger.v3.parser.OpenAPIV3Parser;
-import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ValidationController {
 	
 	private final ValidationService validationService;

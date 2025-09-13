@@ -6,8 +6,14 @@ meta {
 
 post {
   url: http://localhost:8080/api/v1/validate
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "spec": "openapi: 3.0.0\ninfo:\n  title: API with Error and Suggestion\n  version: 1.0.0\nservers:\n  - url: http://localhost:8080\npaths:\n  /health:\n    get:\n      summary: An endpoint that is missing a responses object\n\ncomponents:\n  schemas:\n    UnusedSchema:\n      type: object\n      properties:\n        status:\n          type: string"
+  }
 }
 
 settings {
