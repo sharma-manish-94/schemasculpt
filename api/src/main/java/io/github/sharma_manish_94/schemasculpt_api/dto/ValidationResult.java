@@ -1,4 +1,9 @@
 package io.github.sharma_manish_94.schemasculpt_api.dto;
 
-public record ValidationResult() {
+import java.util.List;
+
+public record ValidationResult(
+		List<ValidationError> errors,
+		List<ValidationSuggestion> suggestions
+) {
 }
