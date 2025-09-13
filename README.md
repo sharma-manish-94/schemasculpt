@@ -7,8 +7,6 @@ SchemaSculpt is an intelligent, locally-run assistant for crafting perfect API s
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)
 
-_It's highly recommended to replace this text with a GIF showcasing the editor, the linter, the quick-fixes, and the AI assistant in action!_
-
 
 
 ## About The Project
