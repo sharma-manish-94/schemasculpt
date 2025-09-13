@@ -6,10 +6,7 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +38,11 @@ public class UnusedComponentRule implements LinterRule{
 		
 		return definedSchemas.stream()
 				       .filter(defined -> !referencedSchemas.contains(defined))
-				       .map(unused -> new ValidationSuggestion("Component schema '" + unused + "' is defined but never used."))
+				       .map(unused -> new ValidationSuggestion(
+							   "Component schema '" + unused + "' is defined but never used.",
+						       "remove-unused-component",
+						       Map.of("componentName", unused)
+						       ))
 				       .toList();
 	}
 }
