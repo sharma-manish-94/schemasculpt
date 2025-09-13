@@ -1,0 +1,23 @@
+/* src/App.css */
+
+.error-panel {
+  text-align: left;
+  background-color: #252526;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 10px 20px;
+  margin-top: 20px;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.error-panel ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.error-panel li {
+  color: #ff8a8a;
+  margin-bottom: 5px;
+}
