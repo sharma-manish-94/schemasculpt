@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
+import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+} from "react-resizable-panels";
 import { validateSpec } from '../../api/validationService';
 import './editor.css';
 
-const sampleSpec = `
-openapi: 3.0.0
+// The sampleSpec constant remains the same...
+const sampleSpec = `openapi: 3.0.0
 info:
   title: Simple Pet Store API
   version: 1.0.0
@@ -14,7 +19,6 @@ paths:
   /pets:
     get:
       summary: List all pets
-      operationId: listPets
       responses:
         '200':
           description: A paged array of pets
@@ -23,15 +27,17 @@ paths:
               schema:
                 type: array
                 items:
-                  type: string
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
 components:
   schemas:
     UnusedComponent:
       type: object
-      properties:
-        message:
-          type: string
-                  `;
+`;
 
 function SpecEditor() {
   const [specText, setSpecText] = useState(sampleSpec);
@@ -39,6 +45,7 @@ function SpecEditor() {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // The useEffect hook for validation remains exactly the same...
   useEffect(() => {
     const handleValidation = async () => {
       setIsLoading(true);
@@ -47,51 +54,36 @@ function SpecEditor() {
         setErrors(result.data.errors);
         setSuggestions(result.data.suggestions);
       } else {
-        setErrors([{
-          message: result.error
-        }]);
+        setErrors([{ message: result.error }]);
         setSuggestions([]);
       }
       setIsLoading(false);
     };
-    const timer = setTimeout(() => {
-      handleValidation();
-    }, 500);
+    const timer = setTimeout(() => { handleValidation(); }, 500);
     return () => clearTimeout(timer);
   }, [specText]);
 
   const renderPanelContent = () => {
     if (isLoading) {
-      return <p className="loading-text">Validating...</p>
+      return <p className="loading-text">Validating...</p>;
     }
-
-    const hasErrors = errors.length;
-    const hasSuggestions = suggestions.length;
-
+    const hasErrors = errors.length > 0;
+    const hasSuggestions = suggestions.length > 0;
     if (!hasErrors && !hasSuggestions) {
-      return <p className="no-errors"> No validation errors or suggestions found.</p>
+      return <p className="no-errors">No validation errors or suggestions found.</p>;
     }
-
     return (
       <>
         {hasErrors && (
           <div className="result-section">
             <h3 className="result-title-error">Errors</h3>
-            <ul>
-              {errors.map((err, index) => (
-                <li key={`err-${index}`}>{err.message}</li>
-              ))}
-            </ul>
+            <ul>{errors.map((err, index) => (<li key={`err-${index}`}>{err.message}</li>))}</ul>
           </div>
         )}
         {hasSuggestions && (
           <div className="result-section">
             <h3 className="result-title-suggestion">Suggestions</h3>
-            <ul>
-              {suggestions.map((sug, index) => (
-                <li className="suggestion-item" key={`sug-${index}`}>{sug.message}</li>
-              ))}
-            </ul>
+            <ul>{suggestions.map((sug, index) => (<li className="suggestion-item" key={`sug-${index}`}>{sug.message}</li>))}</ul>
           </div>
         )}
       </>
@@ -100,17 +92,27 @@ function SpecEditor() {
 
   return (
     <div className="spec-editor-layout">
-      <Editor
-        height="75vh"
-        theme="vs-dark"
-        defaultLanguage="yaml"
-        value={specText}
-        onChange={setSpecText}
-      />
-      <div className="error-panel">
-        <div className="panel-header">Validation Results</div>
-        {renderPanelContent()}
-      </div>
+      <PanelGroup direction="horizontal">
+        <Panel defaultSize={60} minSize={30}>
+          <div className="editor-wrapper">
+            <Editor
+              theme="vs-dark"
+              defaultLanguage="yaml"
+              value={specText}
+              onChange={setSpecText}
+            />
+          </div>
+        </Panel>
+        <PanelResizeHandle className="resize-handle" />
+        <Panel defaultSize={40} minSize={20}>
+          <div className="error-panel">
+            <div className="panel-header">Validation Results</div>
+            <div className="panel-content">
+              {renderPanelContent()}
+            </div>
+          </div>
+        </Panel>
+      </PanelGroup>
     </div>
   );
 }
