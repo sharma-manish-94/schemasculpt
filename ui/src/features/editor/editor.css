@@ -89,6 +89,12 @@
     background-color: #252526;
 }
 
+.swagger-ui .wrapper {
+    padding: 0;
+    text-align: left;
+    /* <-- Add this line */
+}
+
 /* --- Styles for the content inside the validation panel --- */
 .result-section {
     margin-bottom: 10px;
@@ -130,4 +136,55 @@ li {
 .loading-text {
     color: #8c8c8c;
     margin: 0;
+}
+
+/* Add these styles to the top of editor.css */
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #1e1e1e;
+}
+
+.editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: #333;
+    border-bottom: 1px solid #444;
+    flex-shrink: 0;
+}
+
+.format-indicator {
+    font-size: 0.8em;
+    font-weight: bold;
+    color: #a0a0a0;
+}
+
+.toolbar-buttons button {
+    background-color: #4f4f4f;
+    border: 1px solid #666;
+    color: #ddd;
+    padding: 4px 8px;
+    margin-left: 5px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.toolbar-buttons button:hover:not(:disabled) {
+    background-color: #5f5f5f;
+}
+
+.toolbar-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Make sure the editor wrapper fills the remaining space */
+.editor-wrapper {
+    width: 100%;
+    flex-grow: 1;
+    /* This is the important change */
 }

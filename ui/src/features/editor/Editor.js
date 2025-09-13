@@ -7,6 +7,7 @@ import {
 } from "react-resizable-panels";
 import SwaggerUI from 'swagger-ui-react';
 import "swagger-ui-react/swagger-ui.css";
+import yaml from 'js-yaml'
 import { validateSpec } from '../../api/validationService';
 import './editor.css';
 
@@ -47,6 +48,16 @@ function SpecEditor() {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('validation');
+  const [format, setFormat] = useState('yaml');
+
+  useEffect(() => {
+    const trimmedText = specText.trim();
+    if (trimmedText.startsWith('{')) {
+      setFormat('json');
+    } else {
+      setFormat('yaml');
+    }
+  }, [specText]);
 
   useEffect(() => {
     const handleValidation = async () => {
@@ -64,6 +75,26 @@ function SpecEditor() {
     const timer = setTimeout(() => { handleValidation(); }, 500);
     return () => clearTimeout(timer);
   }, [specText]);
+
+  const convertToYAML = () => {
+    try {
+      const jsonObject = JSON.parse(specText);
+      const yamlText = yaml.dump(jsonObject);
+      setSpecText(yamlText);
+    } catch (error) {
+      alert("Could not convert to YAML. Please ensure the content is valid JSON.")
+    }
+  };
+
+  const convertToJSON = () => {
+    try {
+      const jsonObject = yaml.load(specText);
+      const jsonText = JSON.stringify(jsonObject, null, 2);
+      setSpecText(jsonText);
+    } catch (error) {
+      alert("Could not convert to JSON. Please ensure the content is valid YAML.");
+    }
+  }
 
   const renderValidationContent = () => {
     if (isLoading) {
@@ -96,13 +127,22 @@ function SpecEditor() {
     <div className="spec-editor-layout">
       <PanelGroup direction="horizontal">
         <Panel defaultSize={60} minSize={30}>
-          <div className="editor-wrapper">
-            <Editor
-              theme="vs-dark"
-              defaultLanguage="yaml"
-              value={specText}
-              onChange={setSpecText}
-            />
+          <div className="editor-container">
+            <div className="editor-toolbar">
+              <span className="format-indicator">Format: {format.toUpperCase()}</span>
+              <div className="toolbar-buttons">
+                <button onClick={convertToJSON} disabled={format === 'json'}>Convert to JSON</button>
+                <button onClick={convertToYAML} disabled={format === 'yaml'}>Convert to YAML</button>
+              </div>
+            </div>
+            <div className="editor-wrapper">
+              <Editor
+                theme="vs-dark"
+                language={format}
+                value={specText}
+                onChange={setSpecText}
+              />
+            </div>
           </div>
         </Panel>
         <PanelResizeHandle className="resize-handle" />
