@@ -1,75 +1,106 @@
 # SchemaSculpt 🗿
 
-An intelligent, AI-powered assistant for crafting perfect API specifications. SchemaSculpt goes beyond simple validation, providing smart suggestions, one-click fixes, and a clear path towards an AI-native development experience.
+### Your AI Co-pilot for Flawless APIs
+
+SchemaSculpt is an intelligent, locally-run assistant for crafting perfect API specifications. It goes beyond simple validation by providing smart suggestions, one-click fixes, and AI-powered editing to streamline your API design workflow.
+
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)
+
+_It's highly recommended to replace this text with a GIF showcasing the editor, the linter, the quick-fixes, and the AI assistant in action!_
 
 
 
 ## About The Project
 
-Writing and maintaining OpenAPI specifications can be tedious. It's easy to make mistakes, leave unused components lying around, or forget best practices. SchemaSculpt was built to solve this problem.
+Writing and maintaining OpenAPI specifications can be tedious. It's easy to make mistakes, leave unused components lying around, or forget best practices. SchemaSculpt was built to solve this problem by acting as your AI partner for API design.
 
-It started as a high-performance validator and linter but is architected from the ground up to become a true AI partner for API design. The goal is to leverage modern AI to provide deeper insights, automate tedious tasks, and help developers create high-quality, secure, and intuitive APIs with less effort.
+It uses a powerful, locally-run LLM (via Ollama) to understand natural language commands, allowing you to edit and extend your API specs just by having a conversation. The built-in linter and quick-fix engine help you adhere to best practices and keep your specifications clean and maintainable.
 
 ## Key Features
 
-* **⚡ Real-time Validation**: Instantly see parsing and validation errors as you type.
-* **💡 Intelligent Suggestions (Linter)**: Get smart suggestions that go beyond basic validation, such as finding unused components or operations missing summaries.
-* **🪄 One-Click Quick Fixes**: Automatically fix suggestions with the click of a button, letting the tool do the work for you.
-* **👁️ Live Swagger UI Visualization**: Instantly see your API rendered in a beautiful, interactive documentation panel.
+* **🤖 AI-Powered Editing**: Use natural language prompts (e.g., "add a GET endpoint for /health") to have a local LLM modify your API specification.
+* **⚡ Real-time Validation**: Instantly see parsing and OpenAPI validation errors as you type.
+* **💡 Intelligent Linter**: Get smart suggestions that go beyond basic validation, including:
+    * Detecting unused component schemas.
+    * Flagging operations with missing `summaries` or `tags`.
+    * Enforcing `PascalCase` naming conventions for schemas.
+    * Finding operations with a missing `operationId`.
+* **🪄 One-Click Quick Fixes**: Automatically fix linter suggestions—like removing unused components or generating a missing `operationId`—with the click of a button.
+* **👁️ Live Swagger UI Visualization**: Instantly see your API rendered in a beautiful, interactive documentation panel in a separate tab.
 * **🔄 JSON <> YAML Conversion**: Seamlessly write in and convert between JSON and YAML formats with a single click.
 * **✨ Modern UI**: A clean, professional, and resizable split-pane view that feels like a modern IDE.
 
 ## Tech Stack
 
-| Frontend | Backend |
-| :--- | :--- |
-| React | Java 21 |
-| Monaco Editor | Spring Boot 3 |
-| `react-resizable-panels` | Maven |
-| `swagger-ui-react` | `swagger-parser` |
-| `axios` & `js-yaml` | JUnit 5 |
+| Frontend | Backend (API Gateway) | Backend (AI Service) |
+| :--- | :--- | :--- |
+| React | Java 21 | Python 3 |
+| Monaco Editor | Spring Boot 3 | FastAPI |
+| `react-resizable-panels` | Maven | Ollama |
+| `swagger-ui-react` | `swagger-parser` | |
+| `axios` & `js-yaml` | JUnit 5 | |
 
 ## Getting Started
 
-To get a local copy up and running, follow these simple steps.
+To get the full local environment running, you'll need to start the AI model, the Python AI service, the Java backend, and the React frontend.
 
 ### Prerequisites
 
 * Java 21 (or higher)
+* Python 3.10+
 * Node.js and npm
+* **Ollama**: Download and install from [ollama.com](https://ollama.com)
 
 ### Local Setup
 
 1.  **Clone the repo**
     ```sh
     git clone [https://github.com/sharma-manish-94/schemasculpt.git](https://github.com/sharma-manish-94/schemasculpt.git)
+    cd schemasculpt
     ```
-2.  **Run the Backend**
+2.  **Run the Local AI Model** (in a new terminal)
+    * First, pull the model:
+        ```sh
+        ollama pull mistral
+        ```
+    * Ollama runs as a background service, so you just need to ensure it's active.
+
+3.  **Run the Python AI Service** (in a new terminal)
     ```sh
-    cd schemasculpt/api
+    cd ai_service
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt  # (You may need to create a requirements.txt)
+    uvicorn main:app --reload
+    ```
+    The AI service will start on `http://localhost:8000`.
+
+4.  **Run the Java Backend** (in a new terminal)
+    ```sh
+    cd api
     ./mvnw spring-boot:run
     ```
     The backend will start on `http://localhost:8080`.
 
-3.  **Run the Frontend** (in a new terminal window)
+5.  **Run the React Frontend** (in a new terminal)
     ```sh
-    cd schemasculpt/ui
+    cd ui
     npm install
     npm start
     ```
     The frontend will start on `http://localhost:3000`.
 
-4.  **Open the App**
-    Open your browser and navigate to `http://localhost:3000`.
+6.  **Open the App**
+    Open your browser and navigate to `http://localhost:3000`. The full application should now be running.
 
-## 🚀 The Vision: The Road to an AI-Native API Editor
+## 🚀 Future Roadmap
 
-The current features are just the foundation. The ultimate goal for SchemaSculpt is to integrate powerful AI capabilities to revolutionize API design. The roadmap includes:
-
-* **Natural Language to Spec**: Describe an endpoint in plain English ("Create a POST endpoint to add a new user with an email and name") and have the AI generate the corresponding YAML/JSON.
-* **Semantic Refactoring**: AI-powered suggestions to simplify overly complex schemas or refactor API paths to better align with RESTful best practices.
-* **Automated Documentation**: AI-generated `summary` and `description` fields based on the endpoint's structure, parameters, and schema names.
-* **Advanced Security Audits**: Using AI to detect subtle security vulnerabilities in the API design, such as potential for data leakage or improper authentication schemes.
+The current AI features are just the beginning. The vision is to continue making SchemaSculpt a more powerful AI-native tool:
+* **AI-Powered Quick Fixes**: Enable the AI to suggest and perform more complex fixes and refactors.
+* **Automated Documentation**: Generate high-quality `summary` and `description` fields for all parts of the spec.
+* **Semantic Refactoring**: Suggest deeper improvements, like refactoring API paths for better RESTful practices.
+* **Test Generation**: Generate boilerplate API tests based on the specification.
 
 ## Contributing
 
@@ -82,4 +113,3 @@ However, feel free to open an issue to share ideas or report bugs!
 This digital territory is currently an independent sovereignty with a benevolent dictator. A formal constitution (i.e., a license) is forthcoming.
 
 Until then, all rights are reserved.
-

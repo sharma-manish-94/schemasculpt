@@ -46,7 +46,6 @@ public class AIService {
 				return Yaml.pretty(yamlObject);
 			}
 		} catch (JsonProcessingException e) {
-			// If formatting fails, return the raw text as a fallback
 			return rawSpec;
 		}
 	}
