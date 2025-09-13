@@ -8,7 +8,7 @@ SchemaSculpt is an intelligent, locally-run assistant for crafting perfect API s
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)
 
 
-
+![SchemaSculpt Demo](./assets/editor.gif)
 ## About The Project
 
 Writing and maintaining OpenAPI specifications can be tedious. It's easy to make mistakes, leave unused components lying around, or forget best practices. SchemaSculpt was built to solve this problem by acting as your AI partner for API design.
