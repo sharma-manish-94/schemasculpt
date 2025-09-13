@@ -19,8 +19,6 @@ export const validateSpec = async (specText) => {
     }
 }
 
-// Add this function to validationService.js
-
 export const applyQuickFix = async (fixRequest) => {
     try {
         const response = await axios.post(`${API_BASE_URL}/fix`, fixRequest);
@@ -30,3 +28,16 @@ export const applyQuickFix = async (fixRequest) => {
         return null;
     }
 };
+
+export const executeAiAction = async (specText, prompt) => {
+    try{
+        const response = await axios.post(`${API_BASE_URL}/ai/execute`, {
+            prompt: prompt,
+            specText: specText
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error execute AI Action:", error);
+        return { updatedSpecText: `Error: Could not connect to the AI service.\n\nDetails:\n${error.message}` };
+    }
+}

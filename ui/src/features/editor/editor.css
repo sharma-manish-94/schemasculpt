@@ -210,3 +210,44 @@ li {
 .fix-button:hover {
     background-color: #4a7fa8;
 }
+
+.ai-assistant-bar {
+    display: flex;
+    padding: 8px;
+    background-color: #333;
+    border-top: 1px solid #444;
+    flex-shrink: 0;
+}
+
+.ai-input {
+    flex-grow: 1;
+    background-color: #252526;
+    border: 1px solid #444;
+    color: #d4d4d4;
+    padding: 6px 10px;
+    border-radius: 3px;
+}
+
+.ai-input:disabled {
+    opacity: 0.5;
+}
+
+.ai-submit-button {
+    background-color: #007acc;
+    border: none;
+    color: white;
+    padding: 6px 15px;
+    margin-left: 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.ai-submit-button:hover:not(:disabled) {
+    background-color: #008be6;
+}
+
+.ai-submit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
