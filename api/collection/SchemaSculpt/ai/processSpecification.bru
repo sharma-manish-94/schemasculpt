@@ -6,8 +6,15 @@ meta {
 
 post {
   url: http://localhost:8000/process
-  body: none
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+    "specText": "openapi: 3.0.0\ninfo:\n  title: My API\n  version: 1.0.0\npaths:\n  /test:\n    get:\n      summary: A test endpoint\n      responses:\n        '200':\n          description: OK",
+    "prompt": "Add a new GET endpoint for /health that returns a 200 OK response with a simple status message."
+  }
 }
 
 settings {
