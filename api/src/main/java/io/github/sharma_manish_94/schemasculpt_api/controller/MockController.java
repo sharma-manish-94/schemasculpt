@@ -28,4 +28,17 @@ public class MockController {
 				       .retrieve()
 				       .toEntity(String.class); // Forward the raw response
 	}
+	
+	@PutMapping("/{mockId}")
+	public Mono<ResponseEntity<String>> updateMockServer(
+			@PathVariable String mockId,
+			@RequestBody MockStartRequest request) {
+		
+		return this.webClient.put()
+				       .uri("/mock/" + mockId)
+				       .contentType(MediaType.APPLICATION_JSON)
+				       .bodyValue(request)
+				       .retrieve()
+				       .toEntity(String.class);
+	}
 }

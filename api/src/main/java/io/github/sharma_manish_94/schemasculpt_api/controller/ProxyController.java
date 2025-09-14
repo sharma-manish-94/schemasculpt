@@ -1,4 +1,26 @@
 package io.github.sharma_manish_94.schemasculpt_api.controller;
 
+import io.github.sharma_manish_94.schemasculpt_api.dto.ProxyRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.ProxyResponse;
+import io.github.sharma_manish_94.schemasculpt_api.service.proxy.ProxyService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/v1/proxy")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ProxyController {
+	
+	private final ProxyService proxyService;
+	
+	public ProxyController(ProxyService proxyService) {
+		this.proxyService = proxyService;
+	}
+	
+	@PostMapping("/request")
+	public Mono<ResponseEntity<ProxyResponse>> forwardRequest(@RequestBody ProxyRequest request) {
+		return proxyService.forwardRequest(request)
+				       .map(ResponseEntity::ok);
+	}
 }
