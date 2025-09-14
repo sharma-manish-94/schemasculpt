@@ -251,3 +251,13 @@ li {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.mock-url-display {
+    background-color: #1e1e1e;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    color: #a9d4ff;
+    word-wrap: break-word;
+    /* Make sure long URLs wrap */
+}

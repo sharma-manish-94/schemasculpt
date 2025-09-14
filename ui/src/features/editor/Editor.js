@@ -4,7 +4,7 @@ import { Panel, PanelGroup, PanelResizeHandle, } from "react-resizable-panels";
 import SwaggerUI from 'swagger-ui-react';
 import "swagger-ui-react/swagger-ui.css";
 import yaml from 'js-yaml'
-import { applyQuickFix, executeAiAction, validateSpec } from '../../api/validationService';
+import { applyQuickFix, executeAiAction, validateSpec, startMockServer } from '../../api/validationService';
 import './editor.css';
 
 // The sampleSpec constant remains the same...
@@ -47,7 +47,7 @@ function SpecEditor() {
     const [activeTab, setActiveTab] = useState('validation');
     const [format, setFormat] = useState('yaml');
     const [aiPrompt, setAiPrompt] = useState('');
-
+    const [mockServer, setMockServer] = useState({ active: false, url: '', id: '' }); // New state for mock server
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
     }
@@ -132,6 +132,18 @@ function SpecEditor() {
         setIsLoading(false);
     };
 
+    const handleStartMockServer = async () => {
+        setIsLoading(true);
+        const result = await startMockServer(specText);
+        if (result.success) {
+            setMockServer({ active: true, url: `http://localhost:8000${result.data.base_url}`, id: result.data.mock_id });
+            setActiveTab('api_lab');
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+        setIsLoading(false);
+    };
+
     const renderValidationContent = () => {
         if (isLoading) {
             return <p className="loading-text">Validating...</p>;
@@ -208,16 +220,32 @@ function SpecEditor() {
                 <Panel defaultSize={40} minSize={20}>
                     <div className="right-panel-container">
                         <div className="panel-tabs">
-                            <button onClick={() => setActiveTab('validation')}
-                                className={activeTab === 'validation' ? 'active' : ''}>Validation
-                            </button>
-                            <button onClick={() => setActiveTab('visualize')}
-                                className={activeTab === 'visualize' ? 'active' : ''}>Visualize
-                            </button>
+                            <button onClick={() => setActiveTab('validation')} className={activeTab === 'validation' ? 'active' : ''}>Validation</button>
+                            <button onClick={() => setActiveTab('visualize')} className={activeTab === 'visualize' ? 'active' : ''}>Visualize</button>
+                            <button onClick={() => setActiveTab('api_lab')} className={activeTab === 'api_lab' ? 'active' : ''}>API Lab</button> {/* New Tab */}
                         </div>
                         <div className="panel-content">
                             {activeTab === 'validation' && renderValidationContent()}
                             {activeTab === 'visualize' && <SwaggerUI spec={specText} />}
+                            {activeTab === 'api_lab' && (
+                                <div>
+                                    {!mockServer.active ? (
+                                        <>
+                                            <p>Start an AI-powered mock server based on your current spec.</p>
+                                            <button className="ai-submit-button" onClick={handleStartMockServer} disabled={isLoading}>
+                                                {isLoading ? 'Starting...' : 'Start AI Mock Server'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div>
+                                            <h4>Mock Server is Active!</h4>
+                                            <p>Base URL:</p>
+                                            <pre className="mock-url-display">{mockServer.url}</pre>
+                                            <p>You can now make requests to your endpoints, like <code>GET {mockServer.url}/pets</code>, using a tool like Bruno or curl.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Panel>

@@ -30,7 +30,7 @@ export const applyQuickFix = async (fixRequest) => {
 };
 
 export const executeAiAction = async (specText, prompt) => {
-    try{
+    try {
         const response = await axios.post(`${API_BASE_URL}/ai/execute`, {
             prompt: prompt,
             specText: specText
@@ -41,3 +41,13 @@ export const executeAiAction = async (specText, prompt) => {
         return { updatedSpecText: `Error: Could not connect to the AI service.\n\nDetails:\n${error.message}` };
     }
 }
+
+export const startMockServer = async (specText) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/mock/start`, { specText });
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Error starting mock server:", error);
+        return { success: false, error: error.response?.data?.detail || "Failed to start mock server." };
+    }
+};
