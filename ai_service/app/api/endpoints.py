@@ -34,6 +34,19 @@ def start_mock_server(request: MockStartRequest):
     return MockStartResponse(mock_id=mock_id, base_url=f"/mock/{mock_id}")
 
 
+@router.put("/mock/{mock_id}")
+def update_mock_server(mock_id: str, request: MockStartRequest):
+    """Updates the specification for an existing mock server session."""
+    if mock_id not in MOCKED_APIS:
+        raise HTTPException(status_code=404, detail="Mock server not found.")
+
+    try:
+        parser = ResolvingParser(spec_string=request.specText, backend='openapi-spec-validator')
+        MOCKED_APIS[mock_id] = parser.specification
+        return {"message": f"Mock server {mock_id} updated successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid OpenAPI Spec: {e}")
+
 @router.get("/mock/{mock_id}")
 @router.get("/mock/{mock_id}/")
 def welcome_mock_server(mock_id: str):
