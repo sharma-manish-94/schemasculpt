@@ -4,7 +4,7 @@ import { Panel, PanelGroup, PanelResizeHandle, } from "react-resizable-panels";
 import SwaggerUI from 'swagger-ui-react';
 import "swagger-ui-react/swagger-ui.css";
 import yaml from 'js-yaml'
-import { applyQuickFix, executeAiAction, validateSpec, startMockServer } from '../../api/validationService';
+import { applyQuickFix, executeAiAction, validateSpec, startMockServer, executeProxyRequest, refreshMockSpec } from '../../api/validationService';
 import './editor.css';
 
 // The sampleSpec constant remains the same...
@@ -41,16 +41,38 @@ components:
 function SpecEditor() {
     const [specText, setSpecText] = useState(sampleSpec);
     const editorRef = useRef(null);
+
+    // States for linter, AI, etc.
     const [errors, setErrors] = useState([]);
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('validation');
     const [format, setFormat] = useState('yaml');
     const [aiPrompt, setAiPrompt] = useState('');
-    const [mockServer, setMockServer] = useState({ active: false, url: '', id: '' }); // New state for mock server
+
+    // State for API Lab
+    const [endpoints, setEndpoints] = useState([]);
+    const [selectedEndpointIndex, setSelectedEndpointIndex] = useState('');
+    const [serverTarget, setServerTarget] = useState('mock');
+    const [customServerUrl, setCustomServerUrl] = useState('');
+    const [mockServer, setMockServer] = useState({ active: false, url: '', id: '' });
+
+    // State for the API Request Builder
+    const [pathParams, setPathParams] = useState({});
+    const [requestBody, setRequestBody] = useState('');
+    const [apiResponse, setApiResponse] = useState(null);
+    const [isApiRequestLoading, setIsApiRequestLoading] = useState(false);
+
+
+    const handlePathParamChange = (name, value) => {
+        setPathParams(prev => ({ ...prev, [name]: value }));
+    };
+
     function handleEditorDidMount(editor, monaco) {
         editorRef.current = editor;
     }
+
+
 
     useEffect(() => {
         if (editorRef.current && editorRef.current.getValue() !== specText) {
@@ -84,6 +106,32 @@ function SpecEditor() {
             handleValidation();
         }, 500);
         return () => clearTimeout(timer);
+    }, [specText]);
+
+    useEffect(() => {
+        try {
+            const specObject = yaml.load(specText);
+            const availableEndpoints = [];
+            if (specObject && specObject.paths) {
+                for (const path in specObject.paths) {
+                    for (const method in specObject.paths[path]) {
+                        // Check for valid HTTP methods
+                        if (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method.toLowerCase())) {
+                            availableEndpoints.push({
+                                path,
+                                method: method.toUpperCase(),
+                                details: specObject.paths[path][method]
+                            });
+                        }
+                    }
+                }
+            }
+            setEndpoints(availableEndpoints);
+            setSelectedEndpointIndex(''); // Reset selection on spec change
+            setApiResponse(null); // Clear previous response
+        } catch (e) {
+            setEndpoints([]); // Clear endpoints if spec is invalid
+        }
     }, [specText]);
 
     const convertToYAML = () => {
@@ -144,6 +192,51 @@ function SpecEditor() {
         setIsLoading(false);
     };
 
+    const handleRefreshMock = async () => {
+        if (!mockServer.active) return;
+
+        const result = await refreshMockSpec(mockServer.id, specText);
+        if (result.success) {
+            alert("Mock server spec has been updated!"); // Simple confirmation
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+    };
+
+    const handleSendRequest = async () => {
+        const endpoint = endpoints[selectedEndpointIndex];
+        if (!endpoint) return;
+
+        let baseUrl = serverTarget === 'mock' ? mockServer.url : customServerUrl;
+        if (serverTarget === 'mock' && !mockServer.active) {
+            alert("Please start the AI Mock Server first.");
+            return;
+        }
+        if (!baseUrl) {
+            alert("Please set a target server URL.");
+            return;
+        }
+
+        // Replace path parameters in the URL
+        let finalUrl = baseUrl + endpoint.path;
+        for (const paramName in pathParams) {
+            finalUrl = finalUrl.replace(`{${paramName}}`, pathParams[paramName]);
+        }
+
+        setIsApiRequestLoading(true);
+        setApiResponse(null); // Clear previous response
+        const result = await executeProxyRequest({
+            method: endpoint.method,
+            url: finalUrl,
+            headers: { 'Content-Type': 'application/json' },
+            body: requestBody || null,
+        });
+
+        setApiResponse(result);
+        setIsApiRequestLoading(false);
+    };
+
+
     const renderValidationContent = () => {
         if (isLoading) {
             return <p className="loading-text">Validating...</p>;
@@ -177,6 +270,107 @@ function SpecEditor() {
                     </div>
                 )}
             </>
+        );
+    };
+
+    const renderApiLabContent = () => {
+        const selectedEndpoint = endpoints[selectedEndpointIndex] || null;
+        const pathParameters = selectedEndpoint?.details.parameters?.filter(p => p.in === 'path') || [];
+        const hasRequestBody = !!selectedEndpoint?.details.requestBody;
+
+        return (
+            <div className="api-lab-container">
+                {/* --- Server Target & Endpoint Selectors --- */}
+                <div className="form-group">
+                    <label>Target Server</label>
+                    <div className="radio-group">
+                        <input type="radio" id="mock-server" name="server-target" value="mock" checked={serverTarget === 'mock'} onChange={() => setServerTarget('mock')} />
+                        <label htmlFor="mock-server">AI Mock Server</label>
+                        <input type="radio" id="custom-server" name="server-target" value="custom" checked={serverTarget === 'custom'} onChange={() => setServerTarget('custom')} />
+                        <label htmlFor="custom-server">Custom Server</label>
+                    </div>
+                    {serverTarget === 'custom' && (
+                        <input type="text" className="text-input" placeholder="Enter your base URL, e.g., http://localhost:9090" value={customServerUrl} onChange={(e) => setCustomServerUrl(e.target.value)} />
+                    )}
+                    {serverTarget === 'mock' && !mockServer.active && (
+                        <button className="start-mock-button" onClick={handleStartMockServer} disabled={isLoading}>{isLoading ? 'Starting...' : 'Start AI Mock Server'}</button>
+                    )}
+                    {serverTarget === 'mock' && mockServer.active && (
+                        <div>
+                            <div className="mock-url-container">
+                                <input type="text" className="text-input" readOnly value={mockServer.url} />
+                                <button className="refresh-button" onClick={handleRefreshMock} title="Update the mock server with the latest spec from the editor">🔄 Refresh</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="endpoint-select">Endpoint</label>
+                    <select id="endpoint-select" className="select-input" value={selectedEndpointIndex} onChange={e => { setSelectedEndpointIndex(e.target.value); setPathParams({}); setRequestBody(''); setApiResponse(null); }}>
+                        <option value="" disabled>Select an endpoint to test</option>
+                        {endpoints.map((ep, index) => (
+                            <option key={`${ep.method}-${ep.path}`} value={index}>
+                                {ep.method} {ep.path}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* --- DYNAMIC REQUEST & RESPONSE SECTIONS --- */}
+                {selectedEndpoint && (
+                    <>
+                        <div className="request-builder">
+                            <h4>Request</h4>
+                            {pathParameters.map(param => (
+                                <div className="form-group" key={param.name}>
+                                    <label htmlFor={`param-${param.name}`}>{param.name} <span className="param-location">(path)</span></label>
+                                    <input
+                                        type="text"
+                                        id={`param-${param.name}`}
+                                        className="text-input"
+                                        placeholder={param.description || ''}
+                                        value={pathParams[param.name] || ''}
+                                        onChange={e => handlePathParamChange(param.name, e.target.value)}
+                                    />
+                                </div>
+                            ))}
+
+                            {hasRequestBody && (
+                                <div className="form-group">
+                                    <label>Body <span className="param-location">(application/json)</span></label>
+                                    <div className="body-editor-wrapper">
+                                        <Editor
+                                            height="200px"
+                                            language="json"
+                                            theme="vs-dark"
+                                            value={requestBody}
+                                            onChange={(value) => setRequestBody(value || '')}
+                                            options={{ minimap: { enabled: false }, lineNumbers: 'off' }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                            <button className="send-request-button" onClick={handleSendRequest} disabled={isApiRequestLoading}>
+                                {isApiRequestLoading ? 'Sending...' : 'Send Request'}
+                            </button>
+                        </div>
+
+                        <div className="response-viewer">
+                            <h4>Response</h4>
+                            {isApiRequestLoading ? (
+                                <p className="loading-text">Waiting for response...</p>
+                            ) : (
+                                apiResponse ? (
+                                    <pre className={apiResponse.success ? 'response-success' : 'response-error'}>
+                                        {JSON.stringify(apiResponse.data || apiResponse.error, null, 2)}
+                                    </pre>
+                                ) : <p className="no-errors">Response will be displayed here.</p>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
         );
     };
 
@@ -222,30 +416,12 @@ function SpecEditor() {
                         <div className="panel-tabs">
                             <button onClick={() => setActiveTab('validation')} className={activeTab === 'validation' ? 'active' : ''}>Validation</button>
                             <button onClick={() => setActiveTab('visualize')} className={activeTab === 'visualize' ? 'active' : ''}>Visualize</button>
-                            <button onClick={() => setActiveTab('api_lab')} className={activeTab === 'api_lab' ? 'active' : ''}>API Lab</button> {/* New Tab */}
+                            <button onClick={() => setActiveTab('api_lab')} className={activeTab === 'api_lab' ? 'active' : ''}>API Lab</button>
                         </div>
                         <div className="panel-content">
                             {activeTab === 'validation' && renderValidationContent()}
                             {activeTab === 'visualize' && <SwaggerUI spec={specText} />}
-                            {activeTab === 'api_lab' && (
-                                <div>
-                                    {!mockServer.active ? (
-                                        <>
-                                            <p>Start an AI-powered mock server based on your current spec.</p>
-                                            <button className="ai-submit-button" onClick={handleStartMockServer} disabled={isLoading}>
-                                                {isLoading ? 'Starting...' : 'Start AI Mock Server'}
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <div>
-                                            <h4>Mock Server is Active!</h4>
-                                            <p>Base URL:</p>
-                                            <pre className="mock-url-display">{mockServer.url}</pre>
-                                            <p>You can now make requests to your endpoints, like <code>GET {mockServer.url}/pets</code>, using a tool like Bruno or curl.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            {activeTab === 'api_lab' && renderApiLabContent()}
                         </div>
                     </div>
                 </Panel>

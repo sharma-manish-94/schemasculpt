@@ -51,3 +51,28 @@ export const startMockServer = async (specText) => {
         return { success: false, error: error.response?.data?.detail || "Failed to start mock server." };
     }
 };
+
+export const executeProxyRequest = async (requestDetails) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/proxy/request`, requestDetails);
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Error executing proxy request:", error);
+        const errorResponse = error.response?.data || {
+            statusCode: 500,
+            body: `Could not connect to the server. Details: ${error.message}`
+        };
+        return { success: false, error: errorResponse };
+    }
+};
+
+export const refreshMockSpec = async (mockId, specText) => {
+    try {
+        // Note the PUT method and the URL with the mockId
+        const response = await axios.put(`${API_BASE_URL}/mock/${mockId}`, { specText });
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("Error refreshing mock spec:", error);
+        return { success: false, error: "Failed to refresh mock spec." };
+    }
+};
