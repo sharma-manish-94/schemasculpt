@@ -4,11 +4,11 @@
 
 SchemaSculpt is an intelligent, locally-run assistant for crafting perfect API specifications. It goes beyond simple validation by providing smart suggestions, one-click fixes, and AI-powered editing to streamline your API design workflow.
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)
 
 
-![SchemaSculpt Demo](./assets/editor.gif)
+![SchemaSculpt Overview](./assets/images/overview.png)
 
 ## About The Project
 
@@ -18,27 +18,39 @@ It uses a powerful, locally-run LLM (via Ollama) to understand natural language 
 
 ## Key Features
 
+* **🧪 Live API Lab & Testing**: Interactively build and send requests to any endpoint defined in your spec. Target either the built-in AI Mock Server or your own live server, all without leaving the editor.
+![API Lab Mock Response](./assets/images/mock-response.png)
+
+* **🤖 AI-Powered Mock Server**: With a single click, spin up a mock server that uses an LLM to generate realistic, context-aware mock data on the fly. The server stays in sync with your latest changes via a "Refresh" button.
 * **🤖 AI-Powered Editing**: Use natural language prompts (e.g., "add a GET endpoint for /health") to have a local LLM modify your API specification.
+![AI Assistant](./assets/images/ai-assistant.png)
+
 * **⚡ Real-time Validation**: Instantly see parsing and OpenAPI validation errors as you type.
 * **💡 Intelligent Linter**: Get smart suggestions that go beyond basic validation, including:
     * Detecting unused component schemas.
     * Flagging operations with missing `summaries` or `tags`.
     * Enforcing `PascalCase` naming conventions for schemas.
     * Finding operations with a missing `operationId`.
+![Linter and Quick Fixes](./assets/images/linter-and-fixes.png)
+
 * **🪄 One-Click Quick Fixes**: Automatically fix linter suggestions—like removing unused components or generating a missing `operationId`—with the click of a button.
 * **👁️ Live Swagger UI Visualization**: Instantly see your API rendered in a beautiful, interactive documentation panel in a separate tab.
+![Swagger UI Visualization](./assets/images/swagger-ui.png)
+
 * **🔄 JSON <> YAML Conversion**: Seamlessly write in and convert between JSON and YAML formats with a single click.
 * **✨ Modern UI**: A clean, professional, and resizable split-pane view that feels like a modern IDE.
 
+
 ## Tech Stack
 
-| Frontend | Backend (API Gateway) | Backend (AI Service) |
-| :--- | :--- | :--- |
-| React | Java 21 | Python 3 |
-| Monaco Editor | Spring Boot 3 | FastAPI |
-| `react-resizable-panels` | Maven | Ollama |
-| `swagger-ui-react` | `swagger-parser` | |
-| `axios` & `js-yaml` | JUnit 5 | |
+| Frontend                | Backend (API Gateway)       | Backend (AI Service)         |
+| :---------------------- | :-------------------------- | :--------------------------- |
+| React                   | Java 21                     | Python 3                     |
+| Monaco Editor           | Spring Boot 3               | FastAPI                      |
+| `react-resizable-panels`| Spring Boot Webflux         | Ollama                       |
+| `swagger-ui-react`      | `swagger-parser`            | `prance`, `openapi-spec-validator` |
+| `axios` & `js-yaml`     | JUnit 5                     | `httpx`                      |
+
 
 ## Getting Started
 
@@ -95,11 +107,12 @@ To get the full local environment running, you'll need to start the AI model, th
 
 ## 🚀 Future Roadmap
 
-The current AI features are just the beginning. The vision is to continue making SchemaSculpt a more powerful AI-native tool:
-* **AI-Powered Quick Fixes**: Enable the AI to suggest and perform more complex fixes and refactors.
-* **Automated Documentation**: Generate high-quality `summary` and `description` fields for all parts of the spec.
-* **Semantic Refactoring**: Suggest deeper improvements, like refactoring API paths for better RESTful practices.
-* **Test Generation**: Generate boilerplate API tests based on the specification.
+The current features provide a powerful foundation. The vision is to continue making SchemaSculpt a more indispensable AI partner for developers:
+
+* **AI-Powered Semantic Refactoring**: The next major feature. Enable the AI to suggest high-level architectural improvements, such as consolidating redundant schemas or standardizing path structures.
+* **AI-Generated Test Cases**: Automatically generate a suite of "happy path" and "sad path" test cases that can be run from the API Lab.
+* **Automated Documentation**: Generate high-quality `summary` and `description` fields for all parts of the spec based on context.
+
 
 ## Contributing
 

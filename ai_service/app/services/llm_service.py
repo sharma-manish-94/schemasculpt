@@ -15,7 +15,7 @@ class LLMService:
         else:
             return f"Error from Ollama service: {response.status_code} - {response.text}"
 
-    def _build_prompt_messages(spec: str, request: str) -> list:
+    def _build_prompt_messages(self, spec: str, request: str) -> list:
         # ... (this function remains the same)
         system_prompt = """You are an expert api document, api developer/architect who is my assistant. Your task is to modify the provided OpenAPI YAML specification based on the user's request.
     You must only output the new, complete, and valid YAML specification. 
@@ -31,7 +31,7 @@ class LLMService:
     </REQUEST>"""
         return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
 
-    def _extract_generated_text(response_json) -> str:
+    def _extract_generated_text(self, response_json) -> str:
         """Extracts and cleans the content from an Ollama response."""
         try:
             raw_text = response_json['message']['content']
