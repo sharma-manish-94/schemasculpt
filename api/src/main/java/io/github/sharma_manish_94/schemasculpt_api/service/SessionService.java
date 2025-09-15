@@ -7,6 +7,8 @@ public interface SessionService {
 
     void updateSessionSpec(String sessionId, String specText);
 
+    void updateSessionSpec(String sessionId, OpenAPI openApi);
+
     OpenAPI getSpecForSession(String sessionId);
 
     void closeSession(String sessionId);
