@@ -43,67 +43,95 @@ It uses a powerful, locally-run LLM (via Ollama) to understand natural language 
 
 ## Tech Stack
 
-| Frontend                | Backend (API Gateway)       | Backend (AI Service)         |
-| :---------------------- | :-------------------------- | :--------------------------- |
-| React                   | Java 21                     | Python 3                     |
-| Monaco Editor           | Spring Boot 3               | FastAPI                      |
-| `react-resizable-panels`| Spring Boot Webflux         | Ollama                       |
-| `swagger-ui-react`      | `swagger-parser`            | `prance`, `openapi-spec-validator` |
-| `axios` & `js-yaml`     | JUnit 5                     | `httpx`                      |
+| Frontend                | Backend (API Gateway)         | Backend (AI Service)         |
+| :---------------------- | :---------------------------- | :--------------------------- |
+| React                   | Java 21                       | Python 3                     |
+| Monaco Editor           | Spring Boot 3                 | FastAPI                      |
+| `react-resizable-panels`| Spring Boot WebSockets        | Ollama                       |
+| `swagger-ui-react`      | Spring Boot Data Redis        | `prance`, `openapi-spec-validator` |
+| `SockJS` & `StompJS`    | Spring Boot Webflux           | `httpx`                      |
+| `axios` & `js-yaml`     | `swagger-parser`, JUnit 5     |                              |
 
 
 ## Getting Started
 
-To get the full local environment running, you'll need to start the AI model, the Python AI service, the Java backend, and the React frontend.
+To get the full local environment running, you'll need to install the prerequisites and then start the four services in the correct order.
 
 ### Prerequisites
 
-* Java 21 (or higher)
-* Python 3.10+
-* Node.js and npm
+* **Java 21** (or higher) & **Maven**
+* **Python 3.10+** & **Pip**
+* **Node.js** & **npm**
+* **Docker**
 * **Ollama**: Download and install from [ollama.com](https://ollama.com)
 
-### Local Setup
+### Step-by-Step Local Setup
 
-1.  **Clone the repo**
-    ```sh
-    git clone [https://github.com/sharma-manish-94/schemasculpt.git](https://github.com/sharma-manish-94/schemasculpt.git)
-    cd schemasculpt
-    ```
-2.  **Run the Local AI Model** (in a new terminal)
-    * First, pull the model:
-        ```sh
-        ollama pull mistral
-        ```
-    * Ollama runs as a background service, so you just need to ensure it's active.
+Follow these steps in order, each in a **separate terminal window**.
 
-3.  **Run the Python AI Service** (in a new terminal)
-    ```sh
-    cd ai_service
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt  # (You may need to create a requirements.txt)
-    uvicorn app.main:app --relo
-    ```
-    The AI service will start on `http://localhost:8000`.
+#### **1. Start Redis**
+This is our session cache. It needs to be running before the backend starts.
+```bash
+docker run -d --name schemasculpt-redis -p 6379:6379 redis
+```
+*To verify it's running, you can use `docker ps`.*
 
-4.  **Run the Java Backend** (in a new terminal)
-    ```sh
-    cd api
-    ./mvnw spring-boot:run
-    ```
-    The backend will start on `http://localhost:8080`.
+#### **2. Start the AI Model**
+The local LLM must be running for the AI service to use it.
+```bash
+# First, ensure you have the model downloaded
+ollama pull mistral
 
-5.  **Run the React Frontend** (in a new terminal)
-    ```sh
-    cd ui
-    npm install
-    npm start
-    ```
-    The frontend will start on `http://localhost:3000`.
+# Ollama runs as a background service, just ensure it's active.
+# You can test it by running `ollama list`.
+```
 
-6.  **Open the App**
-    Open your browser and navigate to `http://localhost:3000`. The full application should now be running.
+#### **3. Start the Python AI Service**
+This service handles all AI-related tasks.
+```bash
+# Navigate to the ai_service directory
+cd schemasculpt/ai_service
+
+# Set up the environment (only needed the first time)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Create your local environment file (only needed the first time)
+cp .env.example .env 
+# Now, edit the .env file and add your Hugging Face API token if needed.
+
+# Run the server
+uvicorn app.main:app --reload
+```
+*The AI service will start on `http://localhost:8000`.*
+
+#### **4. Start the Java Backend**
+This is the main API gateway.
+```bash
+# Navigate to the api directory
+cd schemasculpt/api
+
+# Run the server
+./mvnw spring-boot:run
+```
+*The Java backend will start on `http://localhost:8080`.*
+
+#### **5. Start the React Frontend**
+This is the user interface.
+```bash
+# Navigate to the ui directory
+cd schemasculpt/ui
+
+# Install dependencies (only needed the first time)
+npm install
+
+# Run the development server
+npm start
+```
+*Your browser will open to `http://localhost:3000`.*
+
+You now have the complete SchemaSculpt application running locally!
 
 ## 🚀 Future Roadmap
 
