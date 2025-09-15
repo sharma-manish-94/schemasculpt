@@ -8,7 +8,6 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/ai")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class AIController {
 	private final AIService aiService;
 	public AIController(AIService aiService) {

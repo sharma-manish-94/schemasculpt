@@ -9,7 +9,6 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/proxy")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ProxyController {
 	
 	private final ProxyService proxyService;

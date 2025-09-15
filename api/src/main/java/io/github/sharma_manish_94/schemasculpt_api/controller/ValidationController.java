@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ValidationController {
 	
 	private final ValidationService validationService;

@@ -10,7 +10,6 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/mock")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class MockController {
 	
 	private final WebClient webClient;

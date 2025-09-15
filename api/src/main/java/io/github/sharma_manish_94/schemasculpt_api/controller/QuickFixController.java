@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class QuickFixController {
 	
 	private final QuickFixService quickFixService;
