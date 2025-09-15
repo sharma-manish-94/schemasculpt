@@ -16,7 +16,6 @@ class LLMService:
             return f"Error from Ollama service: {response.status_code} - {response.text}"
 
     def _build_prompt_messages(self, spec: str, request: str) -> list:
-        # ... (this function remains the same)
         system_prompt = """You are an expert api document, api developer/architect who is my assistant. Your task is to modify the provided OpenAPI YAML specification based on the user's request.
     You must only output the new, complete, and valid YAML specification. 
     Do not add any commentary, explanations, or markdown fences like ```yaml."""
