@@ -6,8 +6,10 @@ import "swagger-ui-react/swagger-ui.css";
 import yaml from 'js-yaml'
 import { applyQuickFix, executeAiAction, validateSpec, startMockServer, executeProxyRequest, refreshMockSpec } from '../../api/validationService';
 import './editor.css';
+import axios from 'axios';
+import * as websocketService from '../../api/websocketService';
 
-// The sampleSpec constant remains the same...
+
 const sampleSpec = `openapi: 3.0.0
 info:
   title: Simple Pet Store API
@@ -40,6 +42,7 @@ components:
 
 function SpecEditor() {
     const [specText, setSpecText] = useState(sampleSpec);
+    const [sessionId, setSessionId] = useState(null);
     const editorRef = useRef(null);
 
     // States for linter, AI, etc.
@@ -134,6 +137,39 @@ function SpecEditor() {
         }
     }, [specText]);
 
+    useEffect(() => {
+        // Function to handle messages received from the server
+        const handleMessage = (message) => {
+            console.log('Message from server:', message);
+            // Here you could update state based on server broadcasts
+        };
+
+        // Connect when the component mounts
+        websocketService.connect(handleMessage);
+
+        // Disconnect when the component unmounts
+        return () => {
+            websocketService.disconnect();
+        };
+    }, []);
+
+    useEffect(() => {
+        // This function creates the session when the component first mounts
+        const createSession = async () => {
+            try {
+                const response = await axios.post('http://localhost:8080/api/v1/sessions', sampleSpec, {
+                    headers: { 'Content-Type': 'text/plain' }
+                });
+                const newSessionId = response.data.sessionId;
+                setSessionId(newSessionId);
+                console.log('Session created with ID:', newSessionId);
+            } catch (error) {
+                console.error('Failed to create session:', error);
+            }
+        };
+        createSession();
+    }, []); // The emp
+
     const convertToYAML = () => {
         try {
             const jsonObject = JSON.parse(specText);
@@ -197,7 +233,7 @@ function SpecEditor() {
 
         const result = await refreshMockSpec(mockServer.id, specText);
         if (result.success) {
-            alert("Mock server spec has been updated!"); // Simple confirmation
+            alert("Mock server spec has been updated!");
         } else {
             alert(`Error: ${result.error}`);
         }
@@ -224,7 +260,7 @@ function SpecEditor() {
         }
 
         setIsApiRequestLoading(true);
-        setApiResponse(null); // Clear previous response
+        setApiResponse(null);
         const result = await executeProxyRequest({
             method: endpoint.method,
             url: finalUrl,
@@ -234,6 +270,16 @@ function SpecEditor() {
 
         setApiResponse(result);
         setIsApiRequestLoading(false);
+    };
+
+    const handleEditorChange = (value) => {
+        const newContent = value || "";
+        setSpecText(newContent);
+
+        // Only send a message if we have a valid session ID
+        if (sessionId) {
+            websocketService.sendMessage(sessionId, newContent);
+        }
     };
 
 
@@ -280,7 +326,6 @@ function SpecEditor() {
 
         return (
             <div className="api-lab-container">
-                {/* --- Server Target & Endpoint Selectors --- */}
                 <div className="form-group">
                     <label>Target Server</label>
                     <div className="radio-group">
@@ -392,7 +437,7 @@ function SpecEditor() {
                                 language={format}
                                 defaultValue={specText} // Use defaultValue for the initial load
                                 onMount={handleEditorDidMount} // Get the editor instance when it mounts
-                                onChange={(value) => setSpecText(value || "")} // Update state on user input
+                                onChange={handleEditorChange}
                             />
                         </div>
                         <form className="ai-assistant-bar" onSubmit={handleAiSubmit}>
