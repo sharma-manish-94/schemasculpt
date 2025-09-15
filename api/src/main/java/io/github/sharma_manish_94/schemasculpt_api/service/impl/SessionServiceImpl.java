@@ -4,21 +4,23 @@ import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
 import io.github.sharma_manish_94.schemasculpt_api.service.SpecParsingService;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class SessionServiceImpl implements SessionService {
 
-    private final Map<String, OpenAPI> activeSessions = new ConcurrentHashMap<>();
+    private final RedisTemplate<String, OpenAPI> redisTemplate;
     private final SpecParsingService specParsingService;
 
-    public SessionServiceImpl(final SpecParsingService specParsingService) {
+    public SessionServiceImpl(final SpecParsingService specParsingService,
+                              final RedisTemplate<String, OpenAPI> redisTemplate) {
         this.specParsingService = specParsingService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -29,7 +31,7 @@ public class SessionServiceImpl implements SessionService {
         if (Objects.nonNull(parseResult)) {
             final OpenAPI openAPI = parseResult.getOpenAPI();
             if (Objects.nonNull(openAPI)) {
-                activeSessions.put(sessionId, openAPI);
+                redisTemplate.opsForValue().set(sessionId, openAPI, Duration.ofHours(1));
                 return sessionId;
             } else {
                 throw new IllegalArgumentException("Could not create session. Please check your spec");
@@ -40,11 +42,11 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public OpenAPI getSpecForSession(final String sessionId) {
-        return activeSessions.getOrDefault(sessionId, null);
+        return redisTemplate.opsForValue().get(sessionId);
     }
 
     @Override
     public void closeSession(final String sessionId) {
-        activeSessions.remove(sessionId);
+        redisTemplate.delete(sessionId);
     }
 }
