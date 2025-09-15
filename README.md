@@ -83,7 +83,7 @@ To get the full local environment running, you'll need to start the AI model, th
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt  # (You may need to create a requirements.txt)
-    uvicorn main:app --reload
+    uvicorn app.main:app --relo
     ```
     The AI service will start on `http://localhost:8000`.
 
