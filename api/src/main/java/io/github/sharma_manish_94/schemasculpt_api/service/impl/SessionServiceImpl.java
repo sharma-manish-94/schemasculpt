@@ -41,6 +41,16 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    public void updateSessionSpec(String sessionId, String specText) {
+        if (redisTemplate.hasKey(sessionId)) {
+            OpenAPI openAPI = specParsingService.parse(specText).getOpenAPI();
+            if (openAPI != null) {
+                redisTemplate.opsForValue().set(sessionId, openAPI, Duration.ofHours(1));
+            }
+        }
+    }
+
+    @Override
     public OpenAPI getSpecForSession(final String sessionId) {
         return redisTemplate.opsForValue().get(sessionId);
     }
