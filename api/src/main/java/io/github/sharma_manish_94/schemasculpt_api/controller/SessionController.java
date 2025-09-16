@@ -1,6 +1,8 @@
 package io.github.sharma_manish_94.schemasculpt_api.controller;
 
+import io.github.sharma_manish_94.schemasculpt_api.dto.MockSessionDetails;
 import io.github.sharma_manish_94.schemasculpt_api.dto.MockSessionResponse;
+import io.github.sharma_manish_94.schemasculpt_api.dto.MockStartRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.SessionResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,14 +37,12 @@ public class SessionController {
         return this.webClient.post()
                 .uri("/mock/start")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(specText)
+                .bodyValue(new MockStartRequest(specText))
                 .retrieve()
-                .bodyToMono(String.class)
-                .map(responseBody -> {
-                    String mockId = responseBody.split("\"mock_id\":\"")[1].split("\"")[0];
-                    String baseUrl = responseBody.split("\"base_url\":\"")[1].split("\"")[0];
-                    String fullMockUrl = "http://localhost:8000" + baseUrl;
-                    return new MockSessionResponse(mockId, fullMockUrl);
+                .bodyToMono(MockSessionDetails.class)
+                .map(mockSessionDetails -> {
+                    String fullMockUrl = "http://localhost:8000" + mockSessionDetails.baseUrl();
+                    return new MockSessionResponse(mockSessionDetails.mockId(), fullMockUrl);
                 });
     }
 
