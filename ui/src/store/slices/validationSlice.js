@@ -1,10 +1,12 @@
 import { validateSpec, applyQuickFix } from '../../api/validationService';
 
 export const createValidationSlice = (set, get) => ({
-   errors:[],
+   // --- STATE ---
+    errors:[],
    suggestions:[],
    isLoading: false,
-
+// --- ACTIONS ---
+    setIsLoading: (loading) => set({ isLoading: loading }),
     validateCurrentSpec: async() => {
        set({isLoading: true});
        const result = await validateSpec(get().specText);

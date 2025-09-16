@@ -2,10 +2,9 @@ import React, { useEffect } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { useSpecStore } from '../../store/specStore'; // Connect to our store
 
-// Import the sub-components
 import EditorPanel from './components/EditorPanel';
 import RightPanel from './components/RightPanel';
-import './editor.css'; // Your existing CSS
+import './editor.css';
 
 function SpecEditor() {
     // We only pull top-level actions needed for initial setup from the store

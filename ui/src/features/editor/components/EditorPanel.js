@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { useSpecStore } from '../../../store/specStore'; // Connect to our store
+import { useSpecStore } from '../../../store/specStore';
+import {useRequestStore} from "../../../store/requestStore";
 
-// Sub-component for the toolbar
 function EditorToolbar() {
     const { format, convertToJSON, convertToYAML } = useSpecStore();
     return (
@@ -44,7 +44,6 @@ function AiAssistantBar() {
 
 // Main Editor Panel component
 function EditorPanel() {
-    // Get specText, format, and the setSpecText action directly from the store
     const { specText, setSpecText, format } = useSpecStore();
     const editorRef = useRef(null);
 
@@ -60,7 +59,7 @@ function EditorPanel() {
     }, [specText]);
 
     // Effect to parse endpoints whenever specText changes
-    const parseEndpoints = useSpecStore((state) => state.parseEndpoints);
+    const parseEndpoints = useRequestStore((state) => state.parseEndpoints);
     const validateCurrentSpec = useSpecStore((state) => state.validateCurrentSpec);
 
     useEffect(() => {
