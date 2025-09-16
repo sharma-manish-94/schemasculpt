@@ -186,7 +186,7 @@ li {
 .editor-wrapper {
     width: 100%;
     flex-grow: 1;
-    /* This is the important change */
+    overflow: hidden;
 }
 
 .suggestion-item {

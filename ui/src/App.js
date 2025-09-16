@@ -1,4 +1,4 @@
-import SpecEditor from './features/editor/Editor';
+import SpecEditor from './features/editor/SpecEditor';
 import bannerLogo from './assets/banner-logo.png';
 import { Link } from 'react-router-dom';
 import './App.css';

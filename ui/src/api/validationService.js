@@ -2,15 +2,11 @@ import axios from "axios";
 
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
-/**
- * Validates the provided OpenAPI specification string by calling the backend API.
- * @param {string} specText The OpenAPI spec content as a string.
- * @returns {Promise<{success: boolean, data: Array, error: string|null}>} A promise that resolves to an object indicating success or failure.
- */
 export const validateSpec = async (specText) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/validate`, {
-            spec: specText
+        const url  = `${API_BASE_URL}/specifications/validate`;
+        const response = await axios.post(url, specText,{
+           headers: {'Content-Type':'text/plain'}
         });
         return { success: true, data: response.data, error: null };
     } catch (error) {
@@ -21,8 +17,9 @@ export const validateSpec = async (specText) => {
 
 export const applyQuickFix = async (fixRequest) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/fix`, fixRequest);
-        return response.data; // Should be { updatedSpecText: "..." }
+        const url = `${API_BASE_URL}/specifications/fix`;
+        const response = await axios.post(url, fixRequest);
+        return response.data;
     } catch (error) {
         console.error("Error applying fix:", error);
         return null;
@@ -31,7 +28,8 @@ export const applyQuickFix = async (fixRequest) => {
 
 export const executeAiAction = async (specText, prompt) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/ai/execute`, {
+        const url = `${API_BASE_URL}/specifications/transform`;
+        const response = await axios.post(url, {
             prompt: prompt,
             specText: specText
         });
@@ -44,7 +42,9 @@ export const executeAiAction = async (specText, prompt) => {
 
 export const startMockServer = async (specText) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/mock/start`, { specText });
+        const response = await axios.post(`${API_BASE_URL}/sessions/mock`, specText, {
+            headers: {'Content-Type': 'text/plain'}
+        });
         return { success: true, data: response.data };
     } catch (error) {
         console.error("Error starting mock server:", error);
@@ -68,8 +68,9 @@ export const executeProxyRequest = async (requestDetails) => {
 
 export const refreshMockSpec = async (mockId, specText) => {
     try {
-        // Note the PUT method and the URL with the mockId
-        const response = await axios.put(`${API_BASE_URL}/mock/${mockId}`, { specText });
+        const response = await axios.put(`${API_BASE_URL}/sessions/${mockId}/spec`, { specText }, {
+            headers: {'Content-Type': 'application/json'}
+        });
         return { success: true, data: response.data };
     } catch (error) {
         console.error("Error refreshing mock spec:", error);
