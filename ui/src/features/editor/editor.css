@@ -391,3 +391,9 @@ li {
 .refresh-button:hover {
     background-color: #5f5f5f;
 }
+
+.divider {
+    border: none;
+    border-top: 1px solid #444;
+    margin: 20px 0;
+}
