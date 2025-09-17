@@ -1,7 +1,17 @@
-.App-logo {
-  height: 50px;
-  pointer-events: none;
-  margin-right: 15px;
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
+  background-color: #1e1e1e;
+  color: white;
+  /* Prevent the entire page from ever scrolling */
+  overflow: hidden;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Make the app fill the entire screen height */
 }
 
 .App-header {
@@ -10,67 +20,46 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0; /* Important: Prevents the header from shrinking */
 }
 
-/* New styles for the text container */
-.header-text {
-  text-align: left;
+.App-main {
+  flex-grow: 1; /* Important: Tells the main content to fill all remaining space */
+  overflow: hidden; /* Important: Ensures scrolling happens inside panels, not on the main page */
 }
 
-/* Adjust the h1 margin */
-.header-text h1 {
-  margin: 0;
-  font-size: 1.5em;
+/* --- (The rest of your styles for header content can remain below) --- */
+.App-logo {
+  height: 50px;
+  pointer-events: none;
+  margin-right: 15px;
 }
-
 .header-left {
   display: flex;
   align-items: center;
 }
-
+.header-text {
+  text-align: left;
+}
+.header-text h1 {
+  margin: 0;
+  font-size: 1.5em;
+}
+.tagline {
+  margin: 0;
+  font-size: 0.9em;
+  color: #a0a0a0;
+}
 .header-right {
   display: flex;
   gap: 20px;
 }
-
 .header-right a {
   color: #a0a0a0;
   text-decoration: none;
   font-weight: bold;
   font-size: 0.9em;
 }
-
 .header-right a:hover {
   color: #ffffff;
-}
-
-/* Style for the new tagline */
-.tagline {
-  margin: 0;
-  font-size: 0.9em;
-  color: #a0a0a0;
-  /* A lighter, more subtle color */
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #1e1e1e;
-  color: white;
-}
-
-.App {
-  text-align: center;
-  background-color: #1e1e1e;
-  /* Add this line */
-  min-height: 100vh;
-  /* Add this line */
-}
-
-.App-main {
-  padding: 20px;
 }

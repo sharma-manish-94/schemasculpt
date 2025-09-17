@@ -1,11 +1,17 @@
-.spec-editor-layout {
-    height: calc(100vh - 150px);
+/* --- Main 3-Panel Layout --- */
+
+.spec-editor-wrapper,
+.main-layout {
+    height: 100%;
     width: 100%;
 }
 
-.editor-wrapper {
-    width: 100%;
+.panel-container {
+    display: flex;
+    flex-direction: column;
     height: 100%;
+    background-color: #252526;
+    overflow: hidden;
 }
 
 .resize-handle {
@@ -16,135 +22,122 @@
     border-right: 1px solid #444;
 }
 
+.panel-header {
+    background-color: #333;
+    padding: 8px 15px;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+    flex-shrink: 0;
+    text-align: left;
+}
+
+.panel-content-placeholder {
+    padding: 20px;
+    color: #8c8c8c;
+    font-style: italic;
+    text-align: center;
+}
+
 .resize-handle:hover {
     background-color: #007acc;
 }
 
-.right-panel-container {
+
+/* --- Navigation Panel (Column 1) --- */
+.navigation-panel {
     display: flex;
     flex-direction: column;
-    background-color: #252526;
-    border: 1px solid #444;
     height: 100%;
 }
 
-.panel-tabs {
-    display: flex;
-    background-color: #1e1e1e;
-    border-bottom: 1px solid #444;
-}
-
-.panel-tabs button {
-    background: none;
-    border: none;
-    color: #a0a0a0;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-}
-
-.panel-tabs button:hover {
-    color: #ffffff;
-}
-
-.panel-tabs button.active {
-    color: #0098ff;
-    border-bottom: 2px solid #0098ff;
-}
-
-.panel-content {
-    padding: 10px 15px;
+.tree-view {
+    padding: 10px;
     overflow-y: auto;
     flex-grow: 1;
-}
-
-/* Make Swagger UI fit the dark theme and container */
-.swagger-ui .wrapper {
-    padding: 0;
-}
-
-.swagger-ui {
-    background-color: #252526;
-    color: #d4d4d4;
-}
-
-.swagger-ui .opblock-tag {
-    border-bottom: 1px solid #444;
-}
-
-.swagger-ui .opblock .opblock-summary {
-    border-color: #444;
-}
-
-.swagger-ui .opblock-summary-description {
-    color: #d4d4d4;
-}
-
-.swagger-ui .info .title {
-    color: #d4d4d4;
-}
-
-.swagger-ui .scheme-container,
-.swagger-ui .info {
-    background-color: #252526;
-}
-
-.swagger-ui .wrapper {
-    padding: 0;
     text-align: left;
-    /* <-- Add this line */
 }
 
-/* --- Styles for the content inside the validation panel --- */
-.result-section {
-    margin-bottom: 10px;
+.tree-view ul {
+    list-style: none;
+    padding-left: 15px;
 }
 
-.result-title-error,
-.result-title-suggestion {
-    margin: 0 0 5px 0;
-    font-size: 0.9em;
-    text-transform: uppercase;
+.tree-item {
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    display: inline-block;
 }
 
-.result-title-error {
-    color: #ff8a8a;
+.tree-item:hover {
+    background-color: #3e3e42;
 }
 
-.result-title-suggestion {
-    color: #82cfff;
+.tree-item.active {
+    background-color: #007acc;
+    color: white;
 }
 
-.result-section ul {
-    padding-left: 20px;
-    margin: 0;
-}
-
-.result-section li {
-    margin-bottom: 8px;
-}
-
-li.suggestion-item {
-    color: #a9d4ff;
-}
-
-li {
+.path-item {
+    font-weight: bold;
     color: #d4d4d4;
+    margin-top: 5px;
 }
 
-.no-errors,
-.loading-text {
-    color: #8c8c8c;
-    margin: 0;
+.method-item {
+    font-family: monospace;
+    font-weight: bold;
 }
 
-/* Add these styles to the top of editor.css */
+.method-get {
+    color: #61affe;
+}
 
+.method-post {
+    color: #49cc90;
+}
+
+.method-put {
+    color: #fca130;
+}
+
+.method-delete {
+    color: #f93e3e;
+}
+
+.method-patch {
+    color: #50e3c2;
+}
+
+
+/* --- Detail Panel (Column 2) --- */
+.detail-panel-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+
+/* --- Editor Panel & Sub-components --- */
 .editor-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex-grow: 1;
+    /* Make it fill its parent panel */
     background-color: #1e1e1e;
+}
+
+.editor-wrapper {
+    flex-grow: 1;
+    /* Make the editor fill the space */
+    overflow: hidden;
+}
+
+.editor-toolbar,
+.ai-assistant-bar {
+    flex-shrink: 0;
+    /* Prevent toolbars from shrinking */
 }
 
 .editor-toolbar {
@@ -157,23 +150,22 @@ li {
     flex-shrink: 0;
 }
 
-.format-indicator {
-    font-size: 0.8em;
-    font-weight: bold;
-    color: #a0a0a0;
+.toolbar-right-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-.toolbar-buttons button {
+.toolbar-button {
     background-color: #4f4f4f;
     border: 1px solid #666;
     color: #ddd;
     padding: 4px 8px;
-    margin-left: 5px;
     cursor: pointer;
     border-radius: 3px;
 }
 
-.toolbar-buttons button:hover:not(:disabled) {
+.toolbar-button:hover:not(:disabled) {
     background-color: #5f5f5f;
 }
 
@@ -182,33 +174,10 @@ li {
     cursor: not-allowed;
 }
 
-/* Make sure the editor wrapper fills the remaining space */
-.editor-wrapper {
-    width: 100%;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-.suggestion-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.fix-button {
-    background-color: #3e6a89;
-    border: 1px solid #5c8cb0;
-    color: #e0e0e0;
-    padding: 2px 8px;
-    margin-left: 10px;
-    cursor: pointer;
-    border-radius: 3px;
+.format-indicator {
     font-size: 0.8em;
-    flex-shrink: 0;
-}
-
-.fix-button:hover {
-    background-color: #4a7fa8;
+    font-weight: bold;
+    color: #a0a0a0;
 }
 
 .ai-assistant-bar {
@@ -252,14 +221,118 @@ li {
     cursor: not-allowed;
 }
 
-.mock-url-display {
+
+/* --- Inspector Panel & Sub-components (Column 3) --- */
+.right-panel-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.panel-tabs {
+    display: flex;
     background-color: #1e1e1e;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #444;
+    border-bottom: 1px solid #444;
+    flex-shrink: 0;
+}
+
+.panel-tabs button {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.panel-tabs button:hover {
+    color: #ffffff;
+}
+
+.panel-tabs button.active {
+    color: #0098ff;
+    border-bottom: 2px solid #0098ff;
+}
+
+.panel-content {
+    padding: 10px 15px;
+    overflow-y: auto;
+    flex-grow: 1;
+    text-align: left;
+}
+
+
+/* --- Validation Panel Styles --- */
+.result-section {
+    margin-bottom: 10px;
+}
+
+.result-title-error,
+.result-title-suggestion {
+    margin: 0 0 5px 0;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.result-title-error {
+    color: #ff8a8a;
+}
+
+.result-title-suggestion {
+    color: #82cfff;
+}
+
+.result-section ul {
+    padding-left: 20px;
+    margin: 0;
+}
+
+.result-section li {
+    margin-bottom: 8px;
+}
+
+li.suggestion-item {
     color: #a9d4ff;
-    word-wrap: break-word;
-    /* Make sure long URLs wrap */
+}
+
+li {
+    color: #d4d4d4;
+}
+
+.no-errors,
+.loading-text {
+    color: #8c8c8c;
+    margin: 0;
+}
+
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fix-button {
+    background-color: #3e6a89;
+    border: 1px solid #5c8cb0;
+    color: #e0e0e0;
+    padding: 2px 8px;
+    margin-left: 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 0.8em;
+    flex-shrink: 0;
+}
+
+.fix-button:hover {
+    background-color: #4a7fa8;
+}
+
+
+/* --- API Lab & Form Styles --- */
+.operation-editor-form {
+    padding: 15px;
+    overflow-y: auto;
+    height: 100%;
 }
 
 .api-lab-container {
@@ -300,7 +373,6 @@ li {
     border-radius: 3px;
     width: 100%;
     box-sizing: border-box;
-    /* Important for padding */
 }
 
 .start-mock-button,
@@ -318,6 +390,27 @@ li {
 .start-mock-button:hover,
 .send-request-button:hover {
     background-color: #4a7fa8;
+}
+
+.mock-url-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.refresh-button {
+    background-color: #4f4f4f;
+    border: 1px solid #666;
+    color: #ddd;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.refresh-button:hover {
+    background-color: #5f5f5f;
 }
 
 .request-builder,
@@ -370,30 +463,42 @@ li {
     text-align: left;
 }
 
-.mock-url-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+.response-viewer pre.response-error {
+    color: #ff8a8a;
 }
 
-.refresh-button {
-    background-color: #4f4f4f;
-    border: 1px solid #666;
-    color: #ddd;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 3px;
-    font-weight: bold;
-    flex-shrink: 0;
-    /* Prevents the button from shrinking */
+
+/* --- Swagger UI Overrides --- */
+.swagger-ui .wrapper {
+    padding: 0;
+    text-align: left;
 }
 
-.refresh-button:hover {
-    background-color: #5f5f5f;
+.swagger-ui {
+    background-color: #ffffff !important;
 }
 
-.divider {
-    border: none;
-    border-top: 1px solid #444;
-    margin: 20px 0;
+.swagger-ui .info .title,
+.swagger-ui .info .description,
+.swagger-ui .info p {
+    color: #3b4151 !important;
+}
+
+.swagger-ui .info {
+    background-color: #fafafa !important;
+}
+
+.swagger-ui .opblock,
+.swagger-ui .opblock .opblock-summary {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    border-color: #dddddd !important;
+}
+
+.swagger-ui .opblock .opblock-summary-description,
+.swagger-ui .opblock-summary-method {
+    color: #3b4151 !important;
+}
+
+.swagger-ui .topbar {
+    display: none;
 }

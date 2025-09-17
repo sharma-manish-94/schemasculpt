@@ -1,34 +1,34 @@
-import React, { useEffect } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { useSpecStore } from '../../store/specStore'; // Connect to our store
-
-import EditorPanel from './components/EditorPanel';
-import RightPanel from './components/RightPanel';
-import './editor.css';
+import React, { useEffect } from "react";
+import { useSpecStore } from "../../store/specStore";
+import { useRequestStore } from "../../store/requestStore";
+import ThreePanelLayout from "./components/ThreePanelLayout"; // Import our new layout
+import "./editor.css";
 
 function SpecEditor() {
-    // We only pull top-level actions needed for initial setup from the store
-    const createSession = useSpecStore((state) => state.createSession);
-    // Assuming websocketService.connect is called somewhere else or in createSession
+  const createSession = useSpecStore((state) => state.createSession);
+  const specText = useSpecStore((state) => state.specText);
+  const parseEndpoints = useRequestStore((state) => state.parseEndpoints);
 
-    useEffect(() => {
-        // Create a session when the component mounts
-        createSession();
-    }, [createSession]);
+  useEffect(() => {
+    createSession();
+  }, [createSession]);
 
-    return (
-        <div className="spec-editor-layout">
-            <PanelGroup direction="horizontal">
-                <Panel defaultSize={60} minSize={30}>
-                    <EditorPanel /> {/* This component will connect to the store internally */}
-                </Panel>
-                <PanelResizeHandle className="resize-handle" />
-                <Panel defaultSize={40} minSize={20}>
-                    <RightPanel /> {/* This component will connect to the store internally */}
-                </Panel>
-            </PanelGroup>
-        </div>
-    );
+  // Parse endpoints whenever the spec text changes
+  useEffect(() => {
+    parseEndpoints();
+  }, [specText, parseEndpoints]);
+
+  //   return (
+  //     <div className="app-container">
+  //       <header className="App-header">{/* Your existing header JSX */}</header>
+  //       <main className="App-main">
+  //         <div className="spec-editor-wrapper">
+  //           <ThreePanelLayout />
+  //         </div>
+  //       </main>
+  //     </div>
+  //   );
+  return <ThreePanelLayout />;
 }
 
 export default SpecEditor;

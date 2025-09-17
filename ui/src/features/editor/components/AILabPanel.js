@@ -12,8 +12,7 @@ function AILabPanel() {
   // Get state and actions from the request store for building the request
   const {
     endpoints,
-    selectedEndpointIndex,
-    setSelectedEndpointIndex,
+    selectedNavItem,
     serverTarget,
     setServerTarget,
     customServerUrl,
@@ -31,7 +30,7 @@ function AILabPanel() {
   // Get state from the response store for displaying the result
   const { apiResponse, isApiRequestLoading } = useResponseStore();
 
-  const selectedEndpoint = endpoints[selectedEndpointIndex] || null;
+  const selectedEndpoint = selectedNavItem;
   const pathParameters =
     selectedEndpoint?.details.parameters?.filter((p) => p.in === "path") || [];
   const hasRequestBody = !!selectedEndpoint?.details.requestBody;
@@ -116,25 +115,6 @@ function AILabPanel() {
             </div>
           </div>
         )}
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="endpoint-select">Endpoint</label>
-        <select
-          id="endpoint-select"
-          className="select-input"
-          value={selectedEndpointIndex}
-          onChange={(e) => setSelectedEndpointIndex(e.target.value)}
-        >
-          <option value="" disabled>
-            Select an endpoint to test
-          </option>
-          {endpoints.map((ep, index) => (
-            <option key={`${ep.method}-${ep.path}`} value={index}>
-              {ep.method} {ep.path}
-            </option>
-          ))}
-        </select>
       </div>
       <hr className="divider" />
       <OperationEditorForm endpoint={selectedEndpoint} />
