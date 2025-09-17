@@ -5,12 +5,16 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.MockSessionResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.MockStartRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.SessionResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
+import io.swagger.v3.core.util.Yaml;
+import io.swagger.v3.oas.models.OpenAPI;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/v1/sessions")
@@ -54,5 +58,16 @@ public class SessionController {
                 .bodyValue(specText)
                 .retrieve()
                 .toEntity(String.class);
+    }
+
+    @GetMapping("/{sessionId}/spec")
+    public ResponseEntity<String> getSessionSpec(@PathVariable String sessionId) {
+        OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
+        if (Objects.isNull(openAPI)) {
+            return ResponseEntity.notFound().build();
+        }
+        String specText = Yaml.pretty(openAPI);
+        return ResponseEntity.ok(specText);
+
     }
 }
