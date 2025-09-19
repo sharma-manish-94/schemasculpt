@@ -50,15 +50,15 @@ public class SessionController {
                 });
     }
 
-    @PutMapping("/{sessionId}/spec")
-    public Mono<ResponseEntity<String>> updateSessionSpec(@PathVariable String sessionId, @RequestBody String specText) {
-        return this.webClient.put()
-                .uri("/mock/" + sessionId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(specText)
-                .retrieve()
-                .toEntity(String.class);
-    }
+//    @PutMapping("/{sessionId}/spec")
+//    public Mono<ResponseEntity<String>> updateSessionSpec(@PathVariable String sessionId, @RequestBody String specText) {
+//        return this.webClient.put()
+//                .uri("/mock/" + sessionId)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .bodyValue(specText)
+//                .retrieve()
+//                .toEntity(String.class);
+//    }
 
     @GetMapping("/{sessionId}/spec")
     public ResponseEntity<String> getSessionSpec(@PathVariable String sessionId) {
