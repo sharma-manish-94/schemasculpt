@@ -7,13 +7,13 @@ function DetailPanel() {
   const selectedNavItem = useRequestStore((state) => state.selectedNavItem);
 
   return (
-    <>
+      <div className="detail-panel-wrapper">
       {!selectedNavItem ? (
         <EditorPanel />
       ) : (
         <OperationEditorForm endpoint={selectedNavItem} />
       )}
-    </>
+    </div>
   );
 }
 

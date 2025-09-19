@@ -52,7 +52,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void updateSessionSpec(String sessionId, OpenAPI openApi) {
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(sessionId))) {
+        if (redisTemplate.hasKey(sessionId)) {
             redisTemplate.opsForValue().set(sessionId, openApi, Duration.ofHours(1));
         }
     }

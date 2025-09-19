@@ -2,26 +2,29 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080/api/v1";
 
-export const validateSpec = async (specText) => {
-  try {
-    const url = `${API_BASE_URL}/specifications/validate`;
-    const response = await axios.post(url, specText, {
-      headers: { "Content-Type": "text/plain" },
-    });
-    return { success: true, data: response.data, error: null };
-  } catch (error) {
-    console.error("Error validating spec:", error);
-    return {
-      success: false,
-      data: [],
-      error: "Failed to connect to the validation service.",
-    };
-  }
+
+
+export const validateSpec = async (sessionId) => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/sessions/${sessionId}/spec/validate`
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        console.error("Error validating spec:", error);
+        return {
+            success: false,
+            error: "Validation failed.",
+        };
+    }
 };
 
-export const applyQuickFix = async (fixRequest) => {
+export const applyQuickFix = async (sessionId, fixRequest) => {
   try {
-    const url = `${API_BASE_URL}/specifications/fix`;
+    const url = `${API_BASE_URL}/sessions/${sessionId}/spec/fix`;
     const response = await axios.post(url, fixRequest);
     return response.data;
   } catch (error) {
@@ -49,6 +52,18 @@ export const updateOperation = async (sessionId, updateRequest) => {
   }
 };
 
+export const updateSessionSpec = async (sessionId, specText) => {
+    try {
+        const response = await axios.put(`${API_BASE_URL}/sessions/${sessionId}/spec`, specText, {
+            headers: { 'Content-Type': 'text/plain' }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating session spec:", error);
+        return { success: false, error: "Failed to update session spec." };
+    }
+};
+
 export const getSessionSpec = async (sessionId) => {
   try {
     const response = await axios.get(
@@ -67,13 +82,10 @@ export const getSessionSpec = async (sessionId) => {
   }
 };
 
-export const executeAiAction = async (specText, prompt) => {
+export const executeAiAction = async (sessionId, prompt) => {
   try {
-    const url = `${API_BASE_URL}/specifications/transform`;
-    const response = await axios.post(url, {
-      prompt: prompt,
-      specText: specText,
-    });
+    const url = `${API_BASE_URL}/sessions/${sessionId}/spec/transform`;
+    const response = await axios.post(url, {prompt});
     return response.data;
   } catch (error) {
     console.error("Error execute AI Action:", error);

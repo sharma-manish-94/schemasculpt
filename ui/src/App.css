@@ -1,11 +1,21 @@
+/* CSS Custom Properties for Design System */
+:root {
+  --primary-bg: #1e1e1e;
+  --secondary-bg: #252526;
+  --border-color: #333;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-accent: #007acc;
+  --header-height: 60px;
+}
+
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif;
-  background-color: #1e1e1e;
-  color: white;
-  /* Prevent the entire page from ever scrolling */
-  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  overflow: hidden; /* Prevent page scrolling */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app-container {
@@ -16,11 +26,12 @@ body {
 
 .App-header {
   padding: 15px 20px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0; /* Important: Prevents the header from shrinking */
+  flex-shrink: 0;
+  min-height: var(--header-height);
 }
 
 .App-main {
@@ -48,18 +59,19 @@ body {
 .tagline {
   margin: 0;
   font-size: 0.9em;
-  color: #a0a0a0;
+  color: var(--text-secondary);
 }
 .header-right {
   display: flex;
   gap: 20px;
 }
 .header-right a {
-  color: #a0a0a0;
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: bold;
   font-size: 0.9em;
+  transition: color 0.2s ease;
 }
 .header-right a:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }

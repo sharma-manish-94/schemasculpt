@@ -6,28 +6,30 @@ import "./editor.css";
 
 function SpecEditor() {
   const createSession = useSpecStore((state) => state.createSession);
+  const connectWebSocket = useSpecStore((state) => state.connectWebSocket);
   const specText = useSpecStore((state) => state.specText);
   const parseEndpoints = useRequestStore((state) => state.parseEndpoints);
 
   useEffect(() => {
-    createSession();
-  }, [createSession]);
+    const initializeSession = async () => {
+      try {
+        const sessionId = await createSession();
+        if (sessionId) {
+          connectWebSocket();
+        }
+      } catch (error) {
+        console.error('Failed to initialize session:', error);
+      }
+    };
+
+    initializeSession();
+  }, [createSession, connectWebSocket]);
 
   // Parse endpoints whenever the spec text changes
   useEffect(() => {
     parseEndpoints();
   }, [specText, parseEndpoints]);
 
-  //   return (
-  //     <div className="app-container">
-  //       <header className="App-header">{/* Your existing header JSX */}</header>
-  //       <main className="App-main">
-  //         <div className="spec-editor-wrapper">
-  //           <ThreePanelLayout />
-  //         </div>
-  //       </main>
-  //     </div>
-  //   );
   return <ThreePanelLayout />;
 }
 
