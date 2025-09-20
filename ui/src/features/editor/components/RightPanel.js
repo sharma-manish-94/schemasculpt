@@ -1,8 +1,7 @@
+import { useSpecStore } from "../../../store/specStore";
 import React from 'react';
 import SwaggerUI from 'swagger-ui-react';
 import "swagger-ui-react/swagger-ui.css"; // Ensure this is imported for Swagger UI
-import { useSpecStore } from '../../../store/specStore'; // Connect to our store
-import { useRequestStore } from '../../../store/requestStore'; // For navigation state
 
 // Import the content components for each tab
 import ValidationPanel from './ValidationPanel';
@@ -14,7 +13,7 @@ function RightPanel() {
     const { specText, activeTab, setActiveTab } = useSpecStore();
 
     // Get selected operation from navigation
-    const selectedNavItem = useRequestStore((state) => state.selectedNavItem);
+    const selectedNavItem = useSpecStore((state) => state.selectedNavItem);
 
     // Parse specText for SwaggerUI
     const parsedSpec = React.useMemo(() => {

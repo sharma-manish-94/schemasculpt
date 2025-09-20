@@ -1,7 +1,6 @@
+import { useSpecStore } from "../../../store/specStore";
 import React, { useRef, useEffect , useMemo} from "react";
 import Editor from "@monaco-editor/react";
-import { useSpecStore } from "../../../store/specStore";
-import { useRequestStore } from "../../../store/requestStore";
 import yaml from "js-yaml";
 import {updateSessionSpec} from "../../../api/validationService";
 import * as websocketService from "../../../api/websocketService";
@@ -102,7 +101,7 @@ function AiAssistantBar() {
 // Main Editor Panel component
 function EditorPanel() {
     const { specText, setSpecText, format, validateCurrentSpec, sessionId } = useSpecStore();
-    const parseEndpoints = useRequestStore((state) => state.parseEndpoints);
+    const parseEndpoints = useSpecStore((state) => state.parseEndpoints);
 
     // This is now the single source of truth for what the editor displays.
     const displayedText = useMemo(() => {

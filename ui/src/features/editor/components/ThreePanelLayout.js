@@ -1,3 +1,4 @@
+import { useSpecStore } from "../../../store/specStore";
 import React from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import NavigationPanel from "./NavigationPanel";

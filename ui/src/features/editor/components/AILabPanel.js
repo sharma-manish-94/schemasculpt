@@ -1,7 +1,6 @@
+import { useSpecStore } from "../../../store/specStore";
 import React from "react";
 import Editor from "@monaco-editor/react";
-import { useSpecStore } from "../../../store/specStore";
-import { useRequestStore } from "../../../store/requestStore";
 import { useResponseStore } from "../../../store/responseStore";
 import OperationEditorForm from "./OperationEditorForm";
 
@@ -25,7 +24,7 @@ function AILabPanel() {
     sendRequest,
     requestBody,
     setRequestBody,
-  } = useRequestStore();
+  } = useSpecStore();
 
   // Get state from the response store for displaying the result
   const { apiResponse, isApiRequestLoading } = useResponseStore();

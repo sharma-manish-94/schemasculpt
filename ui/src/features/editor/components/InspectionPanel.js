@@ -1,11 +1,15 @@
-import React from "react";
-import {useMemo} from "react";
+import React, {useMemo} from "react";
 import SwaggerUI from "swagger-ui-react";
+import {useSpecStore} from "../../../store/specStore";
 import {useResponseStore} from "../../../store/responseStore";
-import {useRequestStore} from "../../../store/requestStore";
 
-function LivePreview({endpoint}) {
+function LivePreview({endpoint, operationDetails}) {
     const minispec = useMemo(() => {
+        // If we have tree-shaken operation details from the API, use that
+        if (operationDetails) {
+            return operationDetails;
+        }
+        // Fall back to building a minimal spec from the endpoint
         if (!endpoint) {
             return null;
         }
@@ -18,7 +22,7 @@ function LivePreview({endpoint}) {
                 },
             },
         };
-    }, [endpoint]);
+    }, [endpoint, operationDetails]);
     if (!minispec) {
         return null;
     }
@@ -39,7 +43,9 @@ function ResponseViewer() {
 }
 
 function InspectionPanel() {
-    const selectedNavItem = useRequestStore((state) => state.selectedNavItem);
+    const selectedNavItem = useSpecStore((state) => state.selectedNavItem);
+    const selectedNavItemDetails = useSpecStore((state) => state.selectedNavItemDetails);
+    const isNavItemLoading = useSpecStore((state) => state.isNavItemLoading);
     const apiResponse = useResponseStore((state) => state.apiResponse);
 
     // content is determined by the application's state
@@ -49,7 +55,11 @@ function InspectionPanel() {
         content = <ResponseViewer/>;
     } else if (selectedNavItem) {
         // Priority 2: if an item is selected, show the live preview
-        content = <LivePreview endpoint={selectedNavItem}/>;
+        if (isNavItemLoading) {
+            content = <div className="panel-content-placeholder">Loading operation details...</div>;
+        } else {
+            content = <LivePreview endpoint={selectedNavItem} operationDetails={selectedNavItemDetails}/>;
+        }
     } else {
         content = <div className = "panel-content-placeholder"> Select an item to see a preview</div>;
     }

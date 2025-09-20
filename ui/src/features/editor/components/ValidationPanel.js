@@ -1,5 +1,5 @@
+import { useSpecStore } from "../../../store/specStore";
 import React from 'react';
-import { useSpecStore } from '../../../store/specStore'; // Connect to our store
 
 function ValidationPanel() {
     // Get errors, suggestions, isLoading, and applyQuickFix action from the store

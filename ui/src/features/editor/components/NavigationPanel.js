@@ -1,9 +1,8 @@
-import React from "react";
 import { useSpecStore } from "../../../store/specStore";
-import { useRequestStore } from "../../../store/requestStore";
+import React from "react";
 
 function NavigationPanel() {
-  const { endpoints, selectedNavItem, setSelectedNavItem } = useRequestStore();
+  const { endpoints, selectedNavItem, setSelectedNavItem } = useSpecStore();
 
   const paths = endpoints.reduce((acc, ep) => {
     acc[ep.path] = [...(acc[ep.path] || []), ep];

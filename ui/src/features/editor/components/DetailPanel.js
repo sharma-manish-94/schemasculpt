@@ -1,17 +1,21 @@
 import React from "react";
-import { useRequestStore } from "../../../store/requestStore";
+import { useSpecStore } from "../../../store/specStore";
 import EditorPanel from "./EditorPanel";
-import OperationEditorForm from "./OperationEditorForm";
+import OperationSpecViewer from "./OperationSpecViewer";
 
 function DetailPanel() {
-  const selectedNavItem = useRequestStore((state) => state.selectedNavItem);
+    const { selectedNavItem, isNavItemLoading } = useSpecStore();
 
-  return (
+    if(isNavItemLoading) {
+        return <div className="panel-content-placeholder"> Loading Details...</div>
+    }
+
+    return (
       <div className="detail-panel-wrapper">
       {!selectedNavItem ? (
         <EditorPanel />
       ) : (
-        <OperationEditorForm endpoint={selectedNavItem} />
+        <OperationSpecViewer />
       )}
     </div>
   );

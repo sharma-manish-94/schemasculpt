@@ -1,148 +1,271 @@
 import axios from "axios";
+import { API_CONFIG, REQUEST_CONFIG } from "../config/constants";
+import { ERROR_TYPES } from "../store/types";
 
-const API_BASE_URL = "http://localhost:8080/api/v1";
+// Configure axios defaults
+axios.defaults.timeout = REQUEST_CONFIG.DEFAULT_TIMEOUT;
+
+const handleApiError = (error, fallbackMessage) => {
+    console.error(fallbackMessage, error);
+
+    if (error.code === 'ECONNABORTED') {
+        return {
+            success: false,
+            error: 'Request timeout - please try again',
+            type: ERROR_TYPES.TIMEOUT_ERROR
+        };
+    }
+
+    if (error.response) {
+        return {
+            success: false,
+            error: error.response.data?.detail || error.response.data?.message || fallbackMessage,
+            type: ERROR_TYPES.SERVER_ERROR,
+            statusCode: error.response.status
+        };
+    }
+
+    if (error.request) {
+        return {
+            success: false,
+            error: 'Unable to connect to server',
+            type: ERROR_TYPES.NETWORK_ERROR
+        };
+    }
+
+    return {
+        success: false,
+        error: error.message || fallbackMessage,
+        type: ERROR_TYPES.NETWORK_ERROR
+    };
+};
 
 
 
 export const validateSpec = async (sessionId) => {
+    if (!sessionId) {
+        return {
+            success: false,
+            error: "Session ID is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
     try {
         const response = await axios.post(
-            `${API_BASE_URL}/sessions/${sessionId}/spec/validate`
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/validate`
         );
         return {
             success: true,
             data: response.data,
         };
     } catch (error) {
-        console.error("Error validating spec:", error);
-        return {
-            success: false,
-            error: "Validation failed.",
-        };
+        return handleApiError(error, "Validation failed");
     }
 };
 
 export const applyQuickFix = async (sessionId, fixRequest) => {
-  try {
-    const url = `${API_BASE_URL}/sessions/${sessionId}/spec/fix`;
-    const response = await axios.post(url, fixRequest);
-    return response.data;
-  } catch (error) {
-    console.error("Error applying fix:", error);
-    return null;
-  }
+    if (!sessionId || !fixRequest) {
+        return {
+            success: false,
+            error: "Session ID and fix request are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const url = `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/fix`;
+        const response = await axios.post(url, fixRequest);
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to apply fix");
+    }
 };
 
 export const updateOperation = async (sessionId, updateRequest) => {
-  try {
-    const response = await axios.patch(
-      `${API_BASE_URL}/sessions/${sessionId}/spec/operations`,
-      updateRequest
-    );
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    console.error("Error updating operation:", error);
-    return {
-      success: false,
-      error: "Failed to update operation.",
-    };
-  }
+    if (!sessionId || !updateRequest) {
+        return {
+            success: false,
+            error: "Session ID and update request are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.patch(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/operations`,
+            updateRequest
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to update operation");
+    }
 };
 
 export const updateSessionSpec = async (sessionId, specText) => {
+    if (!sessionId || !specText) {
+        return {
+            success: false,
+            error: "Session ID and spec text are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
     try {
-        const response = await axios.put(`${API_BASE_URL}/sessions/${sessionId}/spec`, specText, {
-            headers: { 'Content-Type': 'text/plain' }
+        await axios.put(`${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec`, {
+            specText: specText
+        }, {
+            headers: { 'Content-Type': 'application/json' }
         });
         return { success: true };
     } catch (error) {
-        console.error("Error updating session spec:", error);
-        return { success: false, error: "Failed to update session spec." };
+        return handleApiError(error, "Failed to update session spec");
     }
 };
 
 export const getSessionSpec = async (sessionId) => {
-  try {
-    const response = await axios.get(
-      `${API_BASE_URL}/sessions/${sessionId}/spec`
-    );
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    console.error("Error fetching spec: ", error);
-    return {
-      success: false,
-      error: "Failed to fetch latest spec.",
-    };
-  }
+    if (!sessionId) {
+        return {
+            success: false,
+            error: "Session ID is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec`
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to fetch latest spec");
+    }
+};
+
+export const getOperationDetails = async (sessionId, path, method) => {
+    if (!sessionId || !path || !method) {
+        return {
+            success: false,
+            error: "Session ID, path, and method are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/operations`,
+            {
+                params: { path, method }
+            }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to fetch operation details");
+    }
 };
 
 export const executeAiAction = async (sessionId, prompt) => {
-  try {
-    const url = `${API_BASE_URL}/sessions/${sessionId}/spec/transform`;
-    const response = await axios.post(url, {prompt});
-    return response.data;
-  } catch (error) {
-    console.error("Error execute AI Action:", error);
-    return {
-      updatedSpecText: `Error: Could not connect to the AI service.\n\nDetails:\n${error.message}`,
-    };
-  }
+    if (!sessionId || !prompt) {
+        return {
+            success: false,
+            error: "Session ID and prompt are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const url = `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/transform`;
+        const response = await axios.post(url, {prompt});
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        return {
+            success: false,
+            updatedSpecText: `Error: Could not connect to the AI service.\n\nDetails:\n${error.message}`,
+        };
+    }
 };
 
 export const startMockServer = async (specText) => {
-  try {
-    const response = await axios.post(
-      `${API_BASE_URL}/sessions/mock`,
-      specText,
-      {
-        headers: { "Content-Type": "text/plain" },
-      }
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error("Error starting mock server:", error);
-    return {
-      success: false,
-      error: error.response?.data?.detail || "Failed to start mock server.",
-    };
-  }
+    if (!specText) {
+        return {
+            success: false,
+            error: "Spec text is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/mock`,
+            specText,
+            {
+                headers: { "Content-Type": "text/plain" },
+            }
+        );
+        return { success: true, data: response.data };
+    } catch (error) {
+        return handleApiError(error, "Failed to start mock server");
+    }
 };
 
 export const executeProxyRequest = async (requestDetails) => {
-  try {
-    const response = await axios.post(
-      `${API_BASE_URL}/proxy/request`,
-      requestDetails
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error("Error executing proxy request:", error);
-    const errorResponse = error.response?.data || {
-      statusCode: 500,
-      body: `Could not connect to the server. Details: ${error.message}`,
-    };
-    return { success: false, error: errorResponse };
-  }
+    if (!requestDetails) {
+        return {
+            success: false,
+            error: "Request details are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/proxy/request`,
+            requestDetails
+        );
+        return { success: true, data: response.data };
+    } catch (error) {
+        const errorResponse = error.response?.data || {
+            statusCode: 500,
+            body: `Could not connect to the server. Details: ${error.message}`,
+        };
+        return { success: false, error: errorResponse };
+    }
 };
 
 export const refreshMockSpec = async (mockId, specText) => {
-  try {
-    const response = await axios.put(
-      `${API_BASE_URL}/sessions/${mockId}/spec`,
-      { specText },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error("Error refreshing mock spec:", error);
-    return { success: false, error: "Failed to refresh mock spec." };
-  }
+    if (!mockId || !specText) {
+        return {
+            success: false,
+            error: "Mock ID and spec text are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.put(
+            `${API_CONFIG.BASE_URL}/sessions/${mockId}/spec`,
+            { specText },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        );
+        return { success: true, data: response.data };
+    } catch (error) {
+        return handleApiError(error, "Failed to refresh mock spec");
+    }
 };

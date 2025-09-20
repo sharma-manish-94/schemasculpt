@@ -860,9 +860,12 @@ export const coreSlice = (set, get) => ({
 
     createSession: async () => {
         try {
-            // Send the spec as raw text, which the backend is expecting.
-            const response = await axios.post("http://localhost:8080/api/v1/sessions", get().specText, {
-                headers: {"Content-Type": "text/plain"},
+            // Send the spec in the format expected by CreateSessionRequest
+            const requestBody = {
+                specText: get().specText
+            };
+            const response = await axios.post("http://localhost:8080/api/v1/sessions", requestBody, {
+                headers: {"Content-Type": "application/json"},
             });
             const newSessionId = response.data.sessionId;
             set({ sessionId: newSessionId });
@@ -870,6 +873,7 @@ export const coreSlice = (set, get) => ({
             return newSessionId;
         } catch (error) {
             console.error("Failed to create session:", error);
+            throw error;
         }
     },
 
