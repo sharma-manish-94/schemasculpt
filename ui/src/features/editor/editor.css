@@ -158,6 +158,7 @@
 
 .toolbar-button {
     background-color: #4f4f4f;
+
     border: 1px solid #666;
     color: #ddd;
     padding: 4px 8px;
@@ -264,6 +265,56 @@
     overflow-y: auto;
     flex-grow: 1;
     text-align: left;
+}
+
+/* --- Inspection Panel Styles --- */
+.inspection-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.inspection-panel .panel-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* When InspectionPanel is inside RightPanel, don't show double headers */
+.right-panel-container .inspection-panel .panel-header {
+    display: none;
+}
+
+/* Adjust padding when inside RightPanel */
+.right-panel-container .inspection-panel .panel-content {
+    padding: 0;
+}
+
+.right-panel-container .inspection-panel {
+    height: 100%;
+}
+
+.inspection-panel .panel-content-placeholder {
+    padding: 40px 20px;
+    color: #8c8c8c;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Response viewer in inspection panel */
+.inspection-panel .response-success {
+    color: #4EC9B0;
+}
+
+.inspection-panel .response-error {
+    color: #ff8a8a;
+}
+
+.inspection-panel .loading-text {
+    color: #8c8c8c;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
 }
 
 
@@ -474,6 +525,11 @@ li {
 
 
 /* --- Swagger UI Overrides --- */
+.panel-content .swagger-ui {
+    height: 100%;
+    overflow-y: auto;
+}
+
 .swagger-ui .wrapper {
     padding: 0;
     text-align: left;

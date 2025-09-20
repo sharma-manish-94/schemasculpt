@@ -2,6 +2,7 @@ import React from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import NavigationPanel from "./NavigationPanel";
 import DetailPanel from "./DetailPanel";
+import RightPanel from "./RightPanel";
 
 function ThreePanelLayout() {
   return (
@@ -20,10 +21,7 @@ function ThreePanelLayout() {
 
       {/* Column 3 */}
       <Panel defaultSize={35} minSize={20} className="panel-container">
-        <div className="panel-header">Inspector</div>
-        <div className="panel-content-placeholder">
-          Live preview and validation will appear here.
-        </div>
+        <RightPanel />
       </Panel>
     </PanelGroup>
   );
