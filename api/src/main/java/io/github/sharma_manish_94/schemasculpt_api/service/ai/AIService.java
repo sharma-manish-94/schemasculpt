@@ -8,12 +8,14 @@ import io.github.sharma_manish_94.schemasculpt_api.service.SpecParsingService;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
+@Slf4j
 public class AIService {
     private final WebClient webClient;
     private final SessionService sessionService;
@@ -26,17 +28,13 @@ public class AIService {
     }
 
     public String processSpecification(String sessionId, String userPrompt) {
+        log.info("Processing AI request for sessionId: {}", sessionId);
         OpenAPI openApi = sessionService.getSpecForSession(sessionId);
         String specText = Json.pretty(openApi);
-
         AIProxyRequest aiRequest = new AIProxyRequest(specText, userPrompt);
-
         String updatedSpecText = callAIService(aiRequest);
-        System.out.println(updatedSpecText);
         OpenAPI updatedOpenApi = specParsingService.parse(updatedSpecText).getOpenAPI();
-        // Save the new version back to the Redis session
         sessionService.updateSessionSpec(sessionId, updatedOpenApi);
-        // Return the new object
         return updatedSpecText;
     }
 
