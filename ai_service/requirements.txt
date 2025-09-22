@@ -17,3 +17,13 @@ python-dotenv
 
 # YAML Parsing
 PyYAML
+
+# JSON Patch Operations
+jsonpatch
+
+# JSON Schema Validation
+jsonschema
+
+# Data Validation and Settings
+pydantic[email]
+pydantic-settings

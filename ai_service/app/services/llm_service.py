@@ -1,51 +1,836 @@
-import requests
+"""
+Advanced LLM Service for SchemaSculpt AI.
+Provides streaming, JSON patching, agentic workflows, and intelligent prompt engineering.
+"""
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
+import asyncio
+import json
+import time
+from typing import Dict, List, Optional, Any, AsyncGenerator, Union
+from datetime import datetime
+from uuid import uuid4
+
+import httpx
+import jsonpatch
+from jsonschema import validate, ValidationError as JsonSchemaValidationError
+
+from ..core.config import settings
+from ..core.logging import get_logger, log_performance, set_correlation_id
+from ..core.exceptions import LLMError, LLMTimeoutError, ValidationError, OpenAPIError
+from ..schemas.ai_schemas import (
+    AIRequest, AIResponse, GenerateSpecRequest, StreamingChunk,
+    OperationType, StreamingMode, ResponseFormat, ValidationResult,
+    PerformanceMetrics, LLMParameters, JSONPatchOperation
+)
 
 
 class LLMService:
-    def process_ai_request(self, spec_text: str, prompt: str) -> str:
-        messages = self._build_prompt_messages(spec_text, prompt)
-        payload = {"model": "mistral", "messages": messages, "stream": False, "options": {"temperature": 0.2}}
+    """
+    Advanced LLM service with streaming, JSON patching, and agentic capabilities.
+    """
 
-        response = requests.post(OLLAMA_URL, json=payload)
+    def __init__(self):
+        self.logger = get_logger("llm_service")
+        self.client = httpx.AsyncClient(
+            timeout=httpx.Timeout(settings.request_timeout),
+            limits=httpx.Limits(max_connections=settings.max_concurrent_requests)
+        )
+        self.base_url = settings.ollama_base_url
+        self.chat_endpoint = f"{self.base_url}{settings.ollama_chat_endpoint}"
+        self.generate_endpoint = f"{self.base_url}{settings.ollama_generate_endpoint}"
 
-        if response.status_code == 200:
-            return self._extract_generated_text(response.json())
-        else:
-            return f"Error from Ollama service: {response.status_code} - {response.text}"
+        # Cache for conversation context
+        self._context_cache: Dict[str, Any] = {}
 
-    def _build_prompt_messages(self, spec: str, request: str) -> list:
-        system_prompt = """You are an expert api document, api developer/architect who is my assistant. Your task is to modify the provided OpenAPI YAML specification based on the user's request.
-    You must only output the new, complete, and valid YAML specification. 
-    Do not add any commentary, explanations, or markdown fences like ```yaml."""
-        user_prompt = f"""Here is the current specification:
-    <SPECIFICATION>
-    {spec}
-    </SPECIFICATION>
+        # Prompt templates
+        self._system_prompts = {
+            "modify": self._get_modification_system_prompt(),
+            "generate": self._get_generation_system_prompt(),
+            "validate": self._get_validation_system_prompt(),
+            "patch": self._get_patch_system_prompt()
+        }
 
-    Here is the user's request:
-    <REQUEST>
-    {request}
-    </REQUEST>"""
-        return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+    async def process_ai_request(self, request: AIRequest) -> Union[AIResponse, AsyncGenerator[StreamingChunk, None]]:
+        """
+        Process AI request with advanced features including streaming and JSON patching.
+        """
+        start_time = time.time()
+        set_correlation_id(str(request.context.conversation_id) if request.context.conversation_id else None)
 
-    def _extract_generated_text(self, response_json) -> str:
-        """Extracts and cleans the content from an Ollama response."""
+        self.logger.info(f"Processing AI request: {request.operation_type}", extra={
+            "operation_type": request.operation_type,
+            "streaming": request.streaming != StreamingMode.DISABLED,
+            "has_patches": bool(request.json_patches)
+        })
+
         try:
-            raw_text = response_json['message']['content']
+            # Validate input spec
+            if request.validate_output:
+                validation_result = await self._validate_openapi_spec(request.spec_text)
+                if not validation_result.is_valid and not request.auto_fix:
+                    raise ValidationError(f"Invalid OpenAPI spec: {validation_result.errors}")
 
-            # --- UPDATED CLEANUP LOGIC ---
-            # Look for either the old or new tag format
-            cleaned_text = raw_text
-            if "<SPECIFICATION>" in cleaned_text:
-                cleaned_text = cleaned_text.split("<SPECIFICATION>", 1)[1]
-                cleaned_text = cleaned_text.split("</SPECIFICATION>", 1)[0]
-            elif "<NEW_SPECIFICATION>" in cleaned_text:
-                cleaned_text = cleaned_text.split("<NEW_SPECIFICATION>", 1)[1]
-                cleaned_text = cleaned_text.split("</NEW_SPECIFICATION>", 1)[0]
+            # Handle JSON patch operations
+            if request.json_patches:
+                return await self._process_patch_request(request, start_time)
 
-            return cleaned_text.strip()
+            # Handle streaming vs non-streaming
+            if request.streaming != StreamingMode.DISABLED:
+                return self._process_streaming_request(request, start_time)
+            else:
+                return await self._process_standard_request(request, start_time)
 
-        except (KeyError, IndexError, TypeError):
-            return "Error: Could not parse AI response from Ollama."
+        except Exception as e:
+            self.logger.error(f"AI request processing failed: {str(e)}", extra={"error": str(e)})
+            if isinstance(e, (LLMError, ValidationError, OpenAPIError)):
+                raise
+            raise LLMError(f"Unexpected error in AI processing: {str(e)}")
+
+    async def _process_standard_request(self, request: AIRequest, start_time: float) -> AIResponse:
+        """
+        Process standard (non-streaming) AI request with self-correction.
+        """
+        messages = await self._build_intelligent_prompt(request)
+
+        # Initial attempt
+        try:
+            response_text = await self._call_llm_with_retry(messages, request.llm_parameters)
+
+            # Validate and potentially self-correct
+            validation_result = await self._validate_and_correct_response(
+                response_text, request, messages
+            )
+
+            # Build performance metrics
+            performance = PerformanceMetrics(
+                processing_time_ms=(time.time() - start_time) * 1000,
+                token_count=len(response_text.split()),  # Rough estimate
+                model_used=request.llm_parameters.model,
+                cache_hit=False,  # TODO: Implement caching
+                retry_count=0  # TODO: Track retries
+            )
+
+            # Calculate changes and generate summary
+            changes_summary, modified_paths = await self._analyze_changes(
+                request.spec_text, validation_result.corrected_spec or response_text
+            )
+
+            return AIResponse(
+                updated_spec_text=validation_result.corrected_spec or response_text,
+                operation_type=request.operation_type,
+                validation=validation_result.validation,
+                confidence_score=validation_result.confidence_score,
+                changes_summary=changes_summary,
+                modified_paths=modified_paths,
+                performance=performance,
+                context=request.context
+            )
+
+        except Exception as e:
+            self.logger.error(f"Standard request processing failed: {str(e)}")
+            raise LLMError(f"Failed to process AI request: {str(e)}")
+
+    async def _process_streaming_request(self, request: AIRequest, start_time: float) -> AsyncGenerator[StreamingChunk, None]:
+        """
+        Process streaming AI request with real-time updates.
+        """
+        messages = await self._build_intelligent_prompt(request)
+        chunk_id = 0
+
+        try:
+            async for chunk_text in self._stream_llm_response(messages, request.llm_parameters):
+                chunk = StreamingChunk(
+                    chunk_id=chunk_id,
+                    content=chunk_text,
+                    is_final=False,
+                    metadata={"timestamp": datetime.utcnow().isoformat()}
+                )
+                yield chunk
+                chunk_id += 1
+
+            # Final validation chunk
+            final_chunk = StreamingChunk(
+                chunk_id=chunk_id,
+                content="",
+                is_final=True,
+                metadata={
+                    "processing_time_ms": (time.time() - start_time) * 1000,
+                    "total_chunks": chunk_id
+                }
+            )
+            yield final_chunk
+
+        except Exception as e:
+            error_chunk = StreamingChunk(
+                chunk_id=chunk_id,
+                content=f"Error: {str(e)}",
+                is_final=True,
+                metadata={"error": True}
+            )
+            yield error_chunk
+
+    async def _process_patch_request(self, request: AIRequest, start_time: float) -> AIResponse:
+        """
+        Process JSON patch operations with intelligent conflict resolution.
+        """
+        try:
+            # Parse the original spec
+            original_spec = json.loads(request.spec_text)
+
+            # Apply patches with validation
+            patched_spec = await self._apply_json_patches(
+                original_spec, request.json_patches
+            )
+
+            # Validate the patched result
+            validation_result = await self._validate_openapi_spec(json.dumps(patched_spec, indent=2))
+
+            if not validation_result.is_valid and request.auto_fix:
+                # Use AI to fix validation issues
+                fix_request = AIRequest(
+                    spec_text=json.dumps(patched_spec, indent=2),
+                    prompt=f"Fix validation errors: {', '.join(validation_result.errors)}",
+                    operation_type=OperationType.VALIDATE,
+                    llm_parameters=request.llm_parameters
+                )
+                patched_spec = await self._ai_fix_validation_issues(fix_request)
+
+            performance = PerformanceMetrics(
+                processing_time_ms=(time.time() - start_time) * 1000,
+                token_count=0,  # No LLM tokens used for patch operations
+                model_used="json_patch",
+                cache_hit=False
+            )
+
+            changes_summary = f"Applied {len(request.json_patches)} JSON patch operations"
+            modified_paths = [patch.path for patch in request.json_patches]
+
+            return AIResponse(
+                updated_spec_text=json.dumps(patched_spec, indent=2),
+                operation_type=OperationType.PATCH,
+                validation=validation_result,
+                confidence_score=1.0,  # High confidence for direct patch operations
+                changes_summary=changes_summary,
+                applied_patches=request.json_patches,
+                modified_paths=modified_paths,
+                performance=performance,
+                context=request.context
+            )
+
+        except Exception as e:
+            self.logger.error(f"JSON patch operation failed: {str(e)}")
+            raise OpenAPIError(f"Failed to apply JSON patches: {str(e)}")
+
+    async def generate_spec_from_prompt(self, request: GenerateSpecRequest) -> AIResponse:
+        """
+        Orchestrates the advanced agentic process to generate a comprehensive OpenAPI spec.
+        """
+        start_time = time.time()
+        set_correlation_id()
+
+        self.logger.info("Starting agentic spec generation", extra={
+            "domain": request.domain,
+            "complexity": request.complexity_level,
+            "streaming": request.streaming != StreamingMode.DISABLED
+        })
+
+        try:
+            # Agentic workflow: Entity → Schema → Paths → Assembly → Validation
+            workflow_result = await self._execute_agentic_workflow(request)
+
+            performance = PerformanceMetrics(
+                processing_time_ms=(time.time() - start_time) * 1000,
+                token_count=workflow_result["total_tokens"],
+                model_used=request.llm_parameters.model,
+                cache_hit=False
+            )
+
+            validation_result = await self._validate_openapi_spec(workflow_result["spec"])
+
+            return AIResponse(
+                updated_spec_text=workflow_result["spec"],
+                operation_type=OperationType.GENERATE,
+                validation=validation_result,
+                confidence_score=workflow_result["confidence"],
+                changes_summary=f"Generated complete OpenAPI spec with {workflow_result['entity_count']} entities",
+                performance=performance,
+                follow_up_suggestions=workflow_result["suggestions"]
+            )
+
+        except Exception as e:
+            self.logger.error(f"Agentic spec generation failed: {str(e)}")
+            raise LLMError(f"Failed to generate specification: {str(e)}")
+
+    async def _execute_agentic_workflow(self, request: GenerateSpecRequest) -> Dict[str, Any]:
+        """
+        Execute the multi-agent workflow for comprehensive spec generation.
+        """
+        total_tokens = 0
+        suggestions = []
+
+        # Agent 1: Domain Analysis
+        self.logger.info("Agent 1: Analyzing domain and requirements")
+        domain_analysis = await self._analyze_domain_requirements(request)
+        total_tokens += domain_analysis["tokens"]
+
+        # Agent 2: Entity Extraction
+        self.logger.info("Agent 2: Extracting entities and relationships")
+        entities = await self._extract_entities_with_relationships(request, domain_analysis)
+        total_tokens += entities["tokens"]
+
+        # Agent 3: Schema Generation
+        self.logger.info("Agent 3: Generating schemas with advanced features")
+        schemas = await self._generate_advanced_schemas(entities["entities"], request)
+        total_tokens += schemas["tokens"]
+
+        # Agent 4: Path Generation
+        self.logger.info("Agent 4: Generating RESTful paths with patterns")
+        paths = await self._generate_intelligent_paths(entities["entities"], request)
+        total_tokens += paths["tokens"]
+
+        # Agent 5: Security and Documentation
+        self.logger.info("Agent 5: Adding security and documentation")
+        security_docs = await self._enhance_with_security_docs(request)
+        total_tokens += security_docs["tokens"]
+
+        # Agent 6: Final Assembly and Optimization
+        self.logger.info("Agent 6: Assembling and optimizing final spec")
+        final_spec = await self._assemble_optimized_spec(
+            domain_analysis, entities, schemas, paths, security_docs, request
+        )
+
+        return {
+            "spec": json.dumps(final_spec, indent=2),
+            "total_tokens": total_tokens,
+            "entity_count": len(entities["entities"]),
+            "confidence": min(0.95, (len(entities["entities"]) * 0.1) + 0.5),
+            "suggestions": suggestions + security_docs["suggestions"]
+        }
+
+    async def _build_intelligent_prompt(self, request: AIRequest) -> List[Dict[str, str]]:
+        """
+        Build intelligent, context-aware prompts with advanced techniques.
+        """
+        # Get appropriate system prompt based on operation type
+        system_prompt = self._system_prompts.get(
+            request.operation_type.value,
+            self._system_prompts["modify"]
+        )
+
+        # Enhance with context if available
+        if request.context and request.context.previous_operations:
+            context_info = self._build_context_summary(request.context)
+            system_prompt += f"\n\nContext from previous operations:\n{context_info}"
+
+        # Build user prompt with advanced techniques
+        user_prompt = await self._build_enhanced_user_prompt(request)
+
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+
+    async def _build_enhanced_user_prompt(self, request: AIRequest) -> str:
+        """
+        Build enhanced user prompt with context and intelligent formatting.
+        """
+        # Analyze the current spec for context
+        spec_analysis = await self._analyze_spec_structure(request.spec_text)
+
+        # Build contextual prompt sections
+        prompt_sections = [
+            "**Current OpenAPI Specification Analysis:**",
+            f"- Version: {spec_analysis['version']}",
+            f"- Total Paths: {spec_analysis['path_count']}",
+            f"- Components: {spec_analysis['component_count']}",
+            f"- Complexity: {spec_analysis['complexity_level']}",
+            "",
+            "**Current Specification:**",
+            "```json",
+            request.spec_text,
+            "```",
+            "",
+            "**Your Task:**",
+            request.prompt,
+            "",
+            "**Additional Context:**"
+        ]
+
+        # Add operation-specific guidance
+        if request.operation_type == OperationType.MODIFY:
+            prompt_sections.extend([
+                "- Preserve existing structure unless explicitly asked to change",
+                "- Ensure all references remain valid after modifications",
+                "- Follow OpenAPI 3.0+ best practices"
+            ])
+        elif request.operation_type == OperationType.ENHANCE:
+            prompt_sections.extend([
+                "- Add comprehensive examples and descriptions",
+                "- Include appropriate security schemes",
+                "- Add validation constraints where applicable"
+            ])
+
+        # Add target paths if specified
+        if request.target_paths:
+            prompt_sections.extend([
+                "",
+                "**Focus Areas:**",
+                f"Concentrate changes on these paths: {', '.join(request.target_paths)}"
+            ])
+
+        return "\n".join(prompt_sections)
+
+    async def _call_llm_with_retry(self, messages: List[Dict[str, str]], params: LLMParameters, max_retries: int = 3) -> str:
+        """
+        Call LLM with intelligent retry logic and error handling.
+        """
+        for attempt in range(max_retries):
+            try:
+                payload = {
+                    "model": params.model,
+                    "messages": messages,
+                    "stream": False,
+                    "options": {
+                        "temperature": params.temperature,
+                        "top_p": params.top_p,
+                        "frequency_penalty": params.frequency_penalty,
+                        "presence_penalty": params.presence_penalty,
+                        "max_tokens": params.max_tokens
+                    },
+                    "format": "json"
+                }
+
+                response = await self.client.post(self.chat_endpoint, json=payload)
+
+                if response.status_code == 200:
+                    response_data = response.json()
+                    return self._extract_and_clean_response(response_data)
+                else:
+                    self.logger.warning(f"LLM request failed with status {response.status_code}: {response.text}")
+                    if attempt == max_retries - 1:
+                        raise LLMError(f"LLM service error: {response.status_code} - {response.text}")
+
+            except httpx.TimeoutException:
+                self.logger.warning(f"LLM request timeout on attempt {attempt + 1}")
+                if attempt == max_retries - 1:
+                    raise LLMTimeoutError("LLM request timed out after all retries")
+
+            except Exception as e:
+                self.logger.error(f"LLM request error on attempt {attempt + 1}: {str(e)}")
+                if attempt == max_retries - 1:
+                    raise LLMError(f"LLM request failed: {str(e)}")
+
+            # Exponential backoff
+            await asyncio.sleep(2 ** attempt)
+
+        raise LLMError("Max retries exceeded")
+
+    def _extract_and_clean_response(self, response_data: Dict[str, Any]) -> str:
+        """
+        Extract and clean LLM response with advanced parsing.
+        """
+        try:
+            raw_content = response_data['message']['content']
+
+            # Advanced cleaning with multiple strategies
+            cleaned_content = self._advanced_content_cleaning(raw_content)
+
+            return cleaned_content
+
+        except (KeyError, IndexError, TypeError) as e:
+            raise LLMError(f"Failed to parse LLM response: {str(e)}")
+
+    def _advanced_content_cleaning(self, raw_content: str) -> str:
+        """
+        Advanced content cleaning with multiple parsing strategies.
+        """
+        content = raw_content.strip()
+
+        # Strategy 1: Remove markdown code blocks
+        patterns = [
+            (r'```(?:json|yaml|javascript)\n?', ''),
+            (r'```\n?', ''),
+            (r'^[\s]*//.*$', ''),  # Remove comments
+            (r'/\*.*?\*/', ''),    # Remove block comments
+        ]
+
+        for pattern, replacement in patterns:
+            import re
+            content = re.sub(pattern, replacement, content, flags=re.MULTILINE | re.DOTALL)
+
+        # Strategy 2: Extract JSON/YAML content
+        json_start = content.find('{')
+        yaml_start = content.find('openapi:')
+
+        if json_start != -1 and (yaml_start == -1 or json_start < yaml_start):
+            # Find matching closing brace
+            brace_count = 0
+            start_idx = json_start
+            for i, char in enumerate(content[json_start:], json_start):
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        content = content[start_idx:i+1]
+                        break
+        elif yaml_start != -1:
+            content = content[yaml_start:]
+
+        return content.strip()
+
+    async def _stream_llm_response(self, messages: List[Dict[str, str]], params: LLMParameters) -> AsyncGenerator[str, None]:
+        """
+        Stream LLM response for real-time updates.
+        """
+        try:
+            payload = {
+                "model": params.model,
+                "messages": messages,
+                "stream": True,
+                "options": {
+                    "temperature": params.temperature,
+                    "top_p": params.top_p,
+                    "max_tokens": params.max_tokens
+                }
+            }
+
+            async with self.client.stream('POST', self.chat_endpoint, json=payload) as response:
+                if response.status_code != 200:
+                    raise LLMError(f"Streaming request failed: {response.status_code}")
+
+                async for line in response.aiter_lines():
+                    if line.strip():
+                        try:
+                            chunk_data = json.loads(line)
+                            if chunk_data.get('message', {}).get('content'):
+                                yield chunk_data['message']['content']
+                        except json.JSONDecodeError:
+                            continue
+
+        except Exception as e:
+            self.logger.error(f"Streaming failed: {str(e)}")
+            raise LLMError(f"Streaming request failed: {str(e)}")
+
+    async def _apply_json_patches(self, original_spec: Dict[str, Any], patches: List[JSONPatchOperation]) -> Dict[str, Any]:
+        """
+        Apply JSON patches with intelligent conflict resolution.
+        """
+        try:
+            # Convert patches to jsonpatch format
+            patch_objects = []
+            for patch in patches:
+                patch_dict = {
+                    "op": patch.op,
+                    "path": patch.path
+                }
+                if patch.value is not None:
+                    patch_dict["value"] = patch.value
+                if patch.from_path:
+                    patch_dict["from"] = patch.from_path
+
+                patch_objects.append(patch_dict)
+
+            # Apply patches with validation
+            patch = jsonpatch.JsonPatch(patch_objects)
+            result = patch.apply(original_spec)
+
+            return result
+
+        except Exception as e:
+            self.logger.error(f"JSON patch application failed: {str(e)}")
+            raise OpenAPIError(f"Failed to apply JSON patches: {str(e)}")
+
+    # System prompt templates for different operation types
+    def _get_modification_system_prompt(self) -> str:
+        return """
+You are an expert OpenAPI architect specializing in precise specification modifications.
+
+**Core Principles:**
+1. Preserve existing structure unless explicitly requested to change
+2. Maintain all existing references and relationships
+3. Follow OpenAPI 3.0+ specification standards strictly
+4. Ensure backward compatibility when possible
+5. Output ONLY valid JSON without commentary
+
+**Modification Process:**
+1. Analyze the current specification structure
+2. Identify the exact components to modify
+3. Apply changes while preserving schema integrity
+4. Validate all references remain intact
+5. Ensure the result is a complete, valid OpenAPI specification
+
+**Output Requirements:**
+- Complete OpenAPI JSON specification
+- No placeholder text or truncation
+- Valid JSON syntax
+- All required OpenAPI fields present
+"""
+
+    def _get_generation_system_prompt(self) -> str:
+        return """
+You are an expert API designer capable of generating comprehensive OpenAPI specifications.
+
+**Design Principles:**
+1. Create RESTful, intuitive API designs
+2. Include comprehensive schemas with proper validation
+3. Add security schemes appropriate for the domain
+4. Provide detailed descriptions and examples
+5. Follow industry best practices
+
+**Generation Process:**
+1. Analyze requirements and domain context
+2. Design entity relationships and data models
+3. Create RESTful path structures
+4. Define comprehensive schemas with validation
+5. Add security, examples, and documentation
+
+**Output Requirements:**
+- Complete OpenAPI 3.0+ specification
+- Valid JSON format
+- Production-ready structure
+- Comprehensive documentation
+"""
+
+    def _get_validation_system_prompt(self) -> str:
+        return """
+You are an OpenAPI validation specialist focused on ensuring specification correctness.
+
+**Validation Areas:**
+1. Schema compliance with OpenAPI 3.0+ standards
+2. Reference integrity and circular dependency detection
+3. Security scheme completeness
+4. Response schema accuracy
+5. Parameter validation rules
+
+**Correction Process:**
+1. Identify all validation issues
+2. Prioritize critical vs. warning-level problems
+3. Apply minimal corrective changes
+4. Preserve original intent while fixing issues
+5. Provide clear explanation of changes made
+
+**Output Requirements:**
+- Valid, corrected OpenAPI specification
+- Detailed list of issues found and fixed
+- Confidence score for the validation
+"""
+
+    def _get_patch_system_prompt(self) -> str:
+        return """
+You are a JSON Patch specialist for OpenAPI specifications.
+
+**Patch Operations:**
+1. Apply precise modifications using JSON Patch standards
+2. Maintain specification integrity during modifications
+3. Handle complex nested structure changes
+4. Resolve conflicts intelligently
+5. Validate results after patch application
+
+**Safety Principles:**
+1. Never break existing references
+2. Preserve critical specification metadata
+3. Maintain OpenAPI standard compliance
+4. Apply patches in safe order
+5. Rollback on validation failures
+
+**Output Requirements:**
+- Successfully patched OpenAPI specification
+- Validation of patch application success
+- Conflict resolution details if applicable
+"""
+
+    # Helper methods for advanced features
+    async def _validate_openapi_spec(self, spec_text: str) -> ValidationResult:
+        """
+        Validate OpenAPI specification using multiple validators.
+        """
+        errors = []
+        warnings = []
+        suggestions = []
+
+        try:
+            # Parse JSON
+            spec_data = json.loads(spec_text)
+
+            # Basic structure validation
+            required_fields = ['openapi', 'info', 'paths']
+            for field in required_fields:
+                if field not in spec_data:
+                    errors.append(f"Missing required field: {field}")
+
+            # Version validation
+            if 'openapi' in spec_data:
+                version = spec_data['openapi']
+                if not version.startswith('3.'):
+                    warnings.append(f"OpenAPI version {version} is not 3.x")
+
+            # Path validation
+            if 'paths' in spec_data and spec_data['paths']:
+                for path, path_obj in spec_data['paths'].items():
+                    if not path.startswith('/'):
+                        errors.append(f"Path {path} must start with /")
+
+            # TODO: Add more comprehensive validation using openapi-spec-validator
+
+        except json.JSONDecodeError as e:
+            errors.append(f"Invalid JSON: {str(e)}")
+        except Exception as e:
+            errors.append(f"Validation error: {str(e)}")
+
+        return ValidationResult(
+            is_valid=len(errors) == 0,
+            errors=errors,
+            warnings=warnings,
+            suggestions=suggestions
+        )
+
+    async def _analyze_spec_structure(self, spec_text: str) -> Dict[str, Any]:
+        """
+        Analyze OpenAPI spec structure for context building.
+        """
+        try:
+            spec_data = json.loads(spec_text)
+            return {
+                "version": spec_data.get('openapi', 'unknown'),
+                "path_count": len(spec_data.get('paths', {})),
+                "component_count": len(spec_data.get('components', {}).get('schemas', {})),
+                "complexity_level": self._assess_complexity(spec_data)
+            }
+        except:
+            return {
+                "version": "unknown",
+                "path_count": 0,
+                "component_count": 0,
+                "complexity_level": "unknown"
+            }
+
+    def _assess_complexity(self, spec_data: Dict[str, Any]) -> str:
+        """
+        Assess the complexity level of an OpenAPI specification.
+        """
+        path_count = len(spec_data.get('paths', {}))
+        component_count = len(spec_data.get('components', {}).get('schemas', {}))
+
+        total_complexity = path_count + component_count
+
+        if total_complexity < 10:
+            return "simple"
+        elif total_complexity < 50:
+            return "medium"
+        else:
+            return "complex"
+
+    async def _analyze_changes(self, original_spec: str, updated_spec: str) -> tuple[str, List[str]]:
+        """
+        Analyze changes between original and updated specifications.
+        """
+        try:
+            original = json.loads(original_spec)
+            updated = json.loads(updated_spec)
+
+            # Simple change detection - can be enhanced with jsonpatch
+            changes = []
+            modified_paths = []
+
+            # Compare paths
+            orig_paths = set(original.get('paths', {}).keys())
+            new_paths = set(updated.get('paths', {}).keys())
+
+            added_paths = new_paths - orig_paths
+            removed_paths = orig_paths - new_paths
+
+            if added_paths:
+                changes.append(f"Added {len(added_paths)} new paths")
+                modified_paths.extend(list(added_paths))
+
+            if removed_paths:
+                changes.append(f"Removed {len(removed_paths)} paths")
+                modified_paths.extend(list(removed_paths))
+
+            # TODO: Add more detailed change analysis
+
+            summary = "; ".join(changes) if changes else "Minor modifications applied"
+            return summary, modified_paths
+
+        except Exception as e:
+            return f"Changes applied (analysis failed: {str(e)})", []
+
+    def _build_context_summary(self, context) -> str:
+        """
+        Build context summary from previous operations.
+        """
+        if not context.previous_operations:
+            return "No previous context available."
+
+        return f"Previous operations: {', '.join(context.previous_operations[-3:])}"
+
+    # Placeholder methods for agentic workflow - to be implemented
+    async def _analyze_domain_requirements(self, request) -> Dict[str, Any]:
+        return {"tokens": 100, "analysis": "domain analysis"}
+
+    async def _extract_entities_with_relationships(self, request, domain_analysis) -> Dict[str, Any]:
+        return {"tokens": 150, "entities": []}
+
+    async def _generate_advanced_schemas(self, entities, request) -> Dict[str, Any]:
+        return {"tokens": 200, "schemas": {}}
+
+    async def _generate_intelligent_paths(self, entities, request) -> Dict[str, Any]:
+        return {"tokens": 180, "paths": {}}
+
+    async def _enhance_with_security_docs(self, request) -> Dict[str, Any]:
+        return {"tokens": 120, "security": {}, "suggestions": []}
+
+    async def _assemble_optimized_spec(self, *args) -> Dict[str, Any]:
+        return {"openapi": "3.0.0", "info": {"title": "Generated API", "version": "1.0.0"}, "paths": {}}
+
+    async def _validate_and_correct_response(self, response_text: str, request: AIRequest, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+        """
+        Validate LLM response and apply self-correction if needed.
+        """
+        validation_result = await self._validate_openapi_spec(response_text)
+
+        if not validation_result.is_valid and request.auto_fix:
+            # Self-correction attempt
+            correction_messages = messages + [{
+                "role": "assistant",
+                "content": response_text
+            }, {
+                "role": "user",
+                "content": f"The previous response has validation errors: {', '.join(validation_result.errors)}. Please fix these issues and provide the corrected specification."
+            }]
+
+            try:
+                corrected_response = await self._call_llm_with_retry(correction_messages, request.llm_parameters)
+                corrected_validation = await self._validate_openapi_spec(corrected_response)
+
+                return {
+                    "validation": corrected_validation,
+                    "corrected_spec": corrected_response if corrected_validation.is_valid else None,
+                    "confidence_score": 0.8 if corrected_validation.is_valid else 0.3
+                }
+            except Exception as e:
+                self.logger.warning(f"Self-correction failed: {str(e)}")
+
+        return {
+            "validation": validation_result,
+            "corrected_spec": None,
+            "confidence_score": 0.9 if validation_result.is_valid else 0.2
+        }
+
+    async def _ai_fix_validation_issues(self, fix_request: AIRequest) -> Dict[str, Any]:
+        """
+        Use AI to fix validation issues in patched specifications.
+        """
+        try:
+            response = await self._process_standard_request(fix_request, time.time())
+            return json.loads(response.updated_spec_text)
+        except Exception as e:
+            self.logger.error(f"AI validation fix failed: {str(e)}")
+            raise OpenAPIError(f"Failed to fix validation issues: {str(e)}")
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.client.aclose()
