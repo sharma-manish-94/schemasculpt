@@ -1,71 +1,94 @@
-import React from "react";
-import Editor from "@monaco-editor/react";
+import React, { useMemo } from "react";
 import { useSpecStore } from "../../../store/specStore";
+import Editor from "@monaco-editor/react";
 
 function OperationSpecViewer() {
-    const { selectedNavItem, selectedNavItemDetails, isNavItemLoading } = useSpecStore();
+    const { selectedNavItem, setSelectedNavItem, specText } = useSpecStore();
 
-    if (isNavItemLoading) {
-        return (
-            <div className="operation-spec-viewer">
-                <div className="panel-header">Operation Specification</div>
-                <div className="panel-content">
-                    <div className="panel-content-placeholder">Loading operation details...</div>
-                </div>
-            </div>
-        );
-    }
+    // Tree-shake the OpenAPI spec to show only the selected operation
+    const treeShakenSpec = useMemo(() => {
+        if (!selectedNavItem || !specText.trim()) {
+            return null;
+        }
+
+        try {
+            const fullSpec = JSON.parse(specText);
+            const pathSpec = fullSpec.paths?.[selectedNavItem.path];
+            const operationSpec = pathSpec?.[selectedNavItem.method.toLowerCase()];
+
+            if (!operationSpec) {
+                return null;
+            }
+
+            // Create a minimal spec with just this operation
+            const minimalSpec = {
+                openapi: fullSpec.openapi || "3.0.0",
+                info: {
+                    title: fullSpec.info?.title || "API",
+                    version: fullSpec.info?.version || "1.0.0"
+                },
+                paths: {
+                    [selectedNavItem.path]: {
+                        [selectedNavItem.method.toLowerCase()]: operationSpec
+                    }
+                }
+            };
+
+            // Include any components that might be referenced
+            if (fullSpec.components) {
+                minimalSpec.components = fullSpec.components;
+            }
+
+            return JSON.stringify(minimalSpec, null, 2);
+        } catch (error) {
+            console.error("Error creating tree-shaken spec:", error);
+            return JSON.stringify({ error: "Failed to parse OpenAPI spec" }, null, 2);
+        }
+    }, [selectedNavItem, specText]);
 
     if (!selectedNavItem) {
-        return (
-            <div className="operation-spec-viewer">
-                <div className="panel-header">Operation Specification</div>
-                <div className="panel-content">
-                    <div className="panel-content-placeholder">Select an operation to view its specification</div>
-                </div>
-            </div>
-        );
+        return <div className="panel-content-placeholder">No operation selected</div>;
     }
 
-    if (!selectedNavItemDetails) {
-        return (
-            <div className="operation-spec-viewer">
-                <div className="panel-header">Operation Specification</div>
-                <div className="panel-content">
-                    <div className="panel-content-placeholder">Failed to load operation details</div>
-                </div>
-            </div>
-        );
-    }
-
-    // Format the tree-shaken JSON for display with Monaco Editor
-    const formattedJson = JSON.stringify(selectedNavItemDetails, null, 2);
+    const handleBackToEditor = () => {
+        setSelectedNavItem(null);
+    };
 
     return (
         <div className="operation-spec-viewer">
-            <div className="panel-header">
-                Operation Specification: {selectedNavItem.method.toUpperCase()} {selectedNavItem.path}
+            <div className="operation-header">
+                <button className="back-to-editor-btn" onClick={handleBackToEditor}>
+                    ← Back to Editor
+                </button>
+                <div className="operation-title">
+                    <span className={`method-badge ${selectedNavItem.method.toLowerCase()}`}>
+                        {selectedNavItem.method}
+                    </span>
+                    <span className="operation-path">{selectedNavItem.path}</span>
+                </div>
             </div>
-            <div className="panel-content">
-                <div className="monaco-editor-wrapper">
+
+            <div className="operation-json-editor">
+                {treeShakenSpec ? (
                     <Editor
                         height="100%"
-                        theme="vs-dark"
+                        theme="light"
                         language="json"
-                        value={formattedJson}
+                        value={treeShakenSpec}
                         options={{
                             readOnly: true,
                             minimap: { enabled: false },
                             scrollBeyondLastLine: false,
                             fontSize: 12,
                             wordWrap: "on",
-                            folding: true,
-                            foldingHighlight: true,
-                            foldingImportsByDefault: false,
-                            showFoldingControls: "always",
+                            automaticLayout: true
                         }}
                     />
-                </div>
+                ) : (
+                    <div className="operation-error">
+                        <p>Unable to load operation details</p>
+                    </div>
+                )}
             </div>
         </div>
     );

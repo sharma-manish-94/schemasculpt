@@ -24,7 +24,7 @@ const initialRequestState = {
     },
 
     // Request configuration
-    serverTarget: REQUEST_CONFIG.SERVER_TARGETS.MOCK,
+    serverTarget: REQUEST_CONFIG.SERVER_TARGETS.SPEC,
     customServerUrl: "",
     pathParams: {},
     requestBody: "",

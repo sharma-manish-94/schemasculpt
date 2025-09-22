@@ -151,7 +151,7 @@ function EditorPanel() {
             <div className="editor-wrapper">
                 <Editor
                     height="100%"
-                    theme="vs-dark"
+                    theme="light"
                     language={format}
                     value={displayedText} // <-- The editor's content is now always this value
                     onChange={(value) => {

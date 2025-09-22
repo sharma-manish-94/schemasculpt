@@ -1,0 +1,15 @@
+meta {
+  name: generate-spec
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8000/specifications/generate
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}

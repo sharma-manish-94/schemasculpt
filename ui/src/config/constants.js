@@ -24,12 +24,13 @@ export const UI_CONFIG = {
         SWAGGER_UI: "swaggerUi"
     },
     THEMES: {
-        MONACO_DARK: "vs-dark"
+        MONACO_LIGHT: "light"
     }
 };
 
 export const REQUEST_CONFIG = {
     SERVER_TARGETS: {
+        SPEC: "spec",
         MOCK: "mock",
         CUSTOM: "custom"
     },

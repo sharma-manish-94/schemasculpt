@@ -11,7 +11,10 @@ function NavigationPanel() {
 
   return (
     <>
-      <div className="panel-header">API Structure</div>
+      <div className="panel-header">
+        <span className="panel-icon">🌐</span>
+        API Structure
+      </div>
       <div className="tree-view">
         <ul>
           {Object.entries(paths).map(([path, methods]) => (

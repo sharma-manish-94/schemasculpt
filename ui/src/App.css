@@ -1,17 +1,17 @@
-/* CSS Custom Properties for Design System */
+/* CSS Custom Properties for Design System - Light Theme */
 :root {
-  --primary-bg: #1e1e1e;
-  --secondary-bg: #252526;
-  --border-color: #333;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --text-accent: #007acc;
+  --primary-bg: #ffffff;
+  --secondary-bg: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-primary: #334155;
+  --text-secondary: #64748b;
+  --text-accent: #3b82f6;
   --header-height: 60px;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
-  background-color: var(--primary-bg);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   color: var(--text-primary);
   overflow: hidden; /* Prevent page scrolling */
   -webkit-font-smoothing: antialiased;
@@ -27,11 +27,13 @@ body {
 .App-header {
   padding: 15px 20px;
   border-bottom: 1px solid var(--border-color);
+  background: var(--primary-bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
   min-height: var(--header-height);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .App-main {

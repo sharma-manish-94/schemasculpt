@@ -1,4 +1,4 @@
-/* Global base styles - extended by App.css */
+/* Global base styles - Modern Light Theme */
 * {
   box-sizing: border-box;
 }
@@ -7,9 +7,24 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #334155;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.9em;
 }

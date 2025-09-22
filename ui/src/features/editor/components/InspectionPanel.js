@@ -1,7 +1,6 @@
 import React, {useMemo} from "react";
 import SwaggerUI from "swagger-ui-react";
 import {useSpecStore} from "../../../store/specStore";
-import {useResponseStore} from "../../../store/responseStore";
 
 function LivePreview({endpoint, operationDetails}) {
     const minispec = useMemo(() => {
@@ -29,32 +28,16 @@ function LivePreview({endpoint, operationDetails}) {
     return <SwaggerUI spec={minispec}/>;
 }
 
-function ResponseViewer() {
-    const {apiResponse, isApiRequestLoading} = useResponseStore();
-    if (isApiRequestLoading) {
-        return <p className="loading-text">Waiting for response...</p>;
-    }
-    if (!apiResponse) {
-        return <p className="no-errors">Response will be displayed here.</p>;
-    }
-    return (<pre className={apiResponse.success ? 'response-success' : 'response-error'}>
-            {JSON.stringify(apiResponse.data || apiResponse.error, null, 2)}
-        </pre>);
-}
 
 function InspectionPanel() {
     const selectedNavItem = useSpecStore((state) => state.selectedNavItem);
     const selectedNavItemDetails = useSpecStore((state) => state.selectedNavItemDetails);
     const isNavItemLoading = useSpecStore((state) => state.isNavItemLoading);
-    const apiResponse = useResponseStore((state) => state.apiResponse);
 
     // content is determined by the application's state
     let content = null;
-    if (apiResponse) {
-        // Priority 1: show API Response
-        content = <ResponseViewer/>;
-    } else if (selectedNavItem) {
-        // Priority 2: if an item is selected, show the live preview
+    if (selectedNavItem) {
+        // Show the live preview if an item is selected
         if (isNavItemLoading) {
             content = <div className="panel-content-placeholder">Loading operation details...</div>;
         } else {

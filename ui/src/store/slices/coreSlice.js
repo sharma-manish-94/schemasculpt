@@ -823,7 +823,7 @@ const initialJsonObject = yaml.load(initialYamlSpec);
 const initialJsonSpec = JSON.stringify(initialJsonObject, null, 2);
 export const coreSlice = (set, get) => ({
     // --- STATE ---
-    specText: initialJsonSpec, sessionId: null, format: "json", activeTab: "validation",
+    specText: initialJsonSpec, sessionId: null, format: "json", activeTab: "api_explorer",
 
     // --- ACTIONS ---
     setActiveTab: (tabName) => set({activeTab: tabName}),
