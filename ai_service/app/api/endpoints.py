@@ -6,6 +6,7 @@ Integrates advanced LLM service, agentic workflows, streaming, and comprehensive
 import uuid
 import json
 import asyncio
+from datetime import datetime
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -80,26 +81,25 @@ async def process_specification(request: AIRequest, _: None = Depends(handle_exc
         request.context = context_manager.get_context_for_request(session_id, request)
 
         # Process the request
-        async with llm_service:
-            result = await llm_service.process_ai_request(request)
+        result = await llm_service.process_ai_request(request)
 
-            # Handle streaming response
-            if request.streaming != StreamingMode.DISABLED:
-                async def stream_generator():
-                    async for chunk in result:
-                        yield f"data: {json.dumps(chunk.dict())}\n\n"
-                    yield "data: [DONE]\n\n"
+        # Handle streaming response
+        if request.streaming != StreamingMode.DISABLED:
+            async def stream_generator():
+                async for chunk in result:
+                    yield f"data: {json.dumps(chunk.dict())}\n\n"
+                yield "data: [DONE]\n\n"
 
-                return StreamingResponse(
-                    stream_generator(),
-                    media_type="text/plain",
-                    headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
-                )
+            return StreamingResponse(
+                stream_generator(),
+                media_type="text/plain",
+                headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+            )
 
-            # Add conversation turn to context
-            context_manager.add_conversation_turn(session_id, request, result, True)
+        # Add conversation turn to context
+        context_manager.add_conversation_turn(session_id, request, result, True)
 
-            return result
+        return result
 
     except Exception as e:
         logger.error(f"AI processing failed: {str(e)}")
@@ -216,7 +216,7 @@ async def create_session(user_id: Optional[str] = None):
     return {
         "session_id": session_id,
         "user_id": user_id,
-        "created_at": context_manager.get_session_summary(session_id).get("session_start", "unknown")
+        "created_at": datetime.utcnow()
     }
 
 
@@ -339,7 +339,7 @@ async def start_mock_server(request: MockStartRequest, _: None = Depends(handle_
         MOCKED_APIS[mock_id] = {
             "specification": parser.specification,
             "config": request.dict(),
-            "created_at": context_manager.get_context_statistics().get("timestamp", "unknown")
+            "created_at": datetime.utcnow()
         }
 
         spec_info = parser.specification.get('info', {})
@@ -381,7 +381,7 @@ async def update_mock_server(mock_id: str, request: MockStartRequest, _: None = 
 
         return {
             "message": f"Mock server {mock_id} updated successfully",
-            "updated_at": context_manager.get_context_statistics().get("timestamp", "unknown")
+            "updated_at": datetime.utcnow()
         }
     except Exception as e:
         logger.error(f"Mock server update failed: {str(e)}")
@@ -491,8 +491,7 @@ Variation #{random.randint(1, config.get('response_variety', 3))}"""
                 operation_type=OperationType.GENERATE
             )
 
-            async with llm_service:
-                ai_result = await llm_service.process_ai_request(ai_request)
+            ai_result = await llm_service.process_ai_request(ai_request)
 
             try:
                 generated_data = json.loads(ai_result.updated_spec_text)

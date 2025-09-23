@@ -6,22 +6,21 @@ Provides streaming, JSON patching, agentic workflows, and intelligent prompt eng
 import asyncio
 import json
 import time
-from typing import Dict, List, Optional, Any, AsyncGenerator, Union
 from datetime import datetime
-from uuid import uuid4
+from typing import Dict, List, Any, AsyncGenerator, Union
 
 import httpx
 import jsonpatch
-from jsonschema import validate, ValidationError as JsonSchemaValidationError
 
 from ..core.config import settings
-from ..core.logging import get_logger, log_performance, set_correlation_id
 from ..core.exceptions import LLMError, LLMTimeoutError, ValidationError, OpenAPIError
+from ..core.logging import get_logger, set_correlation_id
 from ..schemas.ai_schemas import (
     AIRequest, AIResponse, GenerateSpecRequest, StreamingChunk,
-    OperationType, StreamingMode, ResponseFormat, ValidationResult,
+    OperationType, StreamingMode, ValidationResult,
     PerformanceMetrics, LLMParameters, JSONPatchOperation
 )
+from .intelligent_workflow import IntelligentOpenAPIWorkflow
 
 
 class LLMService:
@@ -29,7 +28,7 @@ class LLMService:
     Advanced LLM service with streaming, JSON patching, and agentic capabilities.
     """
 
-    def __init__(self):
+    def __init__(self, auto_close_client: bool = False):
         self.logger = get_logger("llm_service")
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(settings.request_timeout),
@@ -38,9 +37,13 @@ class LLMService:
         self.base_url = settings.ollama_base_url
         self.chat_endpoint = f"{self.base_url}{settings.ollama_chat_endpoint}"
         self.generate_endpoint = f"{self.base_url}{settings.ollama_generate_endpoint}"
+        self._auto_close_client = auto_close_client
 
         # Cache for conversation context
         self._context_cache: Dict[str, Any] = {}
+
+        # Initialize intelligent workflow
+        self.intelligent_workflow = IntelligentOpenAPIWorkflow(self)
 
         # Prompt templates
         self._system_prompts = {
@@ -96,6 +99,9 @@ class LLMService:
         try:
             response_text = await self._call_llm_with_retry(messages, request.llm_parameters)
 
+            # Apply post-processing fixes
+            response_text = self._fix_openapi_issues(response_text)
+
             # Validate and potentially self-correct
             validation_result = await self._validate_and_correct_response(
                 response_text, request, messages
@@ -112,14 +118,14 @@ class LLMService:
 
             # Calculate changes and generate summary
             changes_summary, modified_paths = await self._analyze_changes(
-                request.spec_text, validation_result.corrected_spec or response_text
+                request.spec_text, validation_result["corrected_spec"] or response_text
             )
 
             return AIResponse(
-                updated_spec_text=validation_result.corrected_spec or response_text,
+                updated_spec_text=validation_result["corrected_spec"] or response_text,
                 operation_type=request.operation_type,
-                validation=validation_result.validation,
-                confidence_score=validation_result.confidence_score,
+                validation=validation_result["validation"],
+                confidence_score=validation_result["confidence_score"],
                 changes_summary=changes_summary,
                 modified_paths=modified_paths,
                 performance=performance,
@@ -223,42 +229,20 @@ class LLMService:
 
     async def generate_spec_from_prompt(self, request: GenerateSpecRequest) -> AIResponse:
         """
-        Orchestrates the advanced agentic process to generate a comprehensive OpenAPI spec.
+        Orchestrates the intelligent multi-agent process to generate a comprehensive OpenAPI spec.
         """
-        start_time = time.time()
-        set_correlation_id()
-
-        self.logger.info("Starting agentic spec generation", extra={
+        self.logger.info("Starting intelligent multi-agent spec generation", extra={
             "domain": request.domain,
             "complexity": request.complexity_level,
-            "streaming": request.streaming != StreamingMode.DISABLED
+            "use_intelligent_workflow": True
         })
 
         try:
-            # Agentic workflow: Entity → Schema → Paths → Assembly → Validation
-            workflow_result = await self._execute_agentic_workflow(request)
-
-            performance = PerformanceMetrics(
-                processing_time_ms=(time.time() - start_time) * 1000,
-                token_count=workflow_result["total_tokens"],
-                model_used=request.llm_parameters.model,
-                cache_hit=False
-            )
-
-            validation_result = await self._validate_openapi_spec(workflow_result["spec"])
-
-            return AIResponse(
-                updated_spec_text=workflow_result["spec"],
-                operation_type=OperationType.GENERATE,
-                validation=validation_result,
-                confidence_score=workflow_result["confidence"],
-                changes_summary=f"Generated complete OpenAPI spec with {workflow_result['entity_count']} entities",
-                performance=performance,
-                follow_up_suggestions=workflow_result["suggestions"]
-            )
+            # Use the intelligent workflow instead of the old agentic workflow
+            return await self.intelligent_workflow.generate_specification(request)
 
         except Exception as e:
-            self.logger.error(f"Agentic spec generation failed: {str(e)}")
+            self.logger.error(f"Intelligent workflow generation failed: {str(e)}")
             raise LLMError(f"Failed to generate specification: {str(e)}")
 
     async def _execute_agentic_workflow(self, request: GenerateSpecRequest) -> Dict[str, Any]:
@@ -553,18 +537,26 @@ You are an expert OpenAPI architect specializing in precise specification modifi
 4. Ensure backward compatibility when possible
 5. Output ONLY valid JSON without commentary
 
+**Critical JSON Structure Rules:**
+- Path operations (get, post, put, delete) must be objects, never strings
+- All operation objects must have a "responses" field
+- Schema references must point to existing schemas in components/schemas
+- When adding $ref, ensure the referenced schema exists
+- Operation-level fields (summary, operationId) go INSIDE the operation object, not at path level
+
 **Modification Process:**
 1. Analyze the current specification structure
 2. Identify the exact components to modify
 3. Apply changes while preserving schema integrity
-4. Validate all references remain intact
+4. If adding $ref, create the referenced schema in components/schemas
 5. Ensure the result is a complete, valid OpenAPI specification
 
 **Output Requirements:**
 - Complete OpenAPI JSON specification
 - No placeholder text or truncation
-- Valid JSON syntax
+- Valid JSON syntax with proper object structure
 - All required OpenAPI fields present
+- All $ref references must point to existing schemas
 """
 
     def _get_generation_system_prompt(self) -> str:
@@ -578,17 +570,27 @@ You are an expert API designer capable of generating comprehensive OpenAPI speci
 4. Provide detailed descriptions and examples
 5. Follow industry best practices
 
+**Critical Structure Requirements:**
+- Every path must start with "/"
+- Every operation (get, post, put, delete) must be a proper object
+- Every operation must have a "responses" field
+- Operation-level fields (summary, operationId, description) go INSIDE the operation object
+- All $ref references must point to schemas defined in components/schemas
+- Always create a complete components/schemas section for any referenced schemas
+
 **Generation Process:**
 1. Analyze requirements and domain context
 2. Design entity relationships and data models
-3. Create RESTful path structures
-4. Define comprehensive schemas with validation
-5. Add security, examples, and documentation
+3. Create RESTful path structures with proper operation objects
+4. Define comprehensive schemas in components/schemas section
+5. Ensure all $ref references are valid and point to existing schemas
+6. Add security, examples, and documentation
 
 **Output Requirements:**
 - Complete OpenAPI 3.0+ specification
-- Valid JSON format
-- Production-ready structure
+- Valid JSON format with proper object nesting
+- All operations must be objects with required fields
+- Production-ready structure with all schemas defined
 - Comprehensive documentation
 """
 
@@ -596,22 +598,31 @@ You are an expert API designer capable of generating comprehensive OpenAPI speci
         return """
 You are an OpenAPI validation specialist focused on ensuring specification correctness.
 
+**Critical Issues to Fix:**
+1. Invalid JSON structure (operations must be objects, not strings)
+2. Missing required fields (every operation needs "responses")
+3. Broken $ref references (must point to existing schemas)
+4. Invalid path structures (operations at wrong level)
+5. Schema compliance with OpenAPI 3.0+ standards
+
 **Validation Areas:**
-1. Schema compliance with OpenAPI 3.0+ standards
+1. JSON syntax and object structure validation
 2. Reference integrity and circular dependency detection
-3. Security scheme completeness
-4. Response schema accuracy
-5. Parameter validation rules
+3. Operation object completeness (responses, parameters)
+4. Schema definitions in components/schemas
+5. Path and operation method validation
 
 **Correction Process:**
-1. Identify all validation issues
-2. Prioritize critical vs. warning-level problems
-3. Apply minimal corrective changes
-4. Preserve original intent while fixing issues
-5. Provide clear explanation of changes made
+1. Fix critical JSON structure errors first
+2. Ensure all $ref references have corresponding schema definitions
+3. Move misplaced operation fields to correct locations
+4. Add missing required fields (responses, etc.)
+5. Preserve original intent while fixing structural issues
 
 **Output Requirements:**
-- Valid, corrected OpenAPI specification
+- Valid, corrected OpenAPI specification with proper JSON structure
+- All $ref references pointing to existing schemas
+- Complete operation objects with required fields
 - Detailed list of issues found and fixed
 - Confidence score for the validation
 """
@@ -641,6 +652,23 @@ You are a JSON Patch specialist for OpenAPI specifications.
 """
 
     # Helper methods for advanced features
+    def _find_all_refs(self, obj, refs=None) -> List[str]:
+        """Recursively find all $ref references in a specification object."""
+        if refs is None:
+            refs = []
+
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if key == '$ref' and isinstance(value, str):
+                    refs.append(value)
+                else:
+                    self._find_all_refs(value, refs)
+        elif isinstance(obj, list):
+            for item in obj:
+                self._find_all_refs(item, refs)
+
+        return refs
+
     async def _validate_openapi_spec(self, spec_text: str) -> ValidationResult:
         """
         Validate OpenAPI specification using multiple validators.
@@ -671,7 +699,45 @@ You are a JSON Patch specialist for OpenAPI specifications.
                     if not path.startswith('/'):
                         errors.append(f"Path {path} must start with /")
 
-            # TODO: Add more comprehensive validation using openapi-spec-validator
+                    # Validate path operations
+                    if isinstance(path_obj, dict):
+                        valid_methods = ['get', 'post', 'put', 'delete', 'options', 'head', 'patch', 'trace']
+                        for method, operation in path_obj.items():
+                            if method in valid_methods:
+                                if not isinstance(operation, dict):
+                                    errors.append(f"Operation {method} in path {path} must be an object")
+                                else:
+                                    # Validate operation structure
+                                    if 'responses' not in operation:
+                                        errors.append(f"Operation {method} in path {path} missing required 'responses' field")
+                            elif method not in ['summary', 'description', 'parameters', 'servers']:
+                                # Invalid field at path level
+                                errors.append(f"Invalid field '{method}' at path level for {path}")
+                    else:
+                        errors.append(f"Path {path} must be an object")
+
+            # Schema reference validation
+            if 'paths' in spec_data:
+                refs_found = self._find_all_refs(spec_data)
+                components_schemas = spec_data.get('components', {}).get('schemas', {})
+
+                for ref in refs_found:
+                    if ref.startswith('#/components/schemas/'):
+                        schema_name = ref.replace('#/components/schemas/', '')
+                        if schema_name not in components_schemas:
+                            errors.append(f"Reference {ref} points to non-existent schema")
+
+            # Comprehensive validation using prance (if available)
+            try:
+                from prance import ResolvingParser
+                # Use spec_dict parameter correctly
+                parser = ResolvingParser(spec_dict=spec_data)
+                # If we get here, the spec is valid according to OpenAPI specification
+            except ImportError:
+                warnings.append("Advanced validation unavailable (prance not installed)")
+            except Exception as e:
+                # Don't fail validation for prance-specific issues, just warn
+                warnings.append(f"Advanced validation warning: {str(e)}")
 
         except json.JSONDecodeError as e:
             errors.append(f"Invalid JSON: {str(e)}")
@@ -684,6 +750,69 @@ You are a JSON Patch specialist for OpenAPI specifications.
             warnings=warnings,
             suggestions=suggestions
         )
+
+    def _fix_openapi_issues(self, spec_text: str) -> str:
+        """Post-process generated spec to fix common OpenAPI 3.0+ issues."""
+        try:
+            spec_data = json.loads(spec_text)
+
+            # Fix common OpenAPI 3.0 issues
+            if 'paths' in spec_data:
+                for path, path_obj in spec_data['paths'].items():
+                    if isinstance(path_obj, dict):
+                        for method, operation in path_obj.items():
+                            if method in ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] and isinstance(operation, dict):
+                                # Fix parameters with "in": "body" (invalid in OpenAPI 3.0)
+                                if 'parameters' in operation:
+                                    body_params = []
+                                    non_body_params = []
+
+                                    for param in operation['parameters']:
+                                        if isinstance(param, dict) and param.get('in') == 'body':
+                                            body_params.append(param)
+                                        else:
+                                            non_body_params.append(param)
+
+                                    # Convert body parameters to requestBody
+                                    if body_params and method in ['post', 'put', 'patch']:
+                                        if 'requestBody' not in operation:
+                                            # Create requestBody from body parameters
+                                            properties = {}
+                                            required = []
+
+                                            for param in body_params:
+                                                prop_name = param.get('name', 'unknown')
+                                                properties[prop_name] = param.get('schema', {'type': 'string'})
+                                                if param.get('required', False):
+                                                    required.append(prop_name)
+
+                                            operation['requestBody'] = {
+                                                'required': len(required) > 0,
+                                                'content': {
+                                                    'application/json': {
+                                                        'schema': {
+                                                            'type': 'object',
+                                                            'properties': properties,
+                                                            'required': required if required else None
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            # Remove the required field if empty
+                                            if not required:
+                                                del operation['requestBody']['content']['application/json']['schema']['required']
+
+                                    # Update parameters to exclude body params
+                                    if non_body_params:
+                                        operation['parameters'] = non_body_params
+                                    elif 'parameters' in operation:
+                                        del operation['parameters']
+
+            return json.dumps(spec_data, indent=2)
+
+        except Exception as e:
+            self.logger.warning(f"Post-processing failed: {str(e)}")
+            return spec_text
 
     async def _analyze_spec_structure(self, spec_text: str) -> Dict[str, Any]:
         """
@@ -833,4 +962,10 @@ You are a JSON Patch specialist for OpenAPI specifications.
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.aclose()
+        if self._auto_close_client:
+            await self.client.aclose()
+
+    async def close(self):
+        """Explicitly close the HTTP client."""
+        if not self.client.is_closed:
+            await self.client.aclose()
