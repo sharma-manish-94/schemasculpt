@@ -5,6 +5,7 @@ import "swagger-ui-react/swagger-ui.css"; // Ensure this is imported for Swagger
 // Import the content components for each tab
 import ValidationPanel from './ValidationPanel';
 import EnhancedSwaggerUI from './EnhancedSwaggerUI';
+import AIPanel from '../../ai/components/AIPanel';
 
 function RightPanel() {
     // Get activeTab and setActiveTab action from the store
@@ -25,10 +26,17 @@ function RightPanel() {
                 >
                     API Explorer
                 </button>
+                <button
+                    onClick={() => setActiveTab('ai_features')}
+                    className={activeTab === 'ai_features' ? 'active' : ''}
+                >
+                    AI Features
+                </button>
             </div>
             <div className="panel-content">
                 {activeTab === 'validation' && <ValidationPanel />}
                 {activeTab === 'api_explorer' && <EnhancedSwaggerUI />}
+                {activeTab === 'ai_features' && <AIPanel />}
             </div>
         </div>
     );

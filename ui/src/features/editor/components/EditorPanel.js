@@ -74,27 +74,50 @@ function EditorToolbar() {
 }
 
 function AiAssistantBar() {
-    const { aiPrompt, setAiPrompt, submitAIRequest, isLoading } = useSpecStore();
+    const {
+        aiPrompt,
+        setAiPrompt,
+        submitAIRequest,
+        isLoading,
+        isAiProcessing,
+        setActiveTab
+    } = useSpecStore();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         submitAIRequest();
     };
 
+    const handleAdvancedClick = () => {
+        setActiveTab('ai_features');
+    };
+
+    const isProcessing = isLoading || isAiProcessing;
+
     return (
-        <form className="ai-assistant-bar" onSubmit={handleSubmit}>
-            <input
-                type="text"
-                className="ai-input"
-                placeholder="AI Assistant: e.g., 'add a GET endpoint for /health'"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                disabled={isLoading}
-            />
-            <button type="submit" className="ai-submit-button" disabled={isLoading}>
-                Submit
-            </button>
-        </form>
+        <div className="ai-assistant-container">
+            <form className="ai-assistant-bar" onSubmit={handleSubmit}>
+                <input
+                    type="text"
+                    className="ai-input"
+                    placeholder="AI Assistant: e.g., 'add a GET endpoint for /health'"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    disabled={isProcessing}
+                />
+                <button type="submit" className="ai-submit-button" disabled={isProcessing || !aiPrompt.trim()}>
+                    {isProcessing ? 'Processing...' : 'Submit'}
+                </button>
+                <button
+                    type="button"
+                    className="ai-advanced-button"
+                    onClick={handleAdvancedClick}
+                    title="Open Advanced AI Features"
+                >
+                    ⚙️
+                </button>
+            </form>
+        </div>
     );
 }
 

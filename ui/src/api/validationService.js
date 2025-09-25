@@ -195,6 +195,7 @@ export const executeAiAction = async (sessionId, prompt) => {
     } catch (error) {
         return {
             success: false,
+            error: error.message || 'AI processing failed',
             updatedSpecText: `Error: Could not connect to the AI service.\n\nDetails:\n${error.message}`,
         };
     }
