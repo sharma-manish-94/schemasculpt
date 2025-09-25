@@ -15,11 +15,14 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(final CorsRegistry corsRegistry) {
+        String[] origins = allowedOrigins.split(",");
         corsRegistry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins)
+                .allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
+                .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true);
+                .allowCredentials(false)  // Set to false to allow pattern matching
+                .maxAge(3600);
     }
 
 }
