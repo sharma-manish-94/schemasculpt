@@ -80,7 +80,7 @@ function OperationSpecViewer() {
                             readOnly: true,
                             minimap: { enabled: true },
                             scrollBeyondLastLine: false,
-                            fontSize: 14,
+                            fontSize: 12,
                             lineNumbers: "on",
                             lineNumbersMinChars: 3,
 

@@ -188,7 +188,7 @@ function EditorPanel() {
                         readOnly: false, // Allow copy-paste in both modes
                         minimap: { enabled: true },
                         scrollBeyondLastLine: false,
-                        fontSize: 14,
+                        fontSize: 12,
                         lineNumbers: "on",
                         lineNumbersMinChars: 3,
 

@@ -19,7 +19,7 @@ export const createValidationSlice = (set, get) => ({
     },
 
     applyQuickFix: async (suggestion) => {
-        const { sessionId, setSpecText } = useSpecStore.getState();
+        const { sessionId, setSpecText, validateCurrentSpec } = useSpecStore.getState();
         const { format } = useSpecStore.getState();
         // Create the fix request object
         const fixRequest = {
@@ -32,6 +32,7 @@ export const createValidationSlice = (set, get) => ({
         if (result && result.success) {
             const updatedSpecText = JSON.stringify(result.data, null, 2);
             setSpecText(updatedSpecText);
+            // Note: Manual refresh required to see updated validation results
         } else if (result && result.error) {
             console.error('Fix failed:', result.error);
             // You could also show this error to the user via state if needed
