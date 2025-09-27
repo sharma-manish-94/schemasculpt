@@ -1,20 +1,21 @@
 import { useSpecStore } from "../../../store/specStore";
-import React, { useRef, useEffect , useMemo} from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import Editor from "@monaco-editor/react";
 import yaml from "js-yaml";
-import {updateSessionSpec} from "../../../api/validationService";
+import { updateSessionSpec } from "../../../api/validationService";
 import * as websocketService from "../../../api/websocketService";
 
 function EditorToolbar() {
-    const { format, convertToJSON, convertToYAML, setSpecText, sessionId } = useSpecStore();
+    const { format, convertToJSON, convertToYAML, setSpecText, sessionId, specText } = useSpecStore();
     const fileInputRef = useRef(null);
 
     const handleLoadClick = () => {
         fileInputRef.current.click();
-    }
+    };
+
     const handleFileChange = (event) => {
         const file = event.target.files[0];
-        if(!file) {
+        if (!file) {
             return;
         }
         const reader = new FileReader();
@@ -25,7 +26,7 @@ function EditorToolbar() {
                     const jsonObj = yaml.load(content);
                     content = JSON.stringify(jsonObj, null, 2);
                     setSpecText(content);
-                    if(sessionId) {
+                    if (sessionId) {
                         await updateSessionSpec(sessionId, content);
                     }
                 } catch (err) {
@@ -38,10 +39,43 @@ function EditorToolbar() {
         event.target.value = null;
     };
 
+    const handlePrettify = () => {
+        if (format === 'json') {
+            try {
+                const formatted = JSON.stringify(JSON.parse(specText), null, 2);
+                setSpecText(formatted);
+            } catch (e) {
+                console.error('Invalid JSON, cannot format:', e);
+                alert('Cannot prettify: Invalid JSON format');
+            }
+        }
+    };
+
+    const handleDownload = () => {
+        const content = format === 'yaml' ?
+            yaml.dump(JSON.parse(specText)) :
+            specText;
+        const filename = `openapi-spec.${format === 'yaml' ? 'yaml' : 'json'}`;
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="editor-toolbar">
-            <div>
-                <button onClick={handleLoadClick} className="toolbar-button">Load File</button>
+            <div className="toolbar-left-group">
+                <button onClick={handleLoadClick} className="toolbar-button">
+                    📁 Load File
+                </button>
+                <button onClick={handleDownload} className="toolbar-button">
+                    💾 Download
+                </button>
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -50,6 +84,7 @@ function EditorToolbar() {
                     accept=".json, .yaml, .yml"
                 />
             </div>
+
             <div className="toolbar-right-group">
                 <span className="format-indicator">Format: {format.toUpperCase()}</span>
                 <div className="toolbar-buttons">
@@ -58,14 +93,22 @@ function EditorToolbar() {
                         disabled={format === 'json'}
                         className={`toolbar-button ${format === 'yaml' ? 'active' : ''}`}
                     >
-                        Convert to JSON
+                        JSON
                     </button>
                     <button
                         onClick={convertToYAML}
                         disabled={format === 'yaml'}
                         className={`toolbar-button ${format === 'json' ? 'active' : ''}`}
                     >
-                        Convert to YAML
+                        YAML
+                    </button>
+                    <button
+                        onClick={handlePrettify}
+                        disabled={format === 'yaml'}
+                        className="toolbar-button prettify-button"
+                        title="Format/Prettify JSON"
+                    >
+                        ✨ Prettify
                     </button>
                 </div>
             </div>
@@ -121,8 +164,8 @@ function AiAssistantBar() {
     );
 }
 
-// Main Editor Panel component
-function EditorPanel() {
+// Enhanced Editor Panel component
+function EnhancedEditorPanel() {
     const { specText, setSpecText, format, validateCurrentSpec, sessionId } = useSpecStore();
     const parseEndpoints = useSpecStore((state) => state.parseEndpoints);
 
@@ -166,7 +209,7 @@ function EditorPanel() {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [specText, sessionId]); // Removed parseEndpoints and validateCurrentSpec from deps to prevent recreation
+    }, [specText, sessionId, parseEndpoints, validateCurrentSpec]);
 
     return (
         <div className="editor-container">
@@ -174,17 +217,17 @@ function EditorPanel() {
             <div className="editor-wrapper">
                 <Editor
                     height="100%"
-                    theme="light"
+                    theme="customLight"
                     language={format}
-                    value={displayedText} // <-- The editor's content is now always this value
+                    value={displayedText}
                     onChange={(value) => {
-                        // onChange should only work when in editable 'json' mode
+                        // onChange should only work when in editable 'json' mode - exactly like original
                         if (format === 'json') {
                             setSpecText(value || "");
                         }
                     }}
                     options={{
-                        // Basic editor options
+                        // Basic editor options - exactly like original
                         readOnly: false, // Allow copy-paste in both modes
                         minimap: { enabled: true },
                         scrollBeyondLastLine: false,
@@ -237,6 +280,50 @@ function EditorPanel() {
                         automaticLayout: true,
                         wordWrap: "on",
                     }}
+                    beforeMount={(monaco) => {
+                        // Define a custom theme to ensure proper selection highlighting
+                        monaco.editor.defineTheme('customLight', {
+                            base: 'vs',
+                            inherit: true,
+                            rules: [
+                                // Force selection highlighting through token rules
+                                { token: '', background: 'ffffff', foreground: '000000' }
+                            ],
+                            colors: {
+                                // Primary selection colors - more opaque and visible
+                                'editor.selectionBackground': '#0066cc99',
+                                'editor.selectionHighlightBackground': '#0066cc66',
+                                'editor.inactiveSelectionBackground': '#0066cc77',
+
+                                // Find and match highlighting
+                                'editor.findMatchBackground': '#0066cc88',
+                                'editor.findMatchHighlightBackground': '#0066cc55',
+                                'editor.currentMatchBackground': '#0066ccAA',
+
+                                // Range and word highlighting
+                                'editor.rangeHighlightBackground': '#0066cc44',
+                                'editor.wordHighlightBackground': '#0066cc33',
+                                'editor.wordHighlightStrongBackground': '#0066cc66',
+
+                                // Line highlighting
+                                'editor.lineHighlightBackground': '#e6f2ff',
+                                'editor.lineHighlightBorder': '#0066cc40',
+
+                                // Additional selection-related colors
+                                'editor.selectionForeground': 'inherit',
+                                'editor.focusedStackFrameHighlightBackground': '#0066cc33',
+                                'editor.stackFrameHighlightBackground': '#0066cc22',
+
+                                // Force background colors
+                                'editor.background': '#ffffff',
+                                'editorWidget.background': '#ffffff',
+                                'editorWidget.foreground': '#000000'
+                            }
+                        });
+
+                        // Set the custom theme
+                        monaco.editor.setTheme('customLight');
+                    }}
                 />
             </div>
             <AiAssistantBar />
@@ -244,4 +331,4 @@ function EditorPanel() {
     );
 }
 
-export default EditorPanel;
+export default EnhancedEditorPanel;

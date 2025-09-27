@@ -5,6 +5,34 @@ function ValidationPanel() {
     // Get errors, suggestions, isLoading, and applyQuickFix action from the store
     const { errors, suggestions, isLoading, applyQuickFix } = useSpecStore();
 
+    // Define which rules can be auto-fixed vs require AI
+    const autoFixableRules = [
+        'remove-unused-component',
+        'generate-operation-id',
+        'use-https',
+        'use-https-for-production',
+        'remove-trailing-slash',
+        'fix-consecutive-slashes',
+        'use-kebab-case',
+        'replace-underscores-with-hyphens',
+        'convert-camelcase-to-kebab',
+        'add-success-response'
+    ];
+
+    const getFixButtonClass = (ruleId) => {
+        if (autoFixableRules.includes(ruleId)) {
+            return 'fix-button auto-fix';
+        }
+        return 'fix-button ai-fix';
+    };
+
+    const getFixButtonText = (ruleId) => {
+        if (autoFixableRules.includes(ruleId)) {
+            return 'Fix';
+        }
+        return 'AI Fix';
+    };
+
     if (isLoading) {
         return <p className="loading-text">Validating...</p>;
     }
@@ -30,9 +58,15 @@ function ValidationPanel() {
                     <ul>
                         {suggestions.map((sug, index) => (
                             <li className="suggestion-item" key={`sug-${index}`}>
-                                {sug.message}
+                                <span className="suggestion-text">{sug.message}</span>
                                 {sug.ruleId && (
-                                    <button className="fix-button" onClick={() => applyQuickFix(sug)}>Fix</button>
+                                    <button
+                                        className={getFixButtonClass(sug.ruleId)}
+                                        onClick={() => applyQuickFix(sug)}
+                                        title={autoFixableRules.includes(sug.ruleId) ? 'Auto-fix available' : 'AI-powered fix'}
+                                    >
+                                        {getFixButtonText(sug.ruleId)}
+                                    </button>
                                 )}
                             </li>
                         ))}

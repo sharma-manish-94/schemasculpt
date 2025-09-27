@@ -21,12 +21,20 @@ export const createValidationSlice = (set, get) => ({
     applyQuickFix: async (suggestion) => {
         const { sessionId, setSpecText } = useSpecStore.getState();
         const { format } = useSpecStore.getState();
-        const result = await applyQuickFix({
-            sessionId, ruleId: suggestion.ruleId, context: suggestion.context, format,
-        });
-        if (result) {
-            const updatedSpecText = JSON.stringify(result, null, 2);
+        // Create the fix request object
+        const fixRequest = {
+            ruleId: suggestion.ruleId,
+            context: suggestion.context,
+            format
+        };
+
+        const result = await applyQuickFix(sessionId, fixRequest);
+        if (result && result.success) {
+            const updatedSpecText = JSON.stringify(result.data, null, 2);
             setSpecText(updatedSpecText);
+        } else if (result && result.error) {
+            console.error('Fix failed:', result.error);
+            // You could also show this error to the user via state if needed
         }
     }
 });

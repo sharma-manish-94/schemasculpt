@@ -1,6 +1,6 @@
 import React from "react";
 import { useSpecStore } from "../../../store/specStore";
-import EditorPanel from "./EditorPanel";
+import EnhancedEditorPanel from "./EnhancedEditorPanel";
 import OperationSpecViewer from "./OperationSpecViewer";
 
 function DetailPanel() {
@@ -13,7 +13,7 @@ function DetailPanel() {
     return (
       <div className="detail-panel-wrapper">
       {!selectedNavItem ? (
-        <EditorPanel />
+        <EnhancedEditorPanel />
       ) : (
         <OperationSpecViewer />
       )}

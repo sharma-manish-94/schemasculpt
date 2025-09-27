@@ -1864,6 +1864,165 @@ body {
   transform: none;
 }
 
+/* ===== VALIDATION PANEL STYLING ===== */
+
+.result-section {
+  margin-bottom: 16px;
+}
+
+.result-title-error {
+  color: var(--error);
+  font-weight: 700;
+  font-size: 1em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.result-title-error::before {
+  content: '⚠️';
+}
+
+.result-title-suggestion {
+  color: var(--warning);
+  font-weight: 700;
+  font-size: 1em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.result-title-suggestion::before {
+  content: '💡';
+}
+
+.result-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.suggestion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.suggestion-item:hover {
+  background: linear-gradient(135deg, var(--warning-light) 0%, var(--gray-50) 100%);
+  border-color: var(--warning);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.suggestion-item .suggestion-text {
+  flex: 1;
+  color: var(--gray-700);
+  font-size: 0.9em;
+  line-height: 1.5;
+  margin-right: 12px;
+}
+
+/* ===== FIX BUTTON STYLING ===== */
+
+.fix-button {
+  background: linear-gradient(135deg, var(--secondary-green) 0%, var(--secondary-green-hover) 100%);
+  border: 1px solid var(--secondary-green);
+  color: var(--white);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.8em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 60px;
+  justify-content: center;
+}
+
+.fix-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.fix-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--secondary-green-hover) 0%, #006a47 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.fix-button:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.fix-button:disabled,
+.fix-button.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.fix-button.loading::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 4px;
+}
+
+.fix-button:focus-visible {
+  outline: 3px solid var(--secondary-green-light);
+  outline-offset: 2px;
+}
+
+/* Auto-fix vs AI-fix button variants */
+.fix-button.auto-fix {
+  background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+  border-color: var(--info);
+}
+
+.fix-button.auto-fix:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.fix-button.ai-fix {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+}
+
+.fix-button.ai-fix:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+.fix-button.ai-fix::before {
+  content: '🤖';
+  margin-right: 2px;
+}
+
 /* ===== ENHANCED INTERACTIONS ===== */
 
 button:focus-visible {
@@ -2005,3 +2164,358 @@ textarea:focus-visible {
 .response-viewer {
   animation: fadeIn 0.4s ease-out;
 }
+/* ===== ENHANCED EDITOR FEATURES ===== */
+
+.toolbar-left-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.prettify-button {
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%) !important;
+  border-color: var(--warning) !important;
+  color: var(--white) !important;
+}
+
+.prettify-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.prettify-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--gray-400) !important;
+}
+
+/* Enhanced Monaco Editor container */
+.monaco-editor-wrapper {
+  height: 100%;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 2px solid var(--gray-200);
+  position: relative;
+}
+
+/* Folding and collapsing indicators */
+.monaco-editor .folding-decorator {
+  color: var(--primary-blue) !important;
+  opacity: 0.7;
+}
+
+.monaco-editor .folding-decorator:hover {
+  opacity: 1;
+  background-color: var(--primary-blue-light) !important;
+}
+
+/* Enhanced minimap */
+.monaco-editor .minimap {
+  background: var(--gray-50) !important;
+  border-left: 1px solid var(--gray-200) !important;
+}
+
+/* Better bracket matching */
+.monaco-editor .bracket-match {
+  background-color: var(--primary-blue-light) !important;
+  border: 1px solid var(--primary-blue) !important;
+}
+
+/* Enhanced selection highlighting */
+.monaco-editor .selected-text {
+  background-color: var(--primary-blue-light) !important;
+}
+
+/* Monaco Editor selection highlighting */
+.monaco-editor .monaco-editor-background .view-overlays .current-line,
+.monaco-editor .view-overlays .selected-text,
+.monaco-editor .view-overlays .selection {
+  background-color: rgba(0, 102, 204, 0.2) !important;
+}
+
+/* Primary selection */
+.monaco-editor .monaco-selection {
+  background-color: rgba(0, 102, 204, 0.3) !important;
+}
+
+/* Multi-cursor selections */
+.monaco-editor .monaco-selection-highlight {
+  background-color: rgba(0, 102, 204, 0.15) !important;
+}
+
+/* Word selection highlighting */
+.monaco-editor .wordHighlight {
+  background-color: rgba(0, 102, 204, 0.1) !important;
+  border: 1px solid rgba(0, 102, 204, 0.4) !important;
+}
+
+.monaco-editor .wordHighlightStrong {
+  background-color: rgba(0, 102, 204, 0.2) !important;
+  border: 1px solid rgba(0, 102, 204, 0.6) !important;
+}
+
+/* Focused editor selection */
+.monaco-editor.focused .monaco-selection {
+  background-color: rgba(0, 102, 204, 0.25) !important;
+}
+
+/* Line selection */
+.monaco-editor .line-numbers.active-line-number {
+  background-color: var(--primary-blue-light) !important;
+  color: var(--primary-blue-dark) !important;
+}
+
+/* More specific Monaco Editor selections */
+.monaco-editor .view-overlays .monaco-selection,
+.monaco-editor .view-overlays .current-line-selection,
+.monaco-editor .view-overlays .selection-decoration {
+  background-color: rgba(0, 102, 204, 0.25) !important;
+}
+
+/* Selection in different states */
+.monaco-editor .monaco-selection-background {
+  background-color: rgba(0, 102, 204, 0.2) !important;
+}
+
+/* Current line highlighting */
+.monaco-editor .current-line-margin,
+.monaco-editor .current-line-margin-both {
+  background-color: var(--primary-blue-light) !important;
+}
+
+/* Text selection overlay */
+.monaco-editor .overlayWidgets .monaco-selection,
+.monaco-editor .overlayWidgets .selection {
+  background-color: rgba(0, 102, 204, 0.3) !important;
+}
+
+/* Ensure selection is visible in both light and dark contexts */
+.monaco-editor[data-theme-id="light"] .monaco-selection {
+  background-color: rgba(0, 102, 204, 0.25) !important;
+}
+
+/* Force visibility for all selection-related elements */
+.monaco-editor .view-line .selection,
+.monaco-editor .view-lines .selection,
+.monaco-editor .monaco-selection-layer .monaco-selection {
+  background-color: rgba(0, 102, 204, 0.3) !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* More specific Monaco Editor selection targeting */
+.monaco-editor .view-overlays .current-line,
+.monaco-editor .view-overlays .current-line-margin,
+.monaco-editor .view-overlays .current-line-margin-both {
+  background-color: rgba(0, 102, 204, 0.1) !important;
+}
+
+/* The actual text selection background */
+.monaco-editor .view-overlay {
+  pointer-events: none;
+}
+
+.monaco-editor .view-overlay .selected-text {
+  background-color: rgba(0, 102, 204, 0.3) !important;
+}
+
+/* Very specific targeting for Monaco's selection implementation */
+.monaco-editor .monaco-selection,
+.monaco-editor .selected-text,
+.monaco-editor .view-zones .view-zone,
+.monaco-editor .monaco-editor-background .view-overlays .current-line {
+  background-color: rgba(0, 102, 204, 0.25) !important;
+}
+
+/* Alternative approach - target the CSS custom properties if Monaco uses them */
+.monaco-editor {
+  --monaco-selection-background: rgba(0, 102, 204, 0.3) !important;
+}
+
+/* Most direct approach - override the selection pseudo-element */
+.monaco-editor .view-line span::selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .view-line span::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .view-line::selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .view-line::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+/* Force the selection on the actual content */
+.monaco-editor .view-lines .view-line span::selection,
+.monaco-editor .view-lines .view-line *::selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .view-lines .view-line span::-moz-selection,
+.monaco-editor .view-lines .view-line *::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+/* CRITICAL: Targeting Monaco's actual text selection rendering layer */
+/* Monaco renders text selections in a canvas-like overlay system */
+.monaco-editor .monaco-selection-layer {
+  pointer-events: none !important;
+}
+
+.monaco-editor .monaco-selection-layer .monaco-selection {
+  background-color: rgba(0, 102, 204, 0.35) !important;
+  opacity: 1 !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Target the view lines container where actual text is rendered */
+.monaco-editor .view-lines {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text !important;
+}
+
+/* Direct targeting of Monaco's text content */
+.monaco-editor .view-line {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* Override Monaco's text selection at the DOM level */
+.monaco-editor .view-line span::selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .view-line span::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+/* Ensure all text nodes can be selected */
+.monaco-editor .view-lines *::selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .view-lines *::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.4) !important;
+  color: inherit !important;
+}
+
+/* Target Monaco's overlay widgets for selection rendering */
+.monaco-editor .overlayWidgets .current-line,
+.monaco-editor .overlayWidgets .selected-text {
+  background-color: rgba(0, 102, 204, 0.3) !important;
+  pointer-events: none;
+}
+
+/* Monaco's selection overlay system - highest priority */
+.monaco-editor .view-overlays .current-line,
+.monaco-editor .view-overlays .selected-text,
+.monaco-editor .view-overlays .monaco-selection {
+  background-color: rgba(0, 102, 204, 0.3) !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* Improved find widget */
+.monaco-editor .find-widget {
+  background: var(--white) !important;
+  border: 1px solid var(--gray-300) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Ensure text selection is always enabled */
+.monaco-editor,
+.monaco-editor .view-lines,
+.monaco-editor .view-line,
+.monaco-editor .monaco-editor-container {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Enable cursor text selection */
+.monaco-editor .view-lines {
+  cursor: text !important;
+}
+
+/* Make sure selections are visible */
+.monaco-editor .current-line-margin,
+.monaco-editor .current-line-margin-both {
+  user-select: text !important;
+}
+
+/* Override any pointer-events that might interfere */
+.monaco-editor .view-lines,
+.monaco-editor .view-line {
+  pointer-events: auto !important;
+}
+
+/* EMERGENCY SELECTION FIX - Force selection color with maximum specificity */
+.monaco-editor,
+.monaco-editor *,
+.monaco-editor .view-lines,
+.monaco-editor .view-lines *,
+.monaco-editor .view-line,
+.monaco-editor .view-line * {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Force browser-level selection highlighting */
+.monaco-editor ::selection {
+  background-color: rgba(0, 102, 204, 0.6) !important;
+  color: inherit !important;
+}
+
+.monaco-editor ::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.6) !important;
+  color: inherit !important;
+}
+
+/* Ultra-specific targeting for Monaco content */
+.monaco-editor .monaco-editor-container ::selection,
+.monaco-editor .monaco-scrollable-element ::selection,
+.monaco-editor .view-lines ::selection,
+.monaco-editor .view-line ::selection,
+.monaco-editor .view-line span ::selection {
+  background-color: rgba(0, 102, 204, 0.6) !important;
+  color: inherit !important;
+}
+
+.monaco-editor .monaco-editor-container ::-moz-selection,
+.monaco-editor .monaco-scrollable-element ::-moz-selection,
+.monaco-editor .view-lines ::-moz-selection,
+.monaco-editor .view-line ::-moz-selection,
+.monaco-editor .view-line span ::-moz-selection {
+  background-color: rgba(0, 102, 204, 0.6) !important;
+  color: inherit !important;
+}
+
