@@ -37,15 +37,15 @@ public record AIServiceResponse(
             modelUsed = (String) performance.get("model_used");
         }
 
-        // Extract validation data
+        // Extract validation data using type-safe casting
         List<Map<String, Object>> validationErrors = null;
         List<String> suggestions = null;
         if (validation != null) {
-            validationErrors = (List<Map<String, Object>>) validation.get("errors");
+            validationErrors = safeGetListOfMaps(validation.get("errors"));
 
             // Convert warnings and suggestions to suggestions list
-            List<String> warnings = (List<String>) validation.get("warnings");
-            List<String> validationSuggestions = (List<String>) validation.get("suggestions");
+            List<String> warnings = safeGetListOfStrings(validation.get("warnings"));
+            List<String> validationSuggestions = safeGetListOfStrings(validation.get("suggestions"));
 
             suggestions = followUpSuggestions;
             if (suggestions == null) {
@@ -100,5 +100,35 @@ public record AIServiceResponse(
             Instant.now(),
             false
         );
+    }
+
+    /**
+     * Type-safe helper method to safely cast Object to List<Map<String, Object>>
+     */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> safeGetListOfMaps(Object obj) {
+        if (obj instanceof List<?> list) {
+            try {
+                return (List<Map<String, Object>>) list;
+            } catch (ClassCastException e) {
+                return null; // Return null if cast fails
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Type-safe helper method to safely cast Object to List<String>
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> safeGetListOfStrings(Object obj) {
+        if (obj instanceof List<?> list) {
+            try {
+                return (List<String>) list;
+            } catch (ClassCastException e) {
+                return null; // Return null if cast fails
+            }
+        }
+        return null;
     }
 }

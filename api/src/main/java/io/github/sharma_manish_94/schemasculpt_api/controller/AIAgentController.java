@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.github.sharma_manish_94.schemasculpt_api.config.ApplicationConstants.*;
 
@@ -60,10 +61,14 @@ public class AIAgentController {
                 return ResponseEntity.ok(createAgentNotFoundResponse(agentName));
             }
 
-            // Extract specific agent status
-            Map<String, Object> agents = (Map<String, Object>) allAgentsStatus.get("agents");
-            if (agents != null && agents.containsKey(agentName)) {
-                Map<String, Object> agentInfo = (Map<String, Object>) agents.get(agentName);
+            // Extract specific agent status using type-safe helper
+            var agentsOptional = getMapFromObject(allAgentsStatus.get("agents"));
+            if (agentsOptional.isPresent() && agentsOptional.get().containsKey(agentName)) {
+                var agentInfoOptional = getMapFromObject(agentsOptional.get().get(agentName));
+                if (agentInfoOptional.isEmpty()) {
+                    return ResponseEntity.ok(createAgentNotFoundResponse(agentName));
+                }
+                Map<String, Object> agentInfo = agentInfoOptional.get();
                 return ResponseEntity.ok(Map.of(
                         AGENT_NAME, agentName,
                         STATUS, agentInfo.getOrDefault(STATUS, UNKNOWN),
@@ -231,12 +236,14 @@ public class AIAgentController {
     }
 
     private Map<String, Object> extractPerformanceMetrics(Map<String, Object> agentStatus) {
-        // Extract performance data from agent status
-        Map<String, Object> agents = (Map<String, Object>) agentStatus.get("agents");
+        // Extract performance data from agent status using type-safe helper
+        var agentsOptional = getMapFromObject(agentStatus.get("agents"));
 
-        if (agents == null) {
+        if (agentsOptional.isEmpty()) {
             return createFallbackPerformanceMetrics();
         }
+
+        Map<String, Object> agents = agentsOptional.get();
 
         return Map.of(
                 "overall_performance", agentStatus.getOrDefault("overall_status", UNKNOWN),
@@ -248,23 +255,21 @@ public class AIAgentController {
     }
 
     private int calculateTotalAgents(Map<String, Object> status) {
-        Map<String, Object> agents = (Map<String, Object>) status.get("agents");
-        return agents != null ? agents.size() : 0;
+        return getMapFromObject(status.get("agents"))
+                .map(Map::size)
+                .orElse(0);
     }
 
     private int calculateActiveAgents(Map<String, Object> status) {
-        Map<String, Object> agents = (Map<String, Object>) status.get("agents");
-        if (agents == null) return 0;
-
-        return (int) agents.values().stream()
-                .filter(agent -> {
-                    if (agent instanceof Map) {
-                        Map<String, Object> agentMap = (Map<String, Object>) agent;
-                        return "active".equals(agentMap.get(STATUS)) || "healthy".equals(agentMap.get(STATUS));
-                    }
-                    return false;
-                })
-                .count();
+        return getMapFromObject(status.get("agents"))
+                .map(agents -> (int) agents.values().stream()
+                        .mapToLong(agent -> getMapFromObject(agent)
+                                .filter(agentMap -> "active".equals(agentMap.get(STATUS)) ||
+                                                   "healthy".equals(agentMap.get(STATUS)))
+                                .map(ignored -> 1L)
+                                .orElse(0L))
+                        .sum())
+                .orElse(0);
     }
 
     private double calculateOverallPerformanceScore(Map<String, Object> agents) {
@@ -274,17 +279,33 @@ public class AIAgentController {
 
         // Simple scoring based on agent availability
         double totalScore = agents.values().stream()
-                .mapToDouble(agent -> {
-                    if (agent instanceof Map) {
-                        Map<String, Object> agentMap = (Map<String, Object>) agent;
-                        String status = (String) agentMap.get(STATUS);
-                        return "active".equals(status) || "healthy".equals(status) ? 100.0 : 0.0;
-                    }
-                    return 0.0;
-                })
+                .mapToDouble(agent -> getMapFromObject(agent)
+                        .map(agentMap -> {
+                            String status = (String) agentMap.get(STATUS);
+                            return "active".equals(status) || "healthy".equals(status) ? 100.0 : 0.0;
+                        })
+                        .orElse(0.0))
                 .average()
                 .orElse(0.0);
 
         return Math.round(totalScore * 100.0) / 100.0;
+    }
+
+    /**
+     * Type-safe helper method to safely cast Object to Map<String, Object>
+     * Returns Optional.empty() if the object is not a Map or is null
+     */
+    @SuppressWarnings("unchecked")
+    private Optional<Map<String, Object>> getMapFromObject(Object obj) {
+        if (obj instanceof Map<?, ?> map) {
+            // Additional runtime check to ensure the map contains the expected types
+            try {
+                return Optional.of((Map<String, Object>) map);
+            } catch (ClassCastException e) {
+                log.warn("Object is a Map but contains unexpected types: {}", e.getMessage());
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 }

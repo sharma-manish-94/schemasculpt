@@ -171,17 +171,22 @@ public class SpecificationController {
                         .body(WorkflowResponse.failed(workflowName, "No response from AI service"));
             }
 
-            // Update session if workflow produced a new spec
-            if ("completed".equals(response.status()) && response.result() instanceof Map) {
-                Map<String, Object> result = (Map<String, Object>) response.result();
-                if (result.containsKey("updated_spec_text")) {
-                    try {
-                        String updatedSpec = (String) result.get("updated_spec_text");
-                        OpenAPI newSpec = Json.mapper().readValue(updatedSpec, OpenAPI.class);
-                        sessionService.updateSessionSpec(sessionId, newSpec);
-                    } catch (Exception e) {
-                        log.warn("Failed to update session with workflow result: {}", e.getMessage());
+            // Update session if workflow produced a new spec using type-safe casting
+            if ("completed".equals(response.status()) && response.result() instanceof Map<?, ?> mapResult) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> result = (Map<String, Object>) mapResult;
+                    if (result.containsKey("updated_spec_text")) {
+                        try {
+                            String updatedSpec = (String) result.get("updated_spec_text");
+                            OpenAPI newSpec = Json.mapper().readValue(updatedSpec, OpenAPI.class);
+                            sessionService.updateSessionSpec(sessionId, newSpec);
+                        } catch (Exception e) {
+                            log.warn("Failed to update session with workflow result: {}", e.getMessage());
+                        }
                     }
+                } catch (ClassCastException e) {
+                    log.warn("Workflow result is not in expected Map<String, Object> format: {}", e.getMessage());
                 }
             }
 

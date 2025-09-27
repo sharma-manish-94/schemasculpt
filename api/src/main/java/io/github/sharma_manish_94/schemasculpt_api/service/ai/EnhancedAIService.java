@@ -341,6 +341,7 @@ public class EnhancedAIService {
             log.error("AI service error response: {}", responseBody);
 
             try {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> errorResponse = objectMapper.readValue(responseBody, Map.class);
                 String errorMessage = (String) errorResponse.getOrDefault("message", "Unknown error");
                 return Mono.just(EnhancedAIResponse.error(errorMessage, OperationType.MODIFY));
