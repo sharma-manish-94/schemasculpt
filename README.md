@@ -42,7 +42,7 @@ It uses a powerful, locally-run LLM (via Ollama) to understand natural language 
 
 | Frontend                 | Backend (API Gateway)     | Backend (AI Service)               |
 | :----------------------- | :------------------------ | :--------------------------------- |
-| React                    | Java 21                   | Python 3                           |
+| React                    | Java 25                   | Python 3                           |
 | Monaco Editor            | Spring Boot 3             | FastAPI                            |
 | `react-resizable-panels` | Spring Boot WebSockets    | Ollama                             |
 | `swagger-ui-react`       | Spring Boot Data Redis    | `prance`, `openapi-spec-validator` |
