@@ -9,6 +9,7 @@ import io.github.sharma_manish_94.schemasculpt_api.service.ValidationService;
 import io.github.sharma_manish_94.schemasculpt_api.service.ai.AIService;
 import io.github.sharma_manish_94.schemasculpt_api.service.ai.EnhancedAIService;
 import io.github.sharma_manish_94.schemasculpt_api.service.fix.QuickFixService;
+import io.github.sharma_manish_94.schemasculpt_api.service.fix.EnhancedQuickFixService;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import lombok.extern.slf4j.Slf4j;

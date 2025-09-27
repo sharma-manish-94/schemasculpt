@@ -31,6 +31,12 @@ public final class ApplicationConstants {
     public static final int MAX_SPEC_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
     public static final int MIN_SESSION_ID_LENGTH = 10;
     public static final int MAX_SESSION_ID_LENGTH = 100;
+    public static final String AGENT_NAME = "agent_name";
+    public static final String STATUS = "status";
+    public static final String LAST_UPDATED = "last_updated";
+    public static final String UNKNOWN = "unknown";
+    public static final String MESSAGE = "message";
+    public static final String TIMESTAMP = "timestamp";
 
     private ApplicationConstants() {
         // Private constructor to prevent instantiation
