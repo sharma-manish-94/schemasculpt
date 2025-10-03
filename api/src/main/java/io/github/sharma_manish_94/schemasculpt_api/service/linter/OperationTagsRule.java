@@ -30,7 +30,12 @@ public class OperationTagsRule implements LinterRule {
 				
 				if (operation.getTags() == null || operation.getTags().isEmpty()) {
 					suggestions.add(new ValidationSuggestion(
-							String.format("Operation '%s %s' is missing tags for grouping.", method, path)
+							String.format("Operation '%s %s' is missing tags for grouping.", method, path),
+							"add-operation-tags",
+							"warning",
+							"documentation",
+							Map.of("path", path, "method", method.toString()),
+							true
 					));
 				}
 			}

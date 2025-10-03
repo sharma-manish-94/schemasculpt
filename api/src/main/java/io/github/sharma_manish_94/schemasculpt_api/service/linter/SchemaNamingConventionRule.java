@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Component
@@ -22,7 +23,12 @@ public class SchemaNamingConventionRule implements LinterRule {
 		return openApi.getComponents().getSchemas().keySet().stream()
 				       .filter(schemaName -> !PASCAL_CASE_PATTERN.matcher(schemaName).matches())
 				       .map(schemaName -> new ValidationSuggestion(
-						       String.format("Schema name '%s' does not follow PascalCase convention.", schemaName)
+						       String.format("Schema name '%s' does not follow PascalCase convention.", schemaName),
+						       "use-pascal-case",
+						       "warning",
+						       "general",
+						       Map.of("schemaName", schemaName),
+						       true
 				       ))
 				       .toList();
 	}

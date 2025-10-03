@@ -24,7 +24,10 @@ public class HttpsOnlyRule implements LinterRule {
             suggestions.add(new ValidationSuggestion(
                 "API should define at least one server URL.",
                 "add-server-url",
-                Map.of("location", "servers")
+                "warning",
+                "completeness",
+                Map.of("location", "servers"),
+                true
             ));
             return suggestions;
         }
@@ -40,14 +43,20 @@ public class HttpsOnlyRule implements LinterRule {
                         String.format("Server URL '%s' uses HTTP. Consider using HTTPS for production environments.",
                             serverUrl),
                         "use-https-for-production",
-                        Map.of("serverUrl", serverUrl, "serverIndex", i, "severity", "warning")
+                        "warning",
+                        "security",
+                        Map.of("serverUrl", serverUrl, "serverIndex", i),
+                        true
                     ));
                 } else {
                     suggestions.add(new ValidationSuggestion(
                         String.format("Server URL '%s' should use HTTPS for security.",
                             serverUrl),
                         "use-https",
-                        Map.of("serverUrl", serverUrl, "serverIndex", i, "severity", "error")
+                        "error",
+                        "security",
+                        Map.of("serverUrl", serverUrl, "serverIndex", i),
+                        true
                     ));
                 }
             }
@@ -57,7 +66,10 @@ public class HttpsOnlyRule implements LinterRule {
                 suggestions.add(new ValidationSuggestion(
                     "API defines servers with mixed protocols (HTTP and HTTPS). Consider using HTTPS consistently.",
                     "consistent-https-usage",
-                    Map.of("issue", "mixed-protocols")
+                    "warning",
+                    "security",
+                    Map.of("issue", "mixed-protocols"),
+                    true
                 ));
                 break; // Only show this warning once
             }

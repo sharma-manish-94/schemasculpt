@@ -48,7 +48,10 @@ public class ExampleRule implements LinterRule {
                 suggestions.add(new ValidationSuggestion(
                     String.format("Schema '%s' should include an example for better documentation.", schemaName),
                     "add-schema-example",
-                    Map.of("schemaName", schemaName, "location", "components.schemas." + schemaName)
+                    "info",
+                    "documentation",
+                    Map.of("schemaName", schemaName, "location", "components.schemas." + schemaName),
+                    true
                 ));
             }
         }
@@ -83,8 +86,11 @@ public class ExampleRule implements LinterRule {
                                         String.format("Response '%s' for operation '%s %s' should include an example.",
                                             responseCode, method, path),
                                         "add-response-example",
+                                        "info",
+                                        "documentation",
                                         Map.of("path", path, "method", method.toString(),
-                                               "responseCode", responseCode, "mediaType", mediaType)
+                                               "responseCode", responseCode, "mediaType", mediaType),
+                                        true
                                     ));
                                 }
                             }

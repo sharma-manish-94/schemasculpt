@@ -28,7 +28,10 @@ public class MissingDescriptionRule implements LinterRule {
             suggestions.add(new ValidationSuggestion(
                 "API is missing a description in the 'info' section.",
                 "add-api-description",
-                Map.of("location", "info.description")
+                "warning",
+                "documentation",
+                Map.of("location", "info.description"),
+                true
             ));
         }
 
@@ -61,7 +64,10 @@ public class MissingDescriptionRule implements LinterRule {
                     suggestions.add(new ValidationSuggestion(
                         String.format("Operation '%s %s' is missing a description.", method, path),
                         "add-operation-description",
-                        Map.of("path", path, "method", method.toString())
+                        "warning",
+                        "documentation",
+                        Map.of("path", path, "method", method.toString()),
+                        true
                     ));
                 }
 
@@ -73,7 +79,10 @@ public class MissingDescriptionRule implements LinterRule {
                                 String.format("Parameter '%s' in operation '%s %s' is missing a description.",
                                     parameter.getName(), method, path),
                                 "add-parameter-description",
-                                Map.of("path", path, "method", method.toString(), "parameter", parameter.getName())
+                                "info",
+                                "documentation",
+                                Map.of("path", path, "method", method.toString(), "parameter", parameter.getName()),
+                                true
                             ));
                         }
                     }
@@ -95,7 +104,10 @@ public class MissingDescriptionRule implements LinterRule {
                 suggestions.add(new ValidationSuggestion(
                     String.format("Schema '%s' is missing a description.", schemaName),
                     "add-schema-description",
-                    Map.of("schemaName", schemaName)
+                    "warning",
+                    "documentation",
+                    Map.of("schemaName", schemaName),
+                    true
                 ));
             }
 
@@ -108,7 +120,10 @@ public class MissingDescriptionRule implements LinterRule {
                             String.format("Property '%s' in schema '%s' is missing a description.",
                                 propertyName, schemaName),
                             "add-property-description",
-                            Map.of("schemaName", schemaName, "propertyName", propertyName)
+                            "info",
+                            "documentation",
+                            Map.of("schemaName", schemaName, "propertyName", propertyName),
+                            true
                         ));
                     }
                 });

@@ -134,9 +134,9 @@ public class QuickFixService {
     private void fixPathNaming(OpenAPI openApi, String originalPath, String segment) {
         if (openApi.getPaths() != null && openApi.getPaths().containsKey(originalPath)) {
             // Convert segment to kebab-case
-            String fixedSegment = segment.toLowerCase()
+            String fixedSegment = segment
+                .replaceAll("([a-z])([A-Z])", "$1-$2") // Convert camelCase to kebab-case first
                 .replaceAll("_", "-") // Replace underscores with hyphens
-                .replaceAll("([a-z])([A-Z])", "$1-$2") // Convert camelCase to kebab-case
                 .toLowerCase();
 
             String fixedPath = originalPath.replace(segment, fixedSegment);

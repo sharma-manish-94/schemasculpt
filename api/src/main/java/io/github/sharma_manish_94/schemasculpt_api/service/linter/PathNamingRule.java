@@ -42,7 +42,10 @@ public class PathNamingRule implements LinterRule {
             suggestions.add(new ValidationSuggestion(
                 String.format("Path '%s' should not have trailing slash.", path),
                 "remove-trailing-slash",
-                Map.of("path", path, "issue", "trailing-slash")
+                "warning",
+                "general",
+                Map.of("path", path, "issue", "trailing-slash"),
+                true
             ));
         }
 
@@ -51,7 +54,10 @@ public class PathNamingRule implements LinterRule {
             suggestions.add(new ValidationSuggestion(
                 String.format("Path '%s' should not contain consecutive slashes.", path),
                 "fix-consecutive-slashes",
-                Map.of("path", path, "issue", "consecutive-slashes")
+                "warning",
+                "general",
+                Map.of("path", path, "issue", "consecutive-slashes"),
+                true
             ));
         }
 
@@ -71,7 +77,10 @@ public class PathNamingRule implements LinterRule {
                     String.format("Path segment '%s' in path '%s' should use kebab-case (lowercase with hyphens).",
                         segment, path),
                     "use-kebab-case",
-                    Map.of("path", path, "segment", segment, "issue", "naming-convention")
+                    "warning",
+                    "general",
+                    Map.of("path", path, "segment", segment, "issue", "naming-convention"),
+                    true
                 ));
             }
 
@@ -81,7 +90,10 @@ public class PathNamingRule implements LinterRule {
                     String.format("Path segment '%s' in path '%s' should use hyphens instead of underscores.",
                         segment, path),
                     "replace-underscores-with-hyphens",
-                    Map.of("path", path, "segment", segment, "issue", "underscore-usage")
+                    "warning",
+                    "general",
+                    Map.of("path", path, "segment", segment, "issue", "underscore-usage"),
+                    true
                 ));
             }
 
@@ -91,7 +103,10 @@ public class PathNamingRule implements LinterRule {
                     String.format("Path segment '%s' in path '%s' should not use camelCase. Use kebab-case instead.",
                         segment, path),
                     "convert-camelcase-to-kebab",
-                    Map.of("path", path, "segment", segment, "issue", "camelcase-usage")
+                    "warning",
+                    "general",
+                    Map.of("path", path, "segment", segment, "issue", "camelcase-usage"),
+                    true
                 ));
             }
         }
@@ -121,7 +136,10 @@ public class PathNamingRule implements LinterRule {
                         String.format("Resource '%s' in path '%s' should likely be plural for collection endpoints.",
                             segment, path),
                         "use-plural-resource-names",
-                        Map.of("path", path, "resource", segment, "issue", "singular-resource")
+                        "info",
+                        "general",
+                        Map.of("path", path, "resource", segment, "issue", "singular-resource"),
+                        true
                     ));
                 }
             }

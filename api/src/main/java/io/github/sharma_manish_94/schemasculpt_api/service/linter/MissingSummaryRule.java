@@ -30,7 +30,12 @@ public class MissingSummaryRule implements LinterRule{
 				final Operation operation = opEntry.getValue();
 				if(operation.getSummary() == null || operation.getSummary().isBlank()) {
 					String message = String.format("Operation '%s %s' is missing a summary.",method, path);
-					suggestions.add(new ValidationSuggestion(message));
+					Map<String, Object> context = Map.of(
+						"path", path,
+						"method", method.toString(),
+						"operationId", operation.getOperationId() != null ? operation.getOperationId() : "unknown"
+					);
+					suggestions.add(new ValidationSuggestion(message, "missing-summary", "warning", "documentation", context, true));
 				}
 			}
 		}

@@ -41,7 +41,10 @@ public class UnusedComponentRule implements LinterRule{
 				       .map(unused -> new ValidationSuggestion(
 							   "Component schema '" + unused + "' is defined but never used.",
 						       "remove-unused-component",
-						       Map.of("componentName", unused)
+						       "warning",
+						       "performance",
+						       Map.of("componentName", unused),
+						       true
 						       ))
 				       .toList();
 	}

@@ -31,7 +31,10 @@ public class SecurityRequirementsRule implements LinterRule {
             suggestions.add(new ValidationSuggestion(
                 "API should define security schemes in components.securitySchemes.",
                 "add-security-schemes",
-                Map.of("location", "components.securitySchemes")
+                "warning",
+                "security",
+                Map.of("location", "components.securitySchemes"),
+                true
             ));
         }
 
@@ -67,7 +70,10 @@ public class SecurityRequirementsRule implements LinterRule {
                             String.format("Operation '%s %s' should have security requirements defined.",
                                 method, path),
                             "add-operation-security",
-                            Map.of("path", path, "method", method.toString())
+                            "error",
+                            "security",
+                            Map.of("path", path, "method", method.toString()),
+                            true
                         ));
                     }
                 }
@@ -81,7 +87,10 @@ public class SecurityRequirementsRule implements LinterRule {
                                     String.format("Operation '%s %s' references undefined security scheme '%s'.",
                                         method, path, schemeName),
                                     "invalid-security-reference",
-                                    Map.of("path", path, "method", method.toString(), "scheme", schemeName)
+                                    "error",
+                                    "security",
+                                    Map.of("path", path, "method", method.toString(), "scheme", schemeName),
+                                    true
                                 ));
                             }
                         }

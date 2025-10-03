@@ -1,6 +1,7 @@
 package io.github.sharma_manish_94.schemasculpt_api.service.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.springframework.core.ParameterizedTypeReference;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIProxyRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
@@ -13,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -54,6 +57,58 @@ public class AIService {
         String specText = Json.pretty(openApi);
         AIProxyRequest aiRequest = new AIProxyRequest(specText, userPrompt);
         return callAIService(aiRequest);
+    }
+
+    public Map<String, Object> explainValidationIssue(Map<String, Object> request) {
+        log.info("Requesting explanation for validation issue");
+
+        try {
+            return this.webClient.post()
+                    .uri("/ai/explain")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+        } catch (Exception e) {
+            log.error("Failed to get explanation from AI service: {}", e.getMessage(), e);
+            throw new RuntimeException("AI explanation service unavailable", e);
+        }
+    }
+
+    public Map<String, Object> generateTestCases(Map<String, Object> request) {
+        log.info("Requesting test case generation for operation: {}",
+                request.get("operation_summary"));
+
+        try {
+            return this.webClient.post()
+                    .uri("/ai/test-cases/generate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+        } catch (Exception e) {
+            log.error("Failed to generate test cases from AI service: {}", e.getMessage(), e);
+            throw new RuntimeException("AI test generation service unavailable", e);
+        }
+    }
+
+    public Map<String, Object> generateTestSuite(Map<String, Object> request) {
+        log.info("Requesting complete test suite generation");
+
+        try {
+            return this.webClient.post()
+                    .uri("/ai/test-suite/generate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+        } catch (Exception e) {
+            log.error("Failed to generate test suite from AI service: {}", e.getMessage(), e);
+            throw new RuntimeException("AI test suite generation service unavailable", e);
+        }
     }
 
     private String formatSpec(String rawSpec) {

@@ -38,7 +38,10 @@ public class ResponseSuccessRule implements LinterRule {
                         String.format("Operation '%s %s' must have at least one success response (2xx or 3xx).",
                             method, path),
                         "add-success-response",
-                        Map.of("path", path, "method", method.toString())
+                        "error",
+                        "completeness",
+                        Map.of("path", path, "method", method.toString()),
+                        true
                     ));
                 }
             }
