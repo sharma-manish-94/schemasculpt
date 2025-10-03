@@ -19,7 +19,8 @@ from ..core.exceptions import SchemaSculptException
 from ..core.logging import get_logger, set_correlation_id
 from ..schemas.ai_schemas import (
     AIRequest, AIResponse, MockStartRequest, MockStartResponse,
-    GenerateSpecRequest, HealthResponse, OperationType, StreamingMode
+    GenerateSpecRequest, HealthResponse, OperationType, StreamingMode,
+    LLMParameters
 )
 from ..services.agent_manager import AgentManager
 from ..services.context_manager import ContextManager
@@ -43,6 +44,10 @@ MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
 
 # Response cache for security analysis (TTL: 1 hour)
 SECURITY_ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
+
+# Explanation cache
+EXPLANATION_CACHE: Dict[str, Dict[str, Any]] = {}
+EXPLANATION_CACHE_TTL = timedelta(hours=settings.explanation_cache_ttl_hours)
 
 
 # Dependency for error handling
@@ -637,6 +642,38 @@ Provide specific, actionable recommendations."""
         })
 
 
+def _generate_explanation_cache_key(rule_id: str, message: str, category: str) -> str:
+    """Generate cache key for explanation."""
+    key_data = f"{rule_id}:{category}:{message}"
+    return hashlib.md5(key_data.encode()).hexdigest()
+
+
+def _get_cached_explanation(rule_id: str, message: str, category: str) -> Optional[Dict[str, Any]]:
+    """Get cached explanation if available and not expired."""
+    cache_key = _generate_explanation_cache_key(rule_id, message, category)
+    cached = EXPLANATION_CACHE.get(cache_key)
+
+    if not cached:
+        return None
+
+    # Check if expired
+    if datetime.utcnow() - cached['timestamp'] > EXPLANATION_CACHE_TTL:
+        del EXPLANATION_CACHE[cache_key]
+        return None
+
+    logger.info(f"Returning cached explanation for rule {rule_id}")
+    return cached['data']
+
+
+def _cache_explanation(rule_id: str, message: str, category: str, data: Dict[str, Any]):
+    """Store explanation in cache."""
+    cache_key = _generate_explanation_cache_key(rule_id, message, category)
+    EXPLANATION_CACHE[cache_key] = {
+        'data': data,
+        'timestamp': datetime.utcnow()
+    }
+
+
 @router.post("/ai/explain")
 async def explain_validation_issue(
     request_data: Dict[str, Any],
@@ -645,6 +682,7 @@ async def explain_validation_issue(
     """
     Provide detailed AI-powered explanations for validation issues and suggestions.
     Uses RAG to find relevant context and best practices.
+    Responses are cached for 24 hours to improve performance.
     """
     correlation_id = set_correlation_id()
 
@@ -657,8 +695,14 @@ async def explain_validation_issue(
     try:
         rule_id = request_data.get("rule_id", "")
         message = request_data.get("message", "")
-        spec_text = request_data.get("spec_text", "")
         category = request_data.get("category", "general")
+
+        # Check cache first
+        cached_explanation = _get_cached_explanation(rule_id, message, category)
+        if cached_explanation:
+            return cached_explanation
+
+        spec_text = request_data.get("spec_text", "")
         context = request_data.get("context", {})
 
         # Create query for RAG knowledge base
@@ -672,53 +716,162 @@ async def explain_validation_issue(
         if len(knowledge_context) > 800:
             knowledge_context = knowledge_context[:800] + "..."
 
-        explanation_prompt = f"""Explain this OpenAPI validation issue in detail:
+        explanation_prompt = f"""You are an OpenAPI expert. Explain this validation issue concisely and professionally.
 
-ISSUE: {message}
-RULE ID: {rule_id}
-CATEGORY: {category}
-CONTEXT: {json.dumps(context, indent=2)}
+VALIDATION ISSUE:
+- Rule: {rule_id}
+- Category: {category}
+- Message: {message}
+- Context: {json.dumps(context, indent=2) if context else "None"}
 
-KNOWLEDGE BASE CONTEXT:
+KNOWLEDGE BASE:
 {knowledge_context}
 
 SPEC EXCERPT:
 {spec_text[:500] if spec_text else "No specification provided"}
 
-Provide a comprehensive explanation that includes:
-1. Why this is an issue (technical reasoning)
-2. Potential problems it could cause
-3. Best practice recommendations
-4. Specific example solutions
-5. Related concepts to understand
+INSTRUCTIONS:
+1. Provide a clear explanation of why this is an issue (2-3 sentences)
+2. List 2-3 related best practices
+3. Provide 1-2 specific example solutions
+4. Suggest relevant resources (optional)
 
-Format as structured JSON with: explanation, severity, related_best_practices, example_solutions, additional_resources"""
+IMPORTANT: Respond ONLY with valid JSON. Do not include any text before or after the JSON.
 
-        # Create AI request for explanation
-        ai_request = AIRequest(
-            spec_text=spec_text,
-            prompt=explanation_prompt,
-            operation_type=OperationType.VALIDATE,
-            streaming=StreamingMode.DISABLED,
-            llm_parameters=LLMParameters(
-                temperature=0.3,  # Lower temperature for more factual explanations
-                max_tokens=2048
-            ),
-            validate_output=False,
-            tags=["explanation", "educational", "rag_enhanced"]
-        )
+{{
+  "explanation": "Brief explanation of the issue and its impact",
+  "severity": "info",
+  "related_best_practices": [
+    "First best practice",
+    "Second best practice"
+  ],
+  "example_solutions": [
+    "First solution approach",
+    "Second solution approach"
+  ],
+  "additional_resources": [
+    "Resource 1",
+    "Resource 2"
+  ]
+}}"""
 
-        # Get explanation from LLM
-        result = await llm_service.process_ai_request(ai_request)
+        # Use direct LLM call instead of process_ai_request for text generation
+        payload = {
+            "model": settings.default_model,
+            "messages": [{
+                "role": "system",
+                "content": "You are an OpenAPI expert. Always respond with valid JSON only, no additional text."
+            }, {
+                "role": "user",
+                "content": explanation_prompt
+            }],
+            "stream": False,
+            "format": "json",  # Force JSON output
+            "options": {
+                "temperature": 0.3,
+                "num_predict": 2048
+            }
+        }
+
+        response = await llm_service.client.post(llm_service.chat_endpoint, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=500,
+                detail=f"LLM request failed: {response.status_code} - {response.text}"
+            )
+
+        # Extract response text
+        response_data = response.json()
+        llm_response = response_data.get('message', {}).get('content', '').strip()
+
+        # Log raw response for debugging
+        logger.debug(f"Raw LLM response: {llm_response[:200]}...")
 
         # Try to parse structured response, fallback to plain text
+        structured_response = None
         try:
-            structured_response = json.loads(result.updated_spec_text)
-            if not isinstance(structured_response, dict):
-                raise ValueError("Response is not a dictionary")
+            # Try to extract JSON from response (in case LLM includes extra text)
+            json_start = llm_response.find('{')
+            json_end = llm_response.rfind('}') + 1
 
+            if json_start >= 0 and json_end > json_start:
+                json_str = llm_response[json_start:json_end]
+
+                # Clean up common JSON issues
+                import re
+
+                # Fix trailing commas in arrays and objects
+                json_str = re.sub(r',\s*]', ']', json_str)
+                json_str = re.sub(r',\s*}', '}', json_str)
+
+                # Fix missing commas between array elements
+                json_str = re.sub(r'"\s*\n\s*"', '",\n"', json_str)
+
+                # Try to parse
+                structured_response = json.loads(json_str)
+
+                if not isinstance(structured_response, dict):
+                    raise ValueError("Response is not a dictionary")
+
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"Failed to parse JSON: {str(e)}, attempting manual extraction")
+
+            # Try manual extraction as last resort
+            try:
+                import re
+
+                structured_response = {
+                    "explanation": "",
+                    "severity": "info",
+                    "related_best_practices": [],
+                    "example_solutions": [],
+                    "additional_resources": []
+                }
+
+                # Extract explanation - handle multiline and escaped quotes
+                expl_match = re.search(r'"explanation"\s*:\s*"((?:[^"\\]|\\["\\])*)"', llm_response, re.DOTALL)
+                if expl_match:
+                    structured_response["explanation"] = expl_match.group(1).replace('\\"', '"').replace('\\n', '\n')
+
+                # Extract severity
+                sev_match = re.search(r'"severity"\s*:\s*"(\w+)"', llm_response)
+                if sev_match:
+                    structured_response["severity"] = sev_match.group(1)
+
+                # Extract arrays
+                def extract_array(field_name):
+                    array_match = re.search(rf'"{field_name}"\s*:\s*\[(.*?)\]', llm_response, re.DOTALL)
+                    if array_match:
+                        items_str = array_match.group(1)
+                        # Extract quoted strings
+                        items = re.findall(r'"((?:[^"\\]|\\.)*)"', items_str)
+                        return [item.replace('\\"', '"') for item in items]
+                    return []
+
+                structured_response["related_best_practices"] = extract_array("related_best_practices")
+                structured_response["example_solutions"] = extract_array("example_solutions")
+                structured_response["additional_resources"] = extract_array("additional_resources")
+
+                # If we couldn't extract explanation, use the whole response
+                if not structured_response["explanation"]:
+                    structured_response["explanation"] = llm_response
+
+            except Exception as inner_e:
+                logger.error(f"Manual extraction also failed: {str(inner_e)}")
+                # Last resort - just use the raw text
+                structured_response = {
+                    "explanation": llm_response,
+                    "severity": "info",
+                    "related_best_practices": [],
+                    "example_solutions": [],
+                    "additional_resources": []
+                }
+
+        # Build final response
+        if structured_response:
             explanation_response = {
-                "explanation": structured_response.get("explanation", result.updated_spec_text),
+                "explanation": structured_response.get("explanation", "Unable to generate explanation"),
                 "severity": structured_response.get("severity", "info"),
                 "category": category,
                 "related_best_practices": structured_response.get("related_best_practices", []),
@@ -731,10 +884,11 @@ Format as structured JSON with: explanation, severity, related_best_practices, e
                     "generated_at": datetime.utcnow().isoformat()
                 }
             }
-        except (json.JSONDecodeError, ValueError):
-            # Fallback to plain text explanation
+        else:
+            # Complete fallback
+            logger.warning("Using complete fallback for explanation")
             explanation_response = {
-                "explanation": result.updated_spec_text,
+                "explanation": llm_response if llm_response else "Unable to generate explanation",
                 "severity": "info",
                 "category": category,
                 "related_best_practices": [],
@@ -749,6 +903,9 @@ Format as structured JSON with: explanation, severity, related_best_practices, e
                 }
             }
 
+        # Cache the explanation
+        _cache_explanation(rule_id, message, category, explanation_response)
+
         logger.info(f"Generated explanation for rule {rule_id}")
         return explanation_response
 
@@ -759,6 +916,47 @@ Format as structured JSON with: explanation, severity, related_best_practices, e
             "message": f"Failed to generate explanation: {str(e)}",
             "rag_available": rag_service.is_available()
         })
+
+
+@router.get("/ai/cache/stats")
+async def get_cache_stats():
+    """
+    Get cache statistics for explanations.
+    """
+    # Clean up expired entries
+    expired_count = 0
+    now = datetime.utcnow()
+    expired_keys = [
+        key for key, value in EXPLANATION_CACHE.items()
+        if now - value['timestamp'] > EXPLANATION_CACHE_TTL
+    ]
+
+    for key in expired_keys:
+        del EXPLANATION_CACHE[key]
+        expired_count += 1
+
+    return {
+        "cache_size": len(EXPLANATION_CACHE),
+        "expired_entries_cleaned": expired_count,
+        "ttl_hours": EXPLANATION_CACHE_TTL.total_seconds() / 3600,
+        "timestamp": now.isoformat()
+    }
+
+
+@router.delete("/ai/cache/clear")
+async def clear_explanation_cache():
+    """
+    Clear all cached explanations.
+    """
+    cache_size = len(EXPLANATION_CACHE)
+    EXPLANATION_CACHE.clear()
+    logger.info(f"Cleared {cache_size} cached explanations")
+
+    return {
+        "success": True,
+        "cleared_entries": cache_size,
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 
 @router.get("/ai/rag/status")

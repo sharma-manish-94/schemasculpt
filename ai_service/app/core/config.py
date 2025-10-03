@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     enable_streaming: bool = Field(default=True, env="ENABLE_STREAMING")
     enable_caching: bool = Field(default=True, env="ENABLE_CACHING")
     cache_ttl: int = Field(default=3600, env="CACHE_TTL")  # 1 hour
+    explanation_cache_ttl_hours: int = Field(default=24, env="EXPLANATION_CACHE_TTL_HOURS")  # 24 hours
     max_concurrent_requests: int = Field(default=10, env="MAX_CONCURRENT_REQUESTS")
 
     # Prompt Engineering

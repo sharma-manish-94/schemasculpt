@@ -148,3 +148,56 @@
 2025-09-28 23:32:04,852 - __main__ - INFO - Ingestion completed successfully in 14.98 seconds
 2025-09-28 23:32:04,852 - __main__ - INFO - Processed 128 documents into 1073 chunks
 2025-09-28 23:32:04,852 - __main__ - INFO - Vector store ready for RAG-enhanced security analysis
+2025-10-04 00:28:05,244 - __main__ - INFO - Starting SchemaSculpt AI Security Knowledge Base Ingestion
+2025-10-04 00:28:05,246 - __main__ - INFO - Hardware: Intel i5-8400 (6 cores) optimization enabled
+2025-10-04 00:28:05,326 - __main__ - INFO - GPU detected: NVIDIA GeForce RTX 3060 with 11.6GB VRAM
+2025-10-04 00:28:06,327 - __main__ - INFO - System Resources: 8.0GB RAM available, 6 CPUs, 34.8% CPU usage
+2025-10-04 00:28:06,327 - __main__ - INFO - Using GPU-optimized settings for 11.6GB GPU
+2025-10-04 00:28:06,327 - __main__ - INFO - Using optimized settings: device=cuda, batch_size=64, max_workers=4
+2025-10-04 00:28:06,328 - __main__ - INFO - GPU acceleration enabled with 11.6GB VRAM
+2025-10-04 00:28:06,329 - __main__ - INFO - Loading documents from /home/manish-sharma/Documents/Projects/schemasculpt/ai_service/knowledge_base
+2025-10-04 00:28:06,329 - __main__ - INFO - Loading PDF files...
+2025-10-04 00:28:08,411 - __main__ - INFO - Loaded 123 PDF document(s)
+2025-10-04 00:28:08,412 - __main__ - INFO - Loading Markdown files...
+2025-10-04 00:28:08,412 - __main__ - INFO - Loaded 0 Markdown document(s)
+2025-10-04 00:28:08,412 - __main__ - INFO - Loading Text files...
+2025-10-04 00:28:08,413 - __main__ - INFO - Loaded 0 Text document(s)
+2025-10-04 00:28:08,413 - __main__ - INFO - Loading 5 document(s) from web sources...
+2025-10-04 00:28:08,413 - __main__ - INFO - Loading: https://owasp.org/www-project-api-security/
+2025-10-04 00:28:08,413 - __main__ - INFO - Loading: https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html
+2025-10-04 00:28:09,562 - __main__ - INFO - Successfully loaded https://owasp.org/www-project-api-security/
+2025-10-04 00:28:09,574 - __main__ - INFO - Loading: https://datatracker.ietf.org/doc/html/rfc6749
+2025-10-04 00:28:09,686 - __main__ - INFO - Successfully loaded https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html
+2025-10-04 00:28:09,687 - __main__ - INFO - Loading: https://datatracker.ietf.org/doc/html/rfc7519
+2025-10-04 00:28:10,146 - __main__ - INFO - Successfully loaded https://datatracker.ietf.org/doc/html/rfc6749
+2025-10-04 00:28:10,146 - __main__ - INFO - Loading: https://openid.net/specs/openid-connect-core-1_0.html
+2025-10-04 00:28:10,775 - __main__ - INFO - Successfully loaded https://datatracker.ietf.org/doc/html/rfc7519
+2025-10-04 00:28:12,910 - __main__ - INFO - Successfully loaded https://openid.net/specs/openid-connect-core-1_0.html
+2025-10-04 00:28:12,911 - __main__ - INFO - Loaded 5 web document(s)
+2025-10-04 00:28:12,911 - __main__ - INFO - Total documents loaded: 128
+2025-10-04 00:28:12,911 - __main__ - INFO - Splitting 128 documents into chunks...
+2025-10-04 00:28:12,911 - __main__ - INFO - Processing batch 1/2
+2025-10-04 00:28:12,916 - __main__ - INFO - Processing batch 2/2
+2025-10-04 00:28:12,930 - __main__ - INFO - Split into 1073 text chunks
+2025-10-04 00:28:12,930 - __main__ - INFO - Initializing embedding model (CUDA-optimized)...
+2025-10-04 00:28:14,939 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-10-04 00:28:19,038 - __main__ - INFO - Creating vector store with 1073 chunks...
+2025-10-04 00:28:19,039 - __main__ - INFO - Using GPU-optimized vector batch size: 200
+2025-10-04 00:28:19,039 - __main__ - INFO - Processing 1073 chunks in batches of 200
+2025-10-04 00:28:19,039 - __main__ - INFO - Processing embedding batch 1/6 (200 chunks)
+2025-10-04 00:28:19,390 - chromadb.telemetry.product.posthog - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2025-10-04 00:28:19,484 - __main__ - ERROR - Error processing batch 1: sentence_transformers.SentenceTransformer.SentenceTransformer.encode() got multiple values for keyword argument 'show_progress_bar'
+2025-10-04 00:28:19,484 - __main__ - INFO - Processing embedding batch 2/6 (200 chunks)
+2025-10-04 00:28:19,487 - __main__ - ERROR - Error processing batch 2: sentence_transformers.SentenceTransformer.SentenceTransformer.encode() got multiple values for keyword argument 'show_progress_bar'
+2025-10-04 00:28:19,487 - __main__ - INFO - Processing embedding batch 3/6 (200 chunks)
+2025-10-04 00:28:19,490 - __main__ - ERROR - Error processing batch 3: sentence_transformers.SentenceTransformer.SentenceTransformer.encode() got multiple values for keyword argument 'show_progress_bar'
+2025-10-04 00:28:19,490 - __main__ - INFO - Processing embedding batch 4/6 (200 chunks)
+2025-10-04 00:28:19,494 - __main__ - ERROR - Error processing batch 4: sentence_transformers.SentenceTransformer.SentenceTransformer.encode() got multiple values for keyword argument 'show_progress_bar'
+2025-10-04 00:28:19,494 - __main__ - INFO - Processing embedding batch 5/6 (200 chunks)
+2025-10-04 00:28:19,497 - __main__ - ERROR - Error processing batch 5: sentence_transformers.SentenceTransformer.SentenceTransformer.encode() got multiple values for keyword argument 'show_progress_bar'
+2025-10-04 00:28:19,497 - __main__ - INFO - Processing embedding batch 6/6 (73 chunks)
+2025-10-04 00:28:19,500 - __main__ - ERROR - Error processing batch 6: sentence_transformers.SentenceTransformer.SentenceTransformer.encode() got multiple values for keyword argument 'show_progress_bar'
+2025-10-04 00:28:19,501 - __main__ - INFO - Vector store created successfully in '/home/manish-sharma/Documents/Projects/schemasculpt/ai_service/vector_store'
+2025-10-04 00:28:19,501 - __main__ - INFO - Ingestion completed successfully in 13.17 seconds
+2025-10-04 00:28:19,501 - __main__ - INFO - Processed 128 documents into 1073 chunks
+2025-10-04 00:28:19,501 - __main__ - INFO - Vector store ready for RAG-enhanced security analysis
