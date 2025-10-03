@@ -1,0 +1,28 @@
+meta {
+  name: Get Context Statistics
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/context/statistics
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return statistics", function() {
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('total_sessions');
+    expect(res.getBody()).to.have.property('active_sessions');
+  });
+
+  test("Session counts should be numbers", function() {
+    expect(res.getBody().total_sessions).to.be.a('number');
+    expect(res.getBody().active_sessions).to.be.a('number');
+  });
+}

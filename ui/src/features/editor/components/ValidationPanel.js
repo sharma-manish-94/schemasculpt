@@ -1,8 +1,9 @@
 import { useSpecStore } from "../../../store/specStore";
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import ValidationSuggestion from '../../../components/validation/ValidationSuggestion';
+import { groupSuggestionsByCategory, getSuggestionsSummary } from '../../../utils/suggestionGrouping';
 
-function ValidationPanel() {
+const ValidationPanel = React.memo(() => {
     // Get errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, and sessionId from the store
     const { errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, sessionId } = useSpecStore();
 
@@ -54,6 +55,17 @@ function ValidationPanel() {
         return { autoFixSuggestions, aiFixSuggestions, noFixSuggestions };
     };
 
+    // Group suggestions by category
+    const groupedByCategory = useMemo(() =>
+        groupSuggestionsByCategory(suggestions),
+        [suggestions]
+    );
+
+    const suggestionsSummary = useMemo(() =>
+        getSuggestionsSummary(suggestions),
+        [suggestions]
+    );
+
     if (isLoading) {
         return <p className="loading-text">Validating...</p>;
     }
@@ -78,6 +90,11 @@ function ValidationPanel() {
                     {hasSuggestions && (
                         <span className="count-badge suggestion-count">
                             {suggestions.length} Suggestion{suggestions.length !== 1 ? 's' : ''}
+                        </span>
+                    )}
+                    {suggestionsSummary.byCategory.Security > 0 && (
+                        <span className="count-badge security-count" title="Security-related suggestions">
+                            🔐 {suggestionsSummary.byCategory.Security} Security
                         </span>
                     )}
                     {!hasErrors && !hasSuggestions && (
@@ -216,6 +233,8 @@ function ValidationPanel() {
             )}
         </>
     );
-}
+});
+
+ValidationPanel.displayName = 'ValidationPanel';
 
 export default ValidationPanel;

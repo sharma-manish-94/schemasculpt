@@ -1,0 +1,77 @@
+meta {
+  name: Start Mock Server
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/mock/start
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"Pet Store API\",\n    \"version\": \"1.0.0\",\n    \"description\": \"A sample API for pet store operations\"\n  },\n  \"paths\": {\n    \"/pets\": {\n      \"get\": {\n        \"summary\": \"List all pets\",\n        \"operationId\": \"listPets\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"A list of pets\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"$ref\": \"#/components/schemas/Pet\"\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    },\n    \"/pets/{petId}\": {\n      \"get\": {\n        \"summary\": \"Get a pet by ID\",\n        \"operationId\": \"getPetById\",\n        \"parameters\": [\n          {\n            \"name\": \"petId\",\n            \"in\": \"path\",\n            \"required\": true,\n            \"schema\": {\n              \"type\": \"integer\",\n              \"format\": \"int64\"\n            }\n          }\n        ],\n        \"responses\": {\n          \"200\": {\n            \"description\": \"A single pet\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"$ref\": \"#/components/schemas/Pet\"\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  },\n  \"components\": {\n    \"schemas\": {\n      \"Pet\": {\n        \"type\": \"object\",\n        \"required\": [\"id\", \"name\"],\n        \"properties\": {\n          \"id\": {\n            \"type\": \"integer\",\n            \"format\": \"int64\"\n          },\n          \"name\": {\n            \"type\": \"string\"\n          },\n          \"breed\": {\n            \"type\": \"string\"\n          },\n          \"age\": {\n            \"type\": \"integer\"\n          }\n        }\n      }\n    }\n  }\n}",
+    "port": 8001,
+    "host": "localhost",
+    "response_delay_ms": 100,
+    "error_rate": 0.1,
+    "use_ai_responses": true,
+    "response_variety": 5,
+    "mock_name": "PetStore Mock",
+    "tags": ["testing", "pets", "demo"]
+  }
+}
+
+docs {
+  # Start Enhanced Mock Server
+
+  Creates a mock server with AI-powered response generation.
+
+  **Test Scenario:**
+  - Start mock server with comprehensive Pet Store API
+  - Test AI-powered response generation
+  - Configure error simulation and delays
+  - Test response variety
+
+  **Expected Response:**
+  - Mock server ID for future reference
+  - Base URL for accessing mock endpoints
+  - List of available endpoints
+  - Server configuration details
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return mock server details", function() {
+    expect(res.getBody()).to.have.property('mock_id');
+    expect(res.getBody()).to.have.property('base_url');
+    expect(res.getBody()).to.have.property('available_endpoints');
+
+    // Store mock ID for subsequent tests
+    if (res.getBody().mock_id) {
+      bru.setVar("mockId", res.getBody().mock_id);
+    }
+  });
+
+  test("Should list correct endpoints", function() {
+    const endpoints = res.getBody().available_endpoints;
+    expect(endpoints).to.be.an('array');
+    expect(endpoints).to.include('/pets');
+    expect(endpoints).to.include('/pets/{petId}');
+  });
+
+  test("Should include server configuration", function() {
+    expect(res.getBody().host).to.equal('localhost');
+    expect(res.getBody().port).to.equal(8001);
+  });
+}

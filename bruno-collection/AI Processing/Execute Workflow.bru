@@ -1,0 +1,33 @@
+meta {
+  name: Execute Workflow
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/workflow/enhance_documentation
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_content": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Sample API\",\n    \"version\": \"1.0.0\"\n  }\n}",
+    "enhancement_type": "comprehensive",
+    "target_audience": "developers",
+    "include_examples": true,
+    "add_security_schemes": true
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return workflow response", function() {
+    expect(res.getBody()).to.have.property('workflow_name', 'enhance_documentation');
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('result');
+  });
+}

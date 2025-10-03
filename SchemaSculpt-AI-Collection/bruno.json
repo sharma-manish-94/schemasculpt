@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "SchemaSculpt AI Service",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

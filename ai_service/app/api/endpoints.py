@@ -22,11 +22,20 @@ from ..schemas.ai_schemas import (
     GenerateSpecRequest, HealthResponse, OperationType, StreamingMode,
     LLMParameters
 )
+from ..schemas.security_schemas import (
+    SecurityAnalysisRequest, SecurityAnalysisReport
+)
+from ..schemas.patch_schemas import (
+    PatchGenerationRequest, PatchGenerationResponse,
+    PatchApplicationRequest, PatchApplicationResponse
+)
 from ..services.agent_manager import AgentManager
 from ..services.context_manager import ContextManager
 from ..services.llm_service import LLMService
 from ..services.prompt_engine import PromptEngine
 from ..services.rag_service import RAGService
+from ..services.security import SecurityAnalysisWorkflow
+from ..services.patch_generator import PatchGenerator, apply_json_patch
 
 # Initialize services
 router = APIRouter()
@@ -38,12 +47,15 @@ agent_manager = AgentManager(llm_service)
 context_manager = ContextManager()
 prompt_engine = PromptEngine()
 rag_service = RAGService()
+security_workflow = SecurityAnalysisWorkflow(llm_service)
+patch_generator = PatchGenerator(llm_service)
 
 # Mock server storage
 MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
 
-# Response cache for security analysis (TTL: 1 hour)
+# Security analysis cache (TTL: 24 hours)
 SECURITY_ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
+SECURITY_CACHE_TTL = timedelta(hours=24)
 
 # Explanation cache
 EXPLANATION_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -1295,3 +1307,410 @@ def _organize_tests_by_collection(test_cases: List[Dict]) -> Dict[str, List[Dict
         collections[collection_name].append(test_case)
 
     return collections
+
+
+# ================================================================================
+# Security Analysis Endpoints
+# ================================================================================
+
+def _generate_security_cache_key(spec_text: str) -> str:
+    """Generate cache key from spec content hash."""
+    return hashlib.sha256(spec_text.encode()).hexdigest()[:16]
+
+
+def _get_cached_security_report(cache_key: str) -> Optional[Dict[str, Any]]:
+    """Retrieve cached security report if not expired."""
+    if cache_key in SECURITY_ANALYSIS_CACHE:
+        cached = SECURITY_ANALYSIS_CACHE[cache_key]
+        if datetime.utcnow() < cached["expires_at"]:
+            logger.info(f"Security report cache hit: {cache_key}")
+            return cached["report"]
+        else:
+            # Remove expired entry
+            del SECURITY_ANALYSIS_CACHE[cache_key]
+            logger.info(f"Security report cache expired: {cache_key}")
+    return None
+
+
+def _cache_security_report(cache_key: str, report: Dict[str, Any]):
+    """Store security report in cache with TTL."""
+    SECURITY_ANALYSIS_CACHE[cache_key] = {
+        "report": report,
+        "cached_at": datetime.utcnow(),
+        "expires_at": datetime.utcnow() + SECURITY_CACHE_TTL
+    }
+    logger.info(f"Cached security report: {cache_key}")
+
+
+@router.post("/ai/security/analyze", response_model=Dict[str, Any])
+async def analyze_security(request: SecurityAnalysisRequest, _: None = Depends(handle_exceptions)):
+    """
+    Comprehensive security analysis of OpenAPI specification.
+
+    Runs multi-agent security analysis workflow covering:
+    - Authentication mechanisms
+    - Authorization controls (RBAC, BOLA, BFLA)
+    - Data exposure and PII protection
+    - OWASP API Security Top 10 compliance
+
+    Returns detailed security report with findings, recommendations, and overall security score.
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Starting comprehensive security analysis", extra={"correlation_id": correlation_id})
+
+    try:
+        # Check cache first
+        cache_key = _generate_security_cache_key(request.spec_text)
+
+        if not request.force_refresh:
+            cached_report = _get_cached_security_report(cache_key)
+            if cached_report:
+                return {
+                    "cached": True,
+                    "report": cached_report,
+                    "correlation_id": correlation_id
+                }
+
+        # Convert validation suggestions to dict format if provided
+        validation_suggestions_dict = None
+        if request.validation_suggestions:
+            validation_suggestions_dict = [
+                {
+                    "rule_id": s.rule_id,
+                    "message": s.message,
+                    "severity": s.severity,
+                    "path": s.path,
+                    "category": s.category
+                }
+                for s in request.validation_suggestions
+            ]
+
+        # Run security analysis workflow
+        report = await security_workflow.analyze(
+            request.spec_text,
+            validation_suggestions=validation_suggestions_dict
+        )
+
+        # Convert to dict for response
+        report_dict = report.dict()
+
+        # Cache the report
+        _cache_security_report(cache_key, report_dict)
+
+        logger.info(
+            f"Security analysis complete. Score: {report.overall_score:.1f}, Risk: {report.risk_level.value}",
+            extra={
+                "correlation_id": correlation_id,
+                "overall_score": report.overall_score,
+                "risk_level": report.risk_level.value,
+                "total_issues": len(report.all_issues)
+            }
+        )
+
+        return {
+            "cached": False,
+            "report": report_dict,
+            "correlation_id": correlation_id
+        }
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in spec: {str(e)}")
+        raise HTTPException(status_code=400, detail={
+            "error": "INVALID_SPEC_FORMAT",
+            "message": "Invalid OpenAPI specification format",
+            "details": str(e)
+        })
+    except Exception as e:
+        logger.error(f"Security analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "SECURITY_ANALYSIS_FAILED",
+            "message": f"Failed to analyze security: {str(e)}"
+        })
+
+
+@router.post("/ai/security/analyze/authentication")
+async def analyze_authentication(request: SecurityAnalysisRequest, _: None = Depends(handle_exceptions)):
+    """
+    Authentication-only security analysis.
+
+    Analyzes authentication mechanisms including:
+    - Security schemes (OAuth2, API Key, Basic Auth)
+    - Authentication weaknesses
+    - Unprotected endpoints
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Starting authentication analysis", extra={"correlation_id": correlation_id})
+
+    try:
+        spec = json.loads(request.spec_text)
+
+        from ..services.security import AuthenticationAnalyzer
+        analyzer = AuthenticationAnalyzer()
+        result = await analyzer.analyze(spec)
+
+        return {
+            "analysis": result.dict(),
+            "correlation_id": correlation_id
+        }
+
+    except Exception as e:
+        logger.error(f"Authentication analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "AUTHENTICATION_ANALYSIS_FAILED",
+            "message": f"Failed to analyze authentication: {str(e)}"
+        })
+
+
+@router.post("/ai/security/analyze/authorization")
+async def analyze_authorization(request: SecurityAnalysisRequest, _: None = Depends(handle_exceptions)):
+    """
+    Authorization-only security analysis.
+
+    Analyzes authorization controls including:
+    - RBAC implementation
+    - Broken Object Level Authorization (BOLA)
+    - Broken Function Level Authorization (BFLA)
+    - Protected vs unprotected endpoints
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Starting authorization analysis", extra={"correlation_id": correlation_id})
+
+    try:
+        spec = json.loads(request.spec_text)
+
+        from ..services.security import AuthorizationAnalyzer
+        analyzer = AuthorizationAnalyzer()
+        result = await analyzer.analyze(spec)
+
+        return {
+            "analysis": result.dict(),
+            "correlation_id": correlation_id
+        }
+
+    except Exception as e:
+        logger.error(f"Authorization analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "AUTHORIZATION_ANALYSIS_FAILED",
+            "message": f"Failed to analyze authorization: {str(e)}"
+        })
+
+
+@router.post("/ai/security/analyze/data-exposure")
+async def analyze_data_exposure(request: SecurityAnalysisRequest, _: None = Depends(handle_exceptions)):
+    """
+    Data exposure and PII protection analysis.
+
+    Analyzes data security including:
+    - PII field detection
+    - Sensitive data exposure
+    - Password field protection
+    - HTTPS enforcement
+    - Excessive data exposure
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Starting data exposure analysis", extra={"correlation_id": correlation_id})
+
+    try:
+        spec = json.loads(request.spec_text)
+
+        from ..services.security import DataExposureAnalyzer
+        analyzer = DataExposureAnalyzer()
+        result = await analyzer.analyze(spec)
+
+        return {
+            "analysis": result.dict(),
+            "correlation_id": correlation_id
+        }
+
+    except Exception as e:
+        logger.error(f"Data exposure analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "DATA_EXPOSURE_ANALYSIS_FAILED",
+            "message": f"Failed to analyze data exposure: {str(e)}"
+        })
+
+
+@router.get("/ai/security/report/{spec_hash}")
+async def get_security_report(spec_hash: str):
+    """
+    Retrieve cached security analysis report by spec hash.
+
+    Returns cached report if available, otherwise 404.
+    """
+    logger.info(f"Retrieving cached security report: {spec_hash}")
+
+    cached_report = _get_cached_security_report(spec_hash)
+
+    if cached_report:
+        return {
+            "cached": True,
+            "report": cached_report,
+            "spec_hash": spec_hash
+        }
+    else:
+        raise HTTPException(status_code=404, detail={
+            "error": "REPORT_NOT_FOUND",
+            "message": f"No cached security report found for hash: {spec_hash}"
+        })
+
+
+# ===========================
+# JSON Patch Generation (RFC 6902)
+# ===========================
+
+@router.post("/ai/patch/generate", response_model=PatchGenerationResponse)
+async def generate_json_patch(request: PatchGenerationRequest):
+    """
+    Generate JSON Patch (RFC 6902) operations for a specific fix.
+
+    This endpoint uses LLM to generate precise patch operations instead of
+    regenerating the entire spec, improving accuracy and token efficiency.
+
+    The generated patches can be applied by the backend using standard JSON Patch libraries.
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info(f"Generating JSON Patch for rule: {request.rule_id}")
+
+    try:
+        # Parse the spec
+        spec_dict = json.loads(request.spec_text)
+
+        # Generate patch using LLM
+        patch_response = await patch_generator.generate_patch(
+            spec=spec_dict,
+            rule_id=request.rule_id,
+            context=request.context,
+            suggestion_message=request.suggestion_message
+        )
+
+        logger.info(
+            f"Generated {len(patch_response.patches)} patch operations "
+            f"with confidence {patch_response.confidence}"
+        )
+
+        return patch_response
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON spec: {str(e)}")
+        raise HTTPException(status_code=400, detail={
+            "error": "INVALID_JSON",
+            "message": f"Invalid JSON specification: {str(e)}"
+        })
+    except Exception as e:
+        logger.error(f"Patch generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "PATCH_GENERATION_FAILED",
+            "message": f"Failed to generate patch: {str(e)}"
+        })
+
+
+@router.post("/ai/patch/apply", response_model=PatchApplicationResponse)
+async def apply_patch(request: PatchApplicationRequest):
+    """
+    Apply JSON Patch operations to a specification.
+
+    This is a utility endpoint for testing. In production, the backend
+    (Spring Boot) should apply patches using its own JSON Patch library.
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info(f"Applying {len(request.patches)} patch operations")
+
+    try:
+        # Parse the spec
+        spec_dict = json.loads(request.spec_text)
+
+        # Apply patches
+        result = await apply_json_patch(spec_dict, request.patches)
+
+        validation_errors = []
+        if request.validate_after and result["success"]:
+            # Validate the patched spec
+            try:
+                spec_json = json.dumps(result["result"])
+                parser = ResolvingParser(spec_string=spec_json)
+                logger.info("Patched spec is valid")
+            except Exception as e:
+                validation_errors.append(f"Validation failed: {str(e)}")
+
+        return PatchApplicationResponse(
+            success=result["success"],
+            updated_spec=result["result"] if result["success"] else None,
+            errors=result["errors"],
+            validation_errors=validation_errors
+        )
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON spec: {str(e)}")
+        raise HTTPException(status_code=400, detail={
+            "error": "INVALID_JSON",
+            "message": f"Invalid JSON specification: {str(e)}"
+        })
+    except Exception as e:
+        logger.error(f"Patch application failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "PATCH_APPLICATION_FAILED",
+            "message": f"Failed to apply patch: {str(e)}"
+        })
+
+
+@router.get("/ai/security/cache/stats")
+async def get_security_cache_stats():
+    """
+    Get security analysis cache statistics.
+
+    Returns information about cached reports and cache performance.
+    """
+    total_cached = len(SECURITY_ANALYSIS_CACHE)
+
+    valid_count = 0
+    expired_count = 0
+
+    for cache_key, cached_data in SECURITY_ANALYSIS_CACHE.items():
+        if datetime.utcnow() < cached_data["expires_at"]:
+            valid_count += 1
+        else:
+            expired_count += 1
+
+    return {
+        "total_entries": total_cached,
+        "valid_entries": valid_count,
+        "expired_entries": expired_count,
+        "ttl_hours": SECURITY_CACHE_TTL.total_seconds() / 3600,
+        "cache_details": [
+            {
+                "spec_hash": key,
+                "cached_at": data["cached_at"].isoformat(),
+                "expires_at": data["expires_at"].isoformat(),
+                "expired": datetime.utcnow() >= data["expires_at"],
+                "overall_score": data["report"].get("overall_score"),
+                "risk_level": data["report"].get("risk_level")
+            }
+            for key, data in SECURITY_ANALYSIS_CACHE.items()
+        ]
+    }
+
+
+@router.delete("/ai/security/cache/clear")
+async def clear_security_cache():
+    """
+    Clear all cached security analysis reports.
+
+    Useful for forcing fresh analysis or clearing memory.
+    """
+    cache_size = len(SECURITY_ANALYSIS_CACHE)
+    SECURITY_ANALYSIS_CACHE.clear()
+
+    logger.info(f"Cleared security analysis cache ({cache_size} entries)")
+
+    return {
+        "cleared": cache_size,
+        "message": f"Cleared {cache_size} cached security report(s)"
+    }

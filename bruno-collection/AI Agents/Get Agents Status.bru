@@ -1,0 +1,30 @@
+meta {
+  name: Get Agents Status
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/agents/status
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return agents status", function() {
+    expect(res.getBody()).to.have.property('overall_status');
+    expect(res.getBody()).to.have.property('agents');
+    expect(res.getBody()).to.have.property('total_agents');
+    expect(res.getBody()).to.have.property('active_agents');
+  });
+
+  test("Agent counts should be valid", function() {
+    expect(res.getBody().total_agents).to.be.a('number');
+    expect(res.getBody().active_agents).to.be.a('number');
+    expect(res.getBody().active_agents).to.be.at.most(res.getBody().total_agents);
+  });
+}

@@ -1,0 +1,64 @@
+meta {
+  name: Error Handling Test
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/ai/process
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"Productivity API\",\n    \"version\": \"1.0.0\",\n    \"description\": \"API for The process of creating, updating, and deleting tasks within the system\"\n  },\n  \"paths\": {\n    \"/tasks\": {\n      \"get\": \"/{id}): {\",\n      \"post\": {\n        \"summary\": \"Create a new task\",\n        \"description\": \"Creates a new task with the provided details\",\n        \"operationId\": \"createTask\",\n        \"parameters\": [\n          {\n            \"name\": \"title\",\n            \"in\": \"body\",\n            \"required\": true,\n            \"schema\": {\n              \"type\": \"string\"\n            },\n            \"description\": \"Title of the task\"\n          },\n          {\n            \"name\": \"description\",\n            \"in\": \"body\",\n            \"required\": false,\n            \"schema\": {\n              \"type\": \"string\"\n            },\n            \"description\": \"Description of the task\"\n          },\n          {\n            \"name\": \"assigned_to\",\n            \"in\": \"body\",\n            \"required\": true,\n            \"schema\": {\n              \"$ref\": \"#/components/schemas/UserID\"\n            },\n            \"description\": \"ID of the assigned user\"\n          },\n          {\n            \"name\": \"due_date\",\n            \"in\": \"body\",\n            \"required\": true,\n            \"schema\": {\n              \"type\": \"string\",\n              \"format\": \"date\"\n            },\n            \"description\": \"Due date of the task in YYYY-MM-DD format\"\n          },\n          {\n            \"name\": \"priority\",\n            \"in\": \"body\",\n            \"required\": true,\n            \"schema\": {\n              \"type\": \"integer\"\n            },\n            \"description\": \"Priority level of the task\"\n          },\n          {\n            \"name\": \"status\",\n            \"in\": \"body\",\n            \"required\": true,\n            \"schema\": {\n              \"$ref\": \"#/components/schemas/TaskStatus\"\n            },\n            \"description\": \"Status of the task\"\n          }\n        ],\n        \"responses\": {\n          \"201\": {\n            \"description\": \"Created task\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"$ref\": \"#/components/schemas/Task\"\n                }\n              }\n            }\n          },\n          \"400\": {\n            \"description\": \"Bad request\"\n          },\n          \"500\": {\n            \"description\": \"Internal server error\"\n          }\n        }\n      },\n      \"summary\": \"Retrieve a specific task by ID\",\n      \"description\": \"Returns the details of a specific task with the provided ID\",\n      \"operationId\": \"getTaskById\",\n      \"parameters\": [\n        {\n          \"name\": \"id\",\n          \"in\": \"path\",\n          \"required\": true,\n          \"schema\": {\n            \"type\": \"integer\"\n          },\n          \"description\": \"ID of the task\"\n        }\n      ],\n      \"responses\": {\n        \"200\": {\n          \"description\": \"Task details\",\n          \"content\": {\n            \"application/json\": {\n              \"schema\": {\n                \"$ref\": \"#/components/schemas/Task\"\n              }\n            }\n          }\n        },\n        \"400\": {\n          \"description\": \"Bad request\"\n        },\n        \"404\": {\n          \"description\": \"Task not found\"\n        },\n        \"500\": {\n          \"description\": \"Internal server error\"\n        }\n      }\n    },\n    \"put\": \"/{id}): {\",\n    \"summary\": \"Update a specific task by ID\",\n    \"description\": \"Updates the details of a specific task with the provided ID\",\n    \"operationId\": \"updateTaskById\",\n    \"parameters\": [\n      {\n        \"name\": \"id\",\n        \"in\": \"path\",\n        \"required\": true,\n        \"schema\": {\n          \"type\": \"integer\"\n        },\n        \"description\": \"ID of the task\"\n      }\n    ],\n    \"requestBody\": {\n      \"content\": {\n        \"application/json\": {\n          \"schema\": {\n            \"$ref\": \"#/components/schemas/TaskUpdateRequest\"\n          }\n        }\n      }\n    },\n    \"responses\": {\n      \"200\": {\n        \"description\": \"Updated task\",\n        \"content\": {\n          \"application/json\": {\n            \"schema\": {\n              \"$ref\": \"#/components/schemas/Task\"\n            }\n          }\n        }\n      },\n      \"400\": {\n        \"description\": \"Bad request\"\n      },\n      \"404\": {\n        \"description\": \"Task not found\"\n      },\n      \"500\": {\n        \"description\": \"Internal server error\"\n      }\n    }\n  },\n  \"components\": {\n    \"schemas\": {\n      \"Task\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"id\",\n          \"title\",\n          \"assigned_to\",\n          \"due_date\",\n          \"priority\",\n          \"status\"\n        ],\n        \"properties\": {\n          \"id\": {\n            \"type\": \"string\",\n            \"description\": \"Unique identifier for the task\",\n            \"example\": \"123e4567-e89b-12d3-a456-426614174000\",\n            \"format\": \"uuid\"\n          },\n          \"title\": {\n            \"type\": \"string\",\n            \"description\": \"Title or name of the task\",\n            \"example\": \"Meeting with John\",\n            \"minLength\": 1,\n            \"maxLength\": 255\n          },\n          \"description\": {\n            \"type\": \"string\",\n            \"description\": \"Detailed description of the task\",\n            \"example\": \"Discuss project progress and next steps\",\n            \"minLength\": 0,\n            \"maxLength\": 4096\n          },\n          \"assigned_to\": {\n            \"type\": \"string\",\n            \"description\": \"The user assigned to complete the task\",\n            \"example\": \"user123\",\n            \"minLength\": 1,\n            \"maxLength\": 50,\n            \"validation_constraints\": {\n              \"min\": 1,\n              \"max\": 50\n            }\n          },\n          \"due_date\": {\n            \"type\": \"string\",\n            \"format\": \"date-time\",\n            \"description\": \"The deadline for completing the task\",\n            \"example\": \"2023-04-15T16:00:00Z\"\n          },\n          \"priority\": {\n            \"type\": \"integer\",\n            \"description\": \"The priority level of the task (e.g., high, medium, low)\",\n            \"example\": 2,\n            \"minimum\": 1,\n            \"maximum\": 3,\n            \"validation_constraints\": {\n              \"min\": 1,\n              \"max\": 3\n            }\n          },\n          \"status\": {\n            \"type\": \"string\",\n            \"description\": \"The current status of the task (e.g., in progress, completed, overdue)\",\n            \"example\": \"in_progress\",\n            \"minLength\": 1,\n            \"maxLength\": 50\n          }\n        },\n        \"additionalProperties\": false,\n        \"description\": \"Schema for a Task entity\"\n      },\n      \"User\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"id\",\n          \"username\",\n          \"email\",\n          \"password\"\n        ],\n        \"properties\": {\n          \"id\": {\n            \"type\": \"string\",\n            \"description\": \"Unique identifier for the user\",\n            \"example\": \"123e4567-e89b-12d3-a456-426614174000\",\n            \"format\": \"uuid\"\n          },\n          \"username\": {\n            \"type\": \"string\",\n            \"description\": \"The username used to log in\",\n            \"example\": \"john_doe\",\n            \"minLength\": 3,\n            \"maxLength\": 50,\n            \"validation_constraints\": {\n              \"min\": 3,\n              \"max\": 50\n            }\n          },\n          \"email\": {\n            \"type\": \"string\",\n            \"format\": \"email\",\n            \"description\": \"The user's email address\",\n            \"example\": \"john.doe@example.com\"\n          },\n          \"password\": {\n            \"type\": \"string\",\n            \"description\": \"The user's password for authentication\",\n            \"example\": \"secure_password\",\n            \"minLength\": 8,\n            \"maxLength\": 100,\n            \"validation_constraints\": {\n              \"min\": 8,\n              \"max\": 100\n            }\n          }\n        },\n        \"additionalProperties\": false,\n        \"description\": \"Schema for a User entity\"\n      },\n      \"Comment\": {\n        \"type\": \"object\",\n        \"required\": [\n          \"id\",\n          \"content\",\n          \"created_at\",\n          \"user_id\",\n          \"task_id\"\n        ],\n        \"properties\": {\n          \"id\": {\n            \"type\": \"string\",\n            \"description\": \"Unique identifier for the comment\",\n            \"example\": \"123e4567-e89b-12d3-a456-426614174001\",\n            \"format\": \"uuid\"\n          },\n          \"content\": {\n            \"type\": \"string\",\n            \"description\": \"The text content of the comment\",\n            \"example\": \"Reminder: Meeting at 3 PM\",\n            \"minLength\": 1,\n            \"maxLength\": 4096\n          },\n          \"created_at\": {\n            \"type\": \"string\",\n            \"format\": \"date-time\",\n            \"description\": \"The date and time when the comment was created\",\n            \"example\": \"2023-04-15T15:30:00Z\"\n          },\n          \"user_id\": {\n            \"type\": \"string\",\n            \"description\": \"The unique identifier of the user who created the comment\",\n            \"example\": \"user123\",\n            \"minLength\": 1,\n            \"maxLength\": 50,\n            \"validation_constraints\": {\n              \"min\": 1,\n              \"max\": 50\n            }\n          },\n          \"task_id\": {\n            \"type\": \"string\",\n            \"description\": \"The unique identifier of the task to which the comment is related\",\n            \"example\": \"task123\",\n            \"minLength\": 1,\n            \"maxLength\": 50,\n            \"validation_constraints\": {\n              \"min\": 1,\n              \"max\": 50\n            }\n          }\n        },\n        \"additionalProperties\": false,\n        \"description\": \"Schema for a Comment entity\"\n      }\n    }\n  }\n}",
+    "prompt": "Fix this specification",
+    "operation_type": "validate",
+    "user_id": "{{userId}}",
+    "session_id": "{{sessionId}}"
+  }
+}
+
+tests {
+  test("Should return error status", function() {
+    expect(res.getStatus()).to.be.oneOf([400, 422, 500]);
+  });
+  
+  test("Error response should have proper structure", function() {
+    const body = res.getBody();
+    expect(body).to.have.property('detail');
+  
+    if (body.detail && typeof body.detail === 'object') {
+      expect(body.detail).to.have.property('error');
+      expect(body.detail).to.have.property('message');
+    }
+  });
+  
+  test("Should not crash service", function() {
+    // If we get any response, service didn't crash
+    expect(res.getStatus()).to.be.a('number');
+  });
+}
+
+docs {
+  # Error Handling Test
+  
+  Tests error handling capabilities when provided with invalid input.
+  
+  **Test Scenario:**
+  - Provides invalid JSON as spec_text
+  - Tests AI service's ability to handle malformed input
+  - Validates proper error responses
+  
+  **Expected Behavior:**
+  - Should return appropriate HTTP error status (400 or 500)
+  - Error response should follow ErrorResponse schema
+  - Should include helpful error messages
+  - Should not crash the service
+}

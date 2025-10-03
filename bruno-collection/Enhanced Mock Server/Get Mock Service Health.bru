@@ -1,0 +1,29 @@
+meta {
+  name: Get Mock Service Health
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mock/health
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return health status", function() {
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('mock_service_available');
+    expect(res.getBody()).to.have.property('timestamp');
+  });
+
+  test("Health status should be valid", function() {
+    const validStatuses = ['healthy', 'unhealthy', 'degraded'];
+    expect(validStatuses).to.include(res.getBody().status);
+    expect(res.getBody().mock_service_available).to.be.a('boolean');
+  });
+}

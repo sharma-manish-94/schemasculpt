@@ -1,0 +1,41 @@
+meta {
+  name: RAG Status Check
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{aiServiceUrl}}/ai/rag/status
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return RAG service status", function() {
+    expect(res.getBody()).to.have.property('rag_service');
+    expect(res.getBody()).to.have.property('timestamp');
+  });
+
+  test("RAG service should be available", function() {
+    const ragService = res.getBody().rag_service;
+    expect(ragService).to.have.property('available');
+
+    if (ragService.available) {
+      expect(ragService).to.have.property('document_count');
+      expect(ragService.document_count).to.be.greaterThan(0);
+    }
+  });
+
+  test("Should show vector store information", function() {
+    const ragService = res.getBody().rag_service;
+
+    if (ragService.available) {
+      expect(ragService).to.have.property('collection_name');
+      expect(ragService).to.have.property('vector_store_path');
+    }
+  });
+}

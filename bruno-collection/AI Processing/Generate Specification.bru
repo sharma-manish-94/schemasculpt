@@ -1,0 +1,42 @@
+meta {
+  name: Generate Specification
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/generate
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "domain": "e-commerce",
+    "description": "A comprehensive e-commerce API for managing products, orders, and customers",
+    "api_type": "REST",
+    "complexity_level": "medium",
+    "include_examples": true,
+    "authentication_type": "bearer",
+    "additional_requirements": [
+      "Include pagination",
+      "Add validation schemas",
+      "Support filtering and sorting"
+    ],
+    "streaming": "disabled",
+    "user_id": "{{sampleUserId}}",
+    "target_version": "3.0.3"
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return generated specification", function() {
+    expect(res.getBody()).to.have.property('updated_spec_text');
+    expect(res.getBody()).to.have.property('operation_type', 'generate');
+    expect(res.getBody()).to.have.property('success');
+  });
+}

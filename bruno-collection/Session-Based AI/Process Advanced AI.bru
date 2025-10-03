@@ -1,0 +1,35 @@
+meta {
+  name: Process Advanced AI
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/ai/process-advanced
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Session API\",\n    \"version\": \"1.0.0\",\n    \"description\": \"API for session-based operations\"\n  },\n  \"paths\": {\n    \"/items\": {\n      \"get\": {\n        \"summary\": \"Get items\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\"\n          }\n        }\n      }\n    }\n  }\n}",
+    "prompt": "Add comprehensive documentation, examples, and security schemes to this API specification",
+    "operation_type": "modify",
+    "session_id": "{{sampleSessionId}}",
+    "user_id": "{{sampleUserId}}",
+    "streaming": "disabled"
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return enhanced AI response", function() {
+    expect(res.getBody()).to.have.property('updated_spec_text');
+    expect(res.getBody()).to.have.property('operation_type', 'modify');
+    expect(res.getBody()).to.have.property('success');
+    expect(res.getBody()).to.have.property('session_id', '{{sampleSessionId}}');
+  });
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Get Prompt Statistics
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/prompt/statistics
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return prompt statistics", function() {
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('total_prompts_generated');
+    expect(res.getBody()).to.have.property('average_prompt_length');
+  });
+
+  test("Statistics should be valid", function() {
+    expect(res.getBody().total_prompts_generated).to.be.a('number');
+    expect(res.getBody().average_prompt_length).to.be.a('number');
+  });
+}

@@ -1,5 +1,5 @@
 import { useSpecStore } from "../../../store/specStore";
-import React, { useRef, useEffect , useMemo} from "react";
+import React, { useRef, useEffect, useMemo, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import yaml from "js-yaml";
 import {updateSessionSpec} from "../../../api/validationService";
@@ -122,9 +122,10 @@ function AiAssistantBar() {
 }
 
 // Main Editor Panel component
-function EditorPanel() {
-    const { specText, setSpecText, format, validateCurrentSpec, sessionId } = useSpecStore();
+const EditorPanel = React.memo(() => {
+    const { specText, setSpecText, format, validateCurrentSpec, sessionId, skipNextValidation, setSkipNextValidation } = useSpecStore();
     const parseEndpoints = useSpecStore((state) => state.parseEndpoints);
+    const editorRef = useRef(null);
 
     // This is now the single source of truth for what the editor displays.
     const displayedText = useMemo(() => {
@@ -139,10 +140,21 @@ function EditorPanel() {
         return specText;
     }, [specText, format]);
 
+    // Handle editor mount - preserve instance
+    const handleEditorDidMount = useCallback((editor, monaco) => {
+        editorRef.current = editor;
+    }, []);
+
     // Debounced effect to parse and validate whenever the underlying specText changes
     useEffect(() => {
         if (!specText.trim()) {
             return; // Don't process empty specs
+        }
+
+        // Check if we should skip this validation (set by quick fix)
+        if (skipNextValidation) {
+            setSkipNextValidation(false); // Reset flag
+            return;
         }
 
         const timer = setTimeout(() => {
@@ -166,7 +178,7 @@ function EditorPanel() {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [specText, sessionId]); // Removed parseEndpoints and validateCurrentSpec from deps to prevent recreation
+    }, [specText, sessionId, skipNextValidation]); // Added skipNextValidation to deps
 
     return (
         <div className="editor-container">
@@ -177,6 +189,7 @@ function EditorPanel() {
                     theme="light"
                     language={format}
                     value={displayedText} // <-- The editor's content is now always this value
+                    onMount={handleEditorDidMount}
                     onChange={(value) => {
                         // onChange should only work when in editable 'json' mode
                         if (format === 'json') {
@@ -184,6 +197,8 @@ function EditorPanel() {
                         }
                     }}
                     options={{
+                        // Preserve editor state during updates
+                        preserveViewState: true,
                         // Basic editor options
                         readOnly: false, // Allow copy-paste in both modes
                         minimap: { enabled: true },
@@ -242,6 +257,8 @@ function EditorPanel() {
             <AiAssistantBar />
         </div>
     );
-}
+});
+
+EditorPanel.displayName = 'EditorPanel';
 
 export default EditorPanel;

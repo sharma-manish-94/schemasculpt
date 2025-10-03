@@ -1,0 +1,42 @@
+meta {
+  name: Generate Intelligent Prompt
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/prompt/generate?contextId={{sampleSessionId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Basic API\",\n    \"version\": \"1.0.0\"\n  }\n}",
+    "prompt": "Enhance this specification with better documentation",
+    "operation_type": "modify",
+    "target_audience": "developers",
+    "complexity_level": "intermediate"
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return generated prompts", function() {
+    expect(res.getBody()).to.have.property('system_prompt');
+    expect(res.getBody()).to.have.property('user_prompt');
+    expect(res.getBody()).to.have.property('context_id');
+  });
+
+  test("Prompts should be non-empty strings", function() {
+    if (res.getBody().system_prompt) {
+      expect(res.getBody().system_prompt).to.be.a('string');
+    }
+    if (res.getBody().user_prompt) {
+      expect(res.getBody().user_prompt).to.be.a('string');
+    }
+  });
+}

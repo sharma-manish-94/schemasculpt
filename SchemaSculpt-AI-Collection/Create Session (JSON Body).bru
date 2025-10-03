@@ -1,0 +1,63 @@
+meta {
+  name: Create Session (JSON Body)
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/ai/context/session
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "user_id": "{{userId}}"
+  }
+}
+
+docs {
+  # Create Conversation Session (JSON Body Alternative)
+
+  Alternative approach using JSON body instead of query parameter.
+
+  **Test Scenario:**
+  - Create new session for user via JSON body
+  - Test session initialization
+  - Validate session metadata
+
+  **Expected Response:**
+  - New session ID
+  - User ID association (should match the provided user_id)
+  - Creation timestamp
+
+  **Note:**
+  - This is an alternative to the query parameter approach
+  - Use this if the query parameter version doesn't work
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return session ID", function() {
+    expect(res.getBody().session_id).to.be.a('string');
+
+    // Store session ID for other tests
+    bru.setVar("sessionId", res.getBody().session_id);
+  });
+
+  test("Should include user ID", function() {
+    expect(res.getBody().user_id).to.equal("test-user");
+  });
+
+  test("Should include creation timestamp", function() {
+    expect(res.getBody().created_at).to.be.a('string');
+  });
+}

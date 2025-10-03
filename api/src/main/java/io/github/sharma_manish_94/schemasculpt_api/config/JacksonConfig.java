@@ -1,9 +1,11 @@
 package io.github.sharma_manish_94.schemasculpt_api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -11,10 +13,24 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class JacksonConfig {
 
+    /**
+     * Mixin to ignore internal Swagger fields
+     */
+    public abstract class SchemaMixin {
+        @JsonIgnore
+        abstract boolean getExampleSetFlag();
+
+        @JsonIgnore
+        abstract void setExampleSetFlag(boolean flag);
+    }
+
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
+
+        // Add mixin to ignore internal Swagger fields
+        mapper.addMixIn(Schema.class, SchemaMixin.class);
 
         // Exclude null values - most important setting
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -40,6 +56,9 @@ public class JacksonConfig {
     @Bean("cleanObjectMapper")
     public ObjectMapper cleanObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
+
+        // Add mixin to ignore internal Swagger fields
+        mapper.addMixIn(Schema.class, SchemaMixin.class);
 
         // Most aggressive null exclusion
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);

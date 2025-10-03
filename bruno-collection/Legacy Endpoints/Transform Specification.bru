@@ -1,0 +1,35 @@
+meta {
+  name: Transform Specification
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/transform
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "prompt": "Add authentication security schemes and improve the documentation for all endpoints with comprehensive examples and descriptions"
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return transformed OpenAPI spec", function() {
+    expect(res.getBody()).to.have.property('openapi');
+    expect(res.getBody()).to.have.property('info');
+    expect(res.getBody()).to.have.property('paths');
+  });
+
+  test("Specification should be valid OpenAPI format", function() {
+    expect(res.getBody().openapi).to.be.a('string');
+    expect(res.getBody().info).to.be.an('object');
+    expect(res.getBody().paths).to.be.an('object');
+  });
+}

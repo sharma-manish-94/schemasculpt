@@ -1,0 +1,69 @@
+meta {
+  name: Basic AI Modification
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/ai/process
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"Sample API\",\n    \"version\": \"1.0.0\"\n  },\n  \"paths\": {\n    \"/users\": {\n      \"get\": {\n        \"summary\": \"Get users\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"id\": {\"type\": \"integer\"},\n                      \"name\": {\"type\": \"string\"}\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+    "prompt": "Add a POST endpoint for creating users with proper validation",
+    "operation_type": "modify",
+    "user_id": "{{userId}}",
+    "session_id": "{{sessionId}}",
+    "validate_output": true,
+    "auto_fix": true
+  }
+}
+
+docs {
+  # Basic AI Modification
+
+  Tests the core AI processing functionality with a simple modification request.
+
+  **Test Scenario:**
+  - Takes a basic OpenAPI spec with GET /users endpoint
+  - Asks AI to add a POST endpoint for creating users
+  - Validates the output specification
+
+  **Expected Behavior:**
+  - AI should add a POST /users endpoint with appropriate schema
+  - Response should include validation results
+  - Changes summary should describe what was added
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should contain updated spec", function() {
+    expect(res.getBody().updated_spec_text).to.be.a('string');
+    expect(res.getBody().updated_spec_text.length).to.be.greaterThan(0);
+  });
+
+  test("Operation type should match", function() {
+    expect(res.getBody().operation_type).to.equal('modify');
+  });
+
+  test("Validation should be present", function() {
+    expect(res.getBody().validation).to.be.an('object');
+    expect(res.getBody().validation.is_valid).to.be.a('boolean');
+  });
+
+  test("Changes summary should be provided", function() {
+    expect(res.getBody().changes_summary).to.be.a('string');
+    expect(res.getBody().changes_summary.length).to.be.greaterThan(0);
+  });
+}

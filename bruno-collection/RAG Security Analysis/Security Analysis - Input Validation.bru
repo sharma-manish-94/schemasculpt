@@ -1,0 +1,54 @@
+meta {
+  name: Security Analysis - Input Validation
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{aiServiceUrl}}/ai/analyze/security
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "openapi: 3.0.0\ninfo:\n  title: E-commerce API\n  version: 1.0.0\npaths:\n  /products/{productId}:\n    get:\n      parameters:\n        - name: productId\n          in: path\n          required: true\n          schema:\n            type: string\n      responses:\n        200:\n          description: Product details\n  /search:\n    get:\n      parameters:\n        - name: query\n          in: query\n          schema:\n            type: string\n        - name: category\n          in: query\n          schema:\n            type: string\n        - name: minPrice\n          in: query\n          schema:\n            type: number\n      responses:\n        200:\n          description: Search results\n  /users:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n              properties:\n                username:\n                  type: string\n                email:\n                  type: string\n                age:\n                  type: integer\n                bio:\n                  type: string\n      responses:\n        201:\n          description: User created",
+    "prompt": "Focus on input validation security issues and recommend validation patterns",
+    "operation_type": "validate",
+    "streaming": "disabled",
+    "session_id": "{{sampleSessionId}}",
+    "user_id": "{{sampleUserId}}",
+    "tags": ["security", "input_validation", "injection"]
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should identify input validation issues", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['validation', 'input', 'sanitiz']);
+  });
+
+  test("Should mention injection vulnerabilities", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['injection', 'sql', 'xss', 'script']);
+  });
+
+  test("Should recommend validation patterns", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['pattern', 'regex', 'format', 'constraint']);
+  });
+
+  test("Should mention length limits", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['length', 'limit', 'maxlength', 'size']);
+  });
+
+  test("Should reference OWASP guidelines", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['owasp', 'top 10', 'cheat sheet']);
+  });
+}

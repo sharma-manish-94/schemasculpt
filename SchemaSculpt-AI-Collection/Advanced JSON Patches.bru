@@ -1,0 +1,93 @@
+meta {
+  name: Advanced JSON Patches
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/ai/process
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"E-commerce API\",\n    \"version\": \"1.0.0\",\n    \"description\": \"API for e-commerce platform\"\n  },\n  \"paths\": {\n    \"/products\": {\n      \"get\": {\n        \"summary\": \"List products\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"$ref\": \"#/components/schemas/Product\"\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  },\n  \"components\": {\n    \"schemas\": {\n      \"Product\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"id\": {\"type\": \"integer\"},\n          \"name\": {\"type\": \"string\"},\n          \"price\": {\"type\": \"number\"}\n        }\n      }\n    }\n  }\n}",
+    "prompt": "Add comprehensive CRUD operations for products with proper validation and error handling",
+    "operation_type": "enhance",
+    "json_patches": [
+      {
+        "op": "add",
+        "path": "/paths/~1products/post",
+        "value": {
+          "summary": "Create product",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductCreate"
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "target_paths": ["/paths", "/components/schemas"],
+    "llm_parameters": {
+      "temperature": 0.2,
+      "max_tokens": 6000
+    },
+    "user_id": "{{userId}}",
+    "session_id": "{{sessionId}}",
+    "validate_output": true,
+    "auto_fix": true,
+    "preserve_formatting": true
+  }
+}
+
+docs {
+  # Advanced AI Processing with JSON Patches
+
+  Tests advanced AI processing capabilities including:
+  - JSON Patch operations for precise modifications
+  - Enhanced operation type (enhance vs modify)
+  - Custom LLM parameters
+  - Target path specifications
+
+  **Expected Behavior:**
+  - AI should build upon the provided JSON patch
+  - Should add GET, PUT, DELETE operations for individual products
+  - Should create proper validation schemas
+  - Applied patches should be tracked in response
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Operation type should be enhance", function() {
+    expect(res.getBody().operation_type).to.equal('enhance');
+  });
+
+  test("Applied patches should be tracked", function() {
+    expect(res.getBody().applied_patches).to.be.an('array');
+  });
+
+  test("Enhanced spec should have CRUD operations", function() {
+    const spec = JSON.parse(res.getBody().updated_spec_text);
+    expect(spec.paths).to.have.property('/products');
+    expect(spec.paths['/products']).to.have.property('post');
+  });
+
+  test("Validation should pass", function() {
+    expect(res.getBody().validation.is_valid).to.equal(true);
+  });
+}

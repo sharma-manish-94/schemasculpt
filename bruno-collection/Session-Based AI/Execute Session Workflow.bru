@@ -1,0 +1,35 @@
+meta {
+  name: Execute Session Workflow
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/ai/workflow/api_optimization
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "optimization_goals": ["performance", "security", "documentation"],
+    "target_compliance": ["OpenAPI 3.0.3", "REST best practices"],
+    "enhancement_level": "comprehensive",
+    "preserve_existing_structure": true,
+    "add_missing_properties": true,
+    "generate_examples": true
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return workflow response", function() {
+    expect(res.getBody()).to.have.property('workflow_name', 'api_optimization');
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('steps_completed');
+    expect(res.getBody()).to.have.property('total_steps');
+  });
+}

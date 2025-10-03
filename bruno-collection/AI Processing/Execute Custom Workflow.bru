@@ -1,0 +1,46 @@
+meta {
+  name: Execute Custom Workflow
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/workflow/custom
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "workflow_type": "custom_analysis",
+    "steps": [
+      {
+        "action": "analyze_endpoints",
+        "parameters": {
+          "focus": ["performance", "security", "documentation"]
+        }
+      },
+      {
+        "action": "generate_recommendations",
+        "parameters": {
+          "priority": "high"
+        }
+      }
+    ],
+    "input_data": {
+      "specification": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"API to Analyze\",\n    \"version\": \"1.0.0\"\n  }\n}",
+      "analysis_depth": "comprehensive"
+    }
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return custom workflow response", function() {
+    expect(res.getBody()).to.have.property('workflow_name', 'custom');
+    expect(res.getBody()).to.have.property('status');
+  });
+}

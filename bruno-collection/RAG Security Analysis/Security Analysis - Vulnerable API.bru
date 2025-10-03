@@ -1,0 +1,54 @@
+meta {
+  name: Security Analysis - Vulnerable API
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{aiServiceUrl}}/ai/analyze/security
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "openapi: 3.0.0\ninfo:\n  title: Vulnerable Bank API\n  version: 1.0.0\npaths:\n  /users/{user_id}:\n    get:\n      parameters:\n        - name: user_id\n          in: path\n          required: true\n          schema:\n            type: string\n      responses:\n        200:\n          description: User data\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  id:\n                    type: string\n                  email:\n                    type: string\n                  password:\n                    type: string\n                  ssn:\n                    type: string\n                  balance:\n                    type: number\n  /admin/users:\n    get:\n      responses:\n        200:\n          description: All users\n  /execute:\n    post:\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n              properties:\n                command:\n                  type: string\n      responses:\n        200:\n          description: Command executed",
+    "prompt": "Perform a comprehensive security audit of this banking API",
+    "operation_type": "validate",
+    "streaming": "disabled",
+    "session_id": "{{sampleSessionId}}",
+    "user_id": "{{sampleUserId}}",
+    "tags": ["security", "vulnerability_test", "banking"]
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should identify data exposure vulnerabilities", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['password', 'ssn', 'sensitive']);
+  });
+
+  test("Should identify authentication issues", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['authentication', 'unauthorized', 'auth']);
+  });
+
+  test("Should identify authorization issues", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['authorization', 'access control', 'admin']);
+  });
+
+  test("Should identify injection vulnerabilities", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['injection', 'command', 'input validation']);
+  });
+
+  test("Should reference security standards", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['owasp', 'oauth', 'jwt', 'https']);
+  });
+}

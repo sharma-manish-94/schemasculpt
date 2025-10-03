@@ -2073,6 +2073,13 @@ body {
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
+.count-badge.security-count {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: var(--white);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+  font-weight: 700;
+}
+
 .refresh-button {
   display: flex;
   align-items: center;

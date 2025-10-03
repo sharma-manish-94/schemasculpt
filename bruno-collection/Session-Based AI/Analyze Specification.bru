@@ -1,0 +1,28 @@
+meta {
+  name: Analyze Specification
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/ai/analyze
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return analysis results", function() {
+    expect(res.getBody()).to.have.property('session_id', '{{sampleSessionId}}');
+    expect(res.getBody()).to.have.property('analysis');
+    expect(res.getBody()).to.have.property('operation_successful');
+  });
+
+  test("Should include performance metrics", function() {
+    expect(res.getBody()).to.have.property('processing_time_ms');
+    expect(res.getBody().processing_time_ms).to.be.a('number');
+  });
+}

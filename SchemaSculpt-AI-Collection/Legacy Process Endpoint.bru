@@ -1,0 +1,62 @@
+meta {
+  name: Legacy Process Endpoint
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/process
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.0\",\n  \"info\": {\n    \"title\": \"Legacy Test API\",\n    \"version\": \"1.0.0\"\n  },\n  \"paths\": {\n    \"/legacy-endpoint\": {\n      \"get\": {\n        \"summary\": \"Legacy endpoint\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\"\n          }\n        }\n      }\n    }\n  }\n}",
+    "prompt": "Add proper error handling to this legacy endpoint",
+    "operation_type": "enhance",
+    "user_id": "{{userId}}"
+  }
+}
+
+docs {
+  # Legacy Process Endpoint
+
+  Tests backward compatibility with the legacy `/process` endpoint.
+
+  **Test Scenario:**
+  - Test legacy endpoint functionality
+  - Ensure backward compatibility
+  - Validate same response format as new endpoint
+
+  **Expected Behavior:**
+  - Should work identically to `/ai/process`
+  - Maintain same response structure
+  - Support all existing parameters
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return AIResponse format", function() {
+    expect(res.getBody()).to.have.property('updated_spec_text');
+    expect(res.getBody()).to.have.property('operation_type');
+    expect(res.getBody()).to.have.property('validation');
+  });
+
+  test("Should enhance the specification", function() {
+    const spec = JSON.parse(res.getBody().updated_spec_text);
+    expect(spec.paths['/legacy-endpoint'].get.responses).to.have.property('400');
+  });
+
+  test("Should track changes", function() {
+    expect(res.getBody().changes_summary).to.be.a('string');
+  });
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Get Specific Agent Status
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/agents/specification_agent/status
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return specific agent status", function() {
+    expect(res.getBody()).to.have.property('agent_name', 'specification_agent');
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('last_updated');
+  });
+
+  test("Agent status should be valid", function() {
+    const validStatuses = ['active', 'inactive', 'error', 'not_found', 'unknown'];
+    expect(validStatuses).to.include(res.getBody().status);
+  });
+}

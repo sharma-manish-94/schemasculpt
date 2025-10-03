@@ -8,6 +8,7 @@ import AIAgentManager from './AIAgentManager';
 import AIPromptBuilder from './AIPromptBuilder';
 import AIWorkflowRunner from './AIWorkflowRunner';
 import AISpecGenerator from './AISpecGenerator';
+import SecurityAnalysisTab from './SecurityAnalysisTab';
 import {
     addOAuth2Security,
     addRateLimiting,
@@ -20,6 +21,7 @@ import '../ai-features.css';
 
 const AI_TABS = {
     ASSISTANT: 'assistant',
+    SECURITY: 'security',
     HARDENING: 'hardening',
     TESTING: 'testing',
     GENERATOR: 'generator',
@@ -44,7 +46,8 @@ function AIPanel() {
         checkAiHealth,
         aiHealthStatus,
         fetchAgentsStatus,
-        agentsStatus
+        agentsStatus,
+        specText
     } = useSpecStore();
 
     useEffect(() => {
@@ -68,6 +71,8 @@ function AIPanel() {
         switch (activeTab) {
             case AI_TABS.ASSISTANT:
                 return <AIAssistantTab />;
+            case AI_TABS.SECURITY:
+                return <SecurityAnalysisTab specContent={specText} />;
             case AI_TABS.HARDENING:
                 return <AIHardeningTab />;
             case AI_TABS.TESTING:
