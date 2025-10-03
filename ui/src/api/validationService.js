@@ -270,3 +270,254 @@ export const refreshMockSpec = async (mockId, specText) => {
         return handleApiError(error, "Failed to refresh mock spec");
     }
 };
+
+export const explainValidationIssue = async (explanationRequest, sessionId = null) => {
+    if (!explanationRequest) {
+        return {
+            success: false,
+            error: "Explanation request is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const params = sessionId ? { sessionId } : {};
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/explanations/explain`,
+            explanationRequest,
+            { params }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to get explanation");
+    }
+};
+
+// API Hardening Services
+export const hardenOperation = async (sessionId, hardenRequest) => {
+    if (!sessionId || !hardenRequest) {
+        return {
+            success: false,
+            error: "Session ID and harden request are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/hardening/operations`,
+            hardenRequest
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to harden operation");
+    }
+};
+
+export const addOAuth2Security = async (sessionId, path, method) => {
+    if (!sessionId || !path || !method) {
+        return {
+            success: false,
+            error: "Session ID, path, and method are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/hardening/operations/oauth2`,
+            { path, method }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to add OAuth2 security");
+    }
+};
+
+export const addRateLimiting = async (sessionId, path, method, policy = "100/hour") => {
+    if (!sessionId || !path || !method) {
+        return {
+            success: false,
+            error: "Session ID, path, and method are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/hardening/operations/rate-limiting`,
+            { path, method, policy }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to add rate limiting");
+    }
+};
+
+export const addCaching = async (sessionId, path, method, ttl = "300") => {
+    if (!sessionId || !path || !method) {
+        return {
+            success: false,
+            error: "Session ID, path, and method are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/hardening/operations/caching`,
+            { path, method, ttl }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to add caching");
+    }
+};
+
+export const hardenOperationComplete = async (sessionId, path, method) => {
+    if (!sessionId || !path || !method) {
+        return {
+            success: false,
+            error: "Session ID, path, and method are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/hardening/operations/complete`,
+            { path, method }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to harden operation completely");
+    }
+};
+
+export const getHardeningPatterns = async () => {
+    try {
+        const response = await axios.get(
+            `${API_CONFIG.BASE_URL}/sessions/dummy/hardening/patterns`
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to get hardening patterns");
+    }
+};
+
+// Test Case Generation Services
+export const generateTestCases = async (testRequest) => {
+    if (!testRequest) {
+        return {
+            success: false,
+            error: "Test request is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/proxy/request`,
+            {
+                url: "/ai/test-cases/generate",
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: testRequest
+            }
+        );
+        return {
+            success: true,
+            data: response.data.body,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to generate test cases");
+    }
+};
+
+export const generateTestSuite = async (specText, options = {}) => {
+    if (!specText) {
+        return {
+            success: false,
+            error: "Specification text is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const request = {
+            spec_text: specText,
+            options: {
+                test_types: options.testTypes || ["positive", "negative", "edge_cases"],
+                max_operations: options.maxOperations || 10,
+                ...options
+            }
+        };
+
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/proxy/request`,
+            {
+                url: "/ai/test-suite/generate",
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: request
+            }
+        );
+        return {
+            success: true,
+            data: response.data.body,
+        };
+    } catch (error) {
+        return handleApiError(error, "Failed to generate test suite");
+    }
+};
+
+export const generateOperationTestCases = async (sessionId, path, method, operationSummary) => {
+    if (!sessionId || !path || !method) {
+        return {
+            success: false,
+            error: "Session ID, path, and method are required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        // Get spec from session first
+        const specResult = await getSessionSpec(sessionId);
+        if (!specResult.success) {
+            return specResult;
+        }
+
+        const testRequest = {
+            spec_text: JSON.stringify(specResult.data),
+            path: path,
+            method: method,
+            operation_summary: operationSummary || `${method.toUpperCase()} ${path}`,
+            test_types: ["positive", "negative", "edge_cases"]
+        };
+
+        return await generateTestCases(testRequest);
+    } catch (error) {
+        return handleApiError(error, "Failed to generate test cases for operation");
+    }
+};

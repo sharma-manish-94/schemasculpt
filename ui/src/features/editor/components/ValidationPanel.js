@@ -1,9 +1,10 @@
 import { useSpecStore } from "../../../store/specStore";
 import React from 'react';
+import ValidationSuggestion from '../../../components/validation/ValidationSuggestion';
 
 function ValidationPanel() {
-    // Get errors, suggestions, isLoading, applyQuickFix, and validateCurrentSpec from the store
-    const { errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec } = useSpecStore();
+    // Get errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, and sessionId from the store
+    const { errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, sessionId } = useSpecStore();
 
     // Define which rules can be auto-fixed vs require AI
     const autoFixableRules = [
@@ -28,9 +29,16 @@ function ValidationPanel() {
 
     const getFixButtonText = (ruleId) => {
         if (autoFixableRules.includes(ruleId)) {
-            return 'Fix';
+            return '⚡'; // Lightning bolt for auto-fix
         }
-        return 'AI Fix';
+        return '✨'; // Sparkles for AI-fix
+    };
+
+    const getFixButtonTitle = (ruleId) => {
+        if (autoFixableRules.includes(ruleId)) {
+            return 'Auto-fix this issue';
+        }
+        return 'AI-powered fix';
     };
 
     // Group suggestions by fix type
@@ -100,20 +108,38 @@ function ValidationPanel() {
                                 <span className="fix-type-icon">⚡</span>
                                 Auto-Fix Suggestions ({autoFixSuggestions.length})
                             </h3>
-                            <ul>
-                                {autoFixSuggestions.map((sug, index) => (
-                                    <li className="suggestion-item" key={`auto-${index}`}>
-                                        <span className="suggestion-text">{sug.message}</span>
+                            <div className="suggestions-list">
+                                {autoFixSuggestions.map((sug, index) => {
+                                    // Convert to ValidationSuggestion format
+                                    const suggestion = {
+                                        message: sug.message,
+                                        ruleId: sug.ruleId,
+                                        severity: 'info',
+                                        context: sug.context || {},
+                                        explainable: true
+                                    };
+
+                                    const fixButton = (
                                         <button
                                             className={getFixButtonClass(sug.ruleId)}
                                             onClick={() => applyQuickFix(sug)}
-                                            title="Auto-fix available"
+                                            title={getFixButtonTitle(sug.ruleId)}
                                         >
                                             {getFixButtonText(sug.ruleId)}
                                         </button>
-                                    </li>
-                                ))}
-                            </ul>
+                                    );
+
+                                    return (
+                                        <ValidationSuggestion
+                                            key={`auto-${index}`}
+                                            suggestion={suggestion}
+                                            sessionId={sessionId}
+                                            specText={specText}
+                                            additionalActions={fixButton}
+                                        />
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 
@@ -123,20 +149,38 @@ function ValidationPanel() {
                                 <span className="fix-type-icon">🤖</span>
                                 AI-Fix Suggestions ({aiFixSuggestions.length})
                             </h3>
-                            <ul>
-                                {aiFixSuggestions.map((sug, index) => (
-                                    <li className="suggestion-item" key={`ai-${index}`}>
-                                        <span className="suggestion-text">{sug.message}</span>
+                            <div className="suggestions-list">
+                                {aiFixSuggestions.map((sug, index) => {
+                                    // Convert to ValidationSuggestion format
+                                    const suggestion = {
+                                        message: sug.message,
+                                        ruleId: sug.ruleId,
+                                        severity: 'warning',
+                                        context: sug.context || {},
+                                        explainable: true
+                                    };
+
+                                    const fixButton = (
                                         <button
                                             className={getFixButtonClass(sug.ruleId)}
                                             onClick={() => applyQuickFix(sug)}
-                                            title="AI-powered fix"
+                                            title={getFixButtonTitle(sug.ruleId)}
                                         >
                                             {getFixButtonText(sug.ruleId)}
                                         </button>
-                                    </li>
-                                ))}
-                            </ul>
+                                    );
+
+                                    return (
+                                        <ValidationSuggestion
+                                            key={`ai-${index}`}
+                                            suggestion={suggestion}
+                                            sessionId={sessionId}
+                                            specText={specText}
+                                            additionalActions={fixButton}
+                                        />
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 
@@ -146,13 +190,26 @@ function ValidationPanel() {
                                 <span className="fix-type-icon">💡</span>
                                 General Suggestions ({noFixSuggestions.length})
                             </h3>
-                            <ul>
-                                {noFixSuggestions.map((sug, index) => (
-                                    <li className="suggestion-item" key={`general-${index}`}>
-                                        <span className="suggestion-text">{sug.message}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                            <div className="suggestions-list">
+                                {noFixSuggestions.map((sug, index) => {
+                                    // Convert to ValidationSuggestion format
+                                    const suggestion = {
+                                        message: sug.message,
+                                        ruleId: sug.ruleId || 'general-suggestion',
+                                        severity: 'info',
+                                        context: sug.context || {},
+                                        explainable: true
+                                    };
+                                    return (
+                                        <ValidationSuggestion
+                                            key={`general-${index}`}
+                                            suggestion={suggestion}
+                                            sessionId={sessionId}
+                                            specText={specText}
+                                        />
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
                 </>
