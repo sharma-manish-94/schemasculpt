@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { explainValidationIssue } from '../../api/validationService';
+import explanationCache from '../../utils/explanationCache';
 import './ValidationSuggestion.css';
 
 const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActions }) => {
@@ -27,9 +28,35 @@ const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActio
         return `suggestion-item severity-${severity || 'info'}`;
     };
 
+    // Check cache on component mount
+    useEffect(() => {
+        const cachedExplanation = explanationCache.get(
+            suggestion.ruleId,
+            suggestion.message,
+            suggestion.category || 'general'
+        );
+
+        if (cachedExplanation) {
+            setExplanation(cachedExplanation);
+        }
+    }, [suggestion.ruleId, suggestion.message, suggestion.category]);
+
     const handleExplainClick = async () => {
         if (explanation) {
             setShowExplanation(!showExplanation);
+            return;
+        }
+
+        // Check cache first
+        const cachedExplanation = explanationCache.get(
+            suggestion.ruleId,
+            suggestion.message,
+            suggestion.category || 'general'
+        );
+
+        if (cachedExplanation) {
+            setExplanation(cachedExplanation);
+            setShowExplanation(true);
             return;
         }
 
@@ -48,6 +75,13 @@ const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActio
             const result = await explainValidationIssue(explanationRequest, sessionId);
 
             if (result.success) {
+                // Store in cache
+                explanationCache.set(
+                    suggestion.ruleId,
+                    suggestion.message,
+                    suggestion.category || 'general',
+                    result.data
+                );
                 setExplanation(result.data);
                 setShowExplanation(true);
             } else {
@@ -90,8 +124,17 @@ const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActio
 
             {showExplanation && explanation && (
                 <div className="explanation-panel">
-                    <div className="explanation-content">
+                    <div className="explanation-header">
                         <h4>Explanation</h4>
+                        <button
+                            className="close-explanation-button"
+                            onClick={() => setShowExplanation(false)}
+                            title="Close explanation"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <div className="explanation-content">
                         <p>{explanation.explanation}</p>
 
                         {explanation.relatedBestPractices && explanation.relatedBestPractices.length > 0 && (

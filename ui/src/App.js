@@ -17,7 +17,6 @@ function App() {
           </div>
         </div>
         <div className="header-right">
-          <Link to="/demo" className="demo-link">🚀 Phase 1 Demo</Link>
           <a
             href="https://github.com/your-username"
             target="_blank"
