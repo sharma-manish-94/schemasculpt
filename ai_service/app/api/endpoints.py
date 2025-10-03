@@ -3,28 +3,29 @@ Enhanced API endpoints for SchemaSculpt AI Service.
 Integrates advanced LLM service, agentic workflows, streaming, and comprehensive AI features.
 """
 
-import uuid
-import json
 import asyncio
-from datetime import datetime
-from typing import Dict, Any, Optional
+import json
+import uuid
+import hashlib
+from datetime import datetime, timedelta
+from typing import Dict, Any, Optional, List
+
 from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 from prance import ResolvingParser
 
+from ..core.config import settings
+from ..core.exceptions import SchemaSculptException
+from ..core.logging import get_logger, set_correlation_id
 from ..schemas.ai_schemas import (
     AIRequest, AIResponse, MockStartRequest, MockStartResponse,
-    GenerateSpecRequest, StreamingChunk, HealthResponse, ErrorResponse,
-    OperationType, StreamingMode
+    GenerateSpecRequest, HealthResponse, OperationType, StreamingMode
 )
-from ..services.llm_service import LLMService
 from ..services.agent_manager import AgentManager
 from ..services.context_manager import ContextManager
+from ..services.llm_service import LLMService
 from ..services.prompt_engine import PromptEngine
-from ..core.config import settings
-from ..core.logging import get_logger, set_correlation_id
-from ..core.exceptions import SchemaSculptException, ValidationError, LLMError
-
+from ..services.rag_service import RAGService
 
 # Initialize services
 router = APIRouter()
@@ -35,9 +36,13 @@ llm_service = LLMService()
 agent_manager = AgentManager(llm_service)
 context_manager = ContextManager()
 prompt_engine = PromptEngine()
+rag_service = RAGService()
 
 # Mock server storage
 MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
+
+# Response cache for security analysis (TTL: 1 hour)
+SECURITY_ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 # Dependency for error handling
@@ -518,3 +523,577 @@ async def process_specification_legacy(request: AIRequest):
 async def generate_specification_legacy(request: GenerateSpecRequest):
     """Legacy endpoint for backward compatibility."""
     return await generate_specification_agentic(request)
+
+
+def _get_cache_key(spec_text: str, prompt: str) -> str:
+    """Generate cache key for security analysis."""
+    content = f"{spec_text}{prompt}"
+    return hashlib.md5(content.encode()).hexdigest()
+
+def _is_cache_valid(cache_entry: Dict[str, Any]) -> bool:
+    """Check if cache entry is still valid (1 hour TTL)."""
+    if 'timestamp' not in cache_entry:
+        return False
+    cache_time = datetime.fromisoformat(cache_entry['timestamp'])
+    return datetime.now() - cache_time < timedelta(hours=1)
+
+@router.post("/ai/analyze/security", response_model=AIResponse)
+async def analyze_security(request: AIRequest, _: None = Depends(handle_exceptions)):
+    """
+    Perform RAG-enhanced security analysis of OpenAPI specifications.
+    Retrieves relevant security context from knowledge base and generates comprehensive analysis.
+    Includes response caching for better performance.
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Starting security analysis", extra={
+        "correlation_id": correlation_id,
+        "operation_type": "security_analysis",
+        "has_spec": bool(request.spec_text)
+    })
+
+    try:
+        # Check cache first
+        cache_key = _get_cache_key(request.spec_text, request.prompt)
+        if cache_key in SECURITY_ANALYSIS_CACHE:
+            cache_entry = SECURITY_ANALYSIS_CACHE[cache_key]
+            if _is_cache_valid(cache_entry):
+                logger.info("Returning cached security analysis result")
+                return cache_entry['result']
+            else:
+                # Remove expired cache entry
+                del SECURITY_ANALYSIS_CACHE[cache_key]
+
+        # Get session context
+        session_id = str(request.session_id) if request.session_id else context_manager.create_session(request.user_id)
+
+        # Retrieve relevant security context from RAG knowledge base (limit results for performance)
+        security_query = f"Security analysis OpenAPI specification vulnerabilities authentication authorization: {request.spec_text[:300]}"
+        context_data = await rag_service.retrieve_security_context(security_query, n_results=3)
+
+        # Streamlined security analysis prompt for better performance
+        context_summary = context_data.get('context', 'No additional context available')
+        if len(context_summary) > 1000:
+            context_summary = context_summary[:1000] + "..."
+
+        enhanced_prompt = f"""Analyze this OpenAPI spec for security vulnerabilities:
+
+CONTEXT: {context_summary}
+
+USER REQUEST: {request.prompt}
+
+FOCUS: Authentication, authorization, input validation, data exposure, rate limiting, HTTPS/TLS, CORS, error handling.
+
+Provide specific, actionable recommendations."""
+
+        # Create enhanced request for LLM processing
+        security_request = AIRequest(
+            spec_text=request.spec_text,
+            prompt=enhanced_prompt,
+            operation_type=OperationType.VALIDATE,  # Use validate for analysis
+            streaming=request.streaming,
+            response_format=request.response_format,
+            llm_parameters=request.llm_parameters,
+            context=request.context,
+            validate_output=False,  # Don't validate since this is analysis, not modification
+            user_id=request.user_id,
+            session_id=request.session_id,
+            tags=request.tags + ["security_analysis", "rag_enhanced"]
+        )
+
+        # Process through LLM service
+        result = await llm_service.process_ai_request(security_request)
+
+        # Enhance result with RAG metadata
+        if hasattr(result, 'metadata'):
+            result.metadata.update({
+                "rag_sources": context_data.get('sources', []),
+                "rag_relevance_scores": context_data.get('relevance_scores', []),
+                "knowledge_base_available": rag_service.is_available(),
+                "analysis_type": "security_rag_enhanced"
+            })
+
+        # Add conversation turn to context
+        context_manager.add_conversation_turn(session_id, security_request, result, True)
+
+        # Cache the result for future requests
+        SECURITY_ANALYSIS_CACHE[cache_key] = {
+            'result': result,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        logger.info(f"Security analysis completed with {len(context_data.get('sources', []))} knowledge sources")
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Security analysis failed: {str(e)}")
+        if 'session_id' in locals():
+            context_manager.add_conversation_turn(session_id, request, None, False)
+        raise HTTPException(status_code=500, detail={
+            "error": "SECURITY_ANALYSIS_FAILED",
+            "message": f"Security analysis failed: {str(e)}",
+            "rag_available": rag_service.is_available()
+        })
+
+
+@router.post("/ai/explain")
+async def explain_validation_issue(
+    request_data: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    Provide detailed AI-powered explanations for validation issues and suggestions.
+    Uses RAG to find relevant context and best practices.
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Generating explanation for validation issue", extra={
+        "correlation_id": correlation_id,
+        "rule_id": request_data.get("rule_id", "unknown"),
+        "category": request_data.get("category", "general")
+    })
+
+    try:
+        rule_id = request_data.get("rule_id", "")
+        message = request_data.get("message", "")
+        spec_text = request_data.get("spec_text", "")
+        category = request_data.get("category", "general")
+        context = request_data.get("context", {})
+
+        # Create query for RAG knowledge base
+        rag_query = f"OpenAPI best practices validation {rule_id} {category} {message}"
+
+        # Retrieve relevant context from knowledge base
+        context_data = await rag_service.retrieve_security_context(rag_query, n_results=3)
+
+        # Build comprehensive explanation prompt
+        knowledge_context = context_data.get('context', 'No additional context available')
+        if len(knowledge_context) > 800:
+            knowledge_context = knowledge_context[:800] + "..."
+
+        explanation_prompt = f"""Explain this OpenAPI validation issue in detail:
+
+ISSUE: {message}
+RULE ID: {rule_id}
+CATEGORY: {category}
+CONTEXT: {json.dumps(context, indent=2)}
+
+KNOWLEDGE BASE CONTEXT:
+{knowledge_context}
+
+SPEC EXCERPT:
+{spec_text[:500] if spec_text else "No specification provided"}
+
+Provide a comprehensive explanation that includes:
+1. Why this is an issue (technical reasoning)
+2. Potential problems it could cause
+3. Best practice recommendations
+4. Specific example solutions
+5. Related concepts to understand
+
+Format as structured JSON with: explanation, severity, related_best_practices, example_solutions, additional_resources"""
+
+        # Create AI request for explanation
+        ai_request = AIRequest(
+            spec_text=spec_text,
+            prompt=explanation_prompt,
+            operation_type=OperationType.VALIDATE,
+            streaming=StreamingMode.DISABLED,
+            llm_parameters=LLMParameters(
+                temperature=0.3,  # Lower temperature for more factual explanations
+                max_tokens=2048
+            ),
+            validate_output=False,
+            tags=["explanation", "educational", "rag_enhanced"]
+        )
+
+        # Get explanation from LLM
+        result = await llm_service.process_ai_request(ai_request)
+
+        # Try to parse structured response, fallback to plain text
+        try:
+            structured_response = json.loads(result.updated_spec_text)
+            if not isinstance(structured_response, dict):
+                raise ValueError("Response is not a dictionary")
+
+            explanation_response = {
+                "explanation": structured_response.get("explanation", result.updated_spec_text),
+                "severity": structured_response.get("severity", "info"),
+                "category": category,
+                "related_best_practices": structured_response.get("related_best_practices", []),
+                "example_solutions": structured_response.get("example_solutions", []),
+                "additional_resources": structured_response.get("additional_resources", []),
+                "metadata": {
+                    "rule_id": rule_id,
+                    "rag_sources": context_data.get('sources', []),
+                    "knowledge_base_available": rag_service.is_available(),
+                    "generated_at": datetime.utcnow().isoformat()
+                }
+            }
+        except (json.JSONDecodeError, ValueError):
+            # Fallback to plain text explanation
+            explanation_response = {
+                "explanation": result.updated_spec_text,
+                "severity": "info",
+                "category": category,
+                "related_best_practices": [],
+                "example_solutions": [],
+                "additional_resources": [],
+                "metadata": {
+                    "rule_id": rule_id,
+                    "rag_sources": context_data.get('sources', []),
+                    "knowledge_base_available": rag_service.is_available(),
+                    "generated_at": datetime.utcnow().isoformat(),
+                    "fallback_format": True
+                }
+            }
+
+        logger.info(f"Generated explanation for rule {rule_id}")
+        return explanation_response
+
+    except Exception as e:
+        logger.error(f"Explanation generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "EXPLANATION_FAILED",
+            "message": f"Failed to generate explanation: {str(e)}",
+            "rag_available": rag_service.is_available()
+        })
+
+
+@router.get("/ai/rag/status")
+async def get_rag_status():
+    """
+    Get status and statistics of the RAG knowledge base.
+    """
+    try:
+        stats = await rag_service.get_knowledge_base_stats()
+        return {
+            "rag_service": stats,
+            "timestamp": datetime.utcnow()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get RAG status: {str(e)}")
+        return {
+            "rag_service": {
+                "available": False,
+                "error": str(e)
+            },
+            "timestamp": datetime.utcnow()
+        }
+
+
+@router.post("/ai/test-cases/generate")
+async def generate_test_cases(
+    request_data: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    Generate comprehensive test cases for API operations using AI.
+    Creates both positive and negative test scenarios with realistic data.
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Generating test cases for API operation", extra={
+        "correlation_id": correlation_id,
+        "operation": request_data.get("operation_summary", "unknown")
+    })
+
+    try:
+        spec_text = request_data.get("spec_text", "")
+        operation_path = request_data.get("path", "")
+        operation_method = request_data.get("method", "")
+        operation_summary = request_data.get("operation_summary", "")
+        test_types = request_data.get("test_types", ["positive", "negative", "edge_cases"])
+
+        # Build comprehensive test generation prompt
+        test_generation_prompt = f"""Generate comprehensive test cases for this API operation:
+
+OPERATION: {operation_method.upper()} {operation_path}
+SUMMARY: {operation_summary}
+
+SPECIFICATION EXCERPT:
+{spec_text[:1000] if spec_text else "No specification provided"}
+
+TEST TYPES TO GENERATE: {', '.join(test_types)}
+
+Generate test cases as a JSON array with the following structure:
+{{
+  "test_cases": [
+    {{
+      "name": "descriptive test name",
+      "type": "positive|negative|edge_case",
+      "description": "what this test validates",
+      "request": {{
+        "method": "HTTP_METHOD",
+        "path": "/api/path",
+        "headers": {{}},
+        "query_params": {{}},
+        "body": {{}}
+      }},
+      "expected_response": {{
+        "status_code": 200,
+        "headers": {{}},
+        "body": {{}}
+      }},
+      "assertions": [
+        "Response status should be 200",
+        "Response should contain valid data"
+      ]
+    }}
+  ]
+}}
+
+REQUIREMENTS:
+1. Generate 5-10 test cases covering different scenarios
+2. Include realistic test data
+3. Cover validation failures, authentication issues, and success cases
+4. Include edge cases like empty inputs, large inputs, special characters
+5. Specify clear assertions for each test
+6. Use appropriate HTTP status codes
+7. Consider the operation's purpose and constraints
+
+Return only the JSON structure, no explanations."""
+
+        # Create AI request for test generation
+        ai_request = AIRequest(
+            spec_text=spec_text,
+            prompt=test_generation_prompt,
+            operation_type=OperationType.GENERATE,
+            streaming=StreamingMode.DISABLED,
+            llm_parameters=LLMParameters(
+                temperature=0.4,  # Moderate creativity for test variety
+                max_tokens=3000
+            ),
+            validate_output=False,
+            tags=["test_generation", "quality_assurance"]
+        )
+
+        # Get test cases from LLM
+        result = await llm_service.process_ai_request(ai_request)
+
+        # Try to parse the JSON response
+        try:
+            test_cases_data = json.loads(result.updated_spec_text)
+            if not isinstance(test_cases_data, dict) or 'test_cases' not in test_cases_data:
+                raise ValueError("Invalid test cases format")
+
+            # Enhance test cases with additional metadata
+            enhanced_test_cases = []
+            for i, test_case in enumerate(test_cases_data['test_cases']):
+                enhanced_test_case = {
+                    **test_case,
+                    "id": f"test_{i+1}",
+                    "operation": f"{operation_method.upper()} {operation_path}",
+                    "generated_at": datetime.utcnow().isoformat(),
+                    "priority": _get_test_priority(test_case.get("type", "positive")),
+                    "estimated_execution_time": "< 1s"
+                }
+                enhanced_test_cases.append(enhanced_test_case)
+
+            response = {
+                "test_cases": enhanced_test_cases,
+                "summary": {
+                    "total_tests": len(enhanced_test_cases),
+                    "positive_tests": len([tc for tc in enhanced_test_cases if tc.get("type") == "positive"]),
+                    "negative_tests": len([tc for tc in enhanced_test_cases if tc.get("type") == "negative"]),
+                    "edge_case_tests": len([tc for tc in enhanced_test_cases if tc.get("type") == "edge_case"]),
+                    "operation": f"{operation_method.upper()} {operation_path}",
+                    "generated_at": datetime.utcnow().isoformat()
+                },
+                "metadata": {
+                    "correlation_id": correlation_id,
+                    "generation_method": "ai_powered",
+                    "llm_model": "mistral",
+                    "test_framework_compatible": ["jest", "postman", "newman", "python-requests"]
+                }
+            }
+
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            logger.warning(f"Failed to parse structured test cases: {str(e)}")
+            # Fallback: create a simple test case from the text response
+            fallback_test_case = {
+                "id": "test_1",
+                "name": f"Basic test for {operation_method.upper()} {operation_path}",
+                "type": "positive",
+                "description": "Generated test case",
+                "request": {
+                    "method": operation_method.upper(),
+                    "path": operation_path,
+                    "headers": {"Content-Type": "application/json"},
+                    "body": {}
+                },
+                "expected_response": {
+                    "status_code": 200,
+                    "body": {}
+                },
+                "assertions": ["Response status should be successful"],
+                "operation": f"{operation_method.upper()} {operation_path}",
+                "generated_at": datetime.utcnow().isoformat(),
+                "priority": "medium",
+                "notes": "Fallback test case - original AI response was not parseable"
+            }
+
+            response = {
+                "test_cases": [fallback_test_case],
+                "summary": {
+                    "total_tests": 1,
+                    "positive_tests": 1,
+                    "negative_tests": 0,
+                    "edge_case_tests": 0,
+                    "operation": f"{operation_method.upper()} {operation_path}",
+                    "generated_at": datetime.utcnow().isoformat(),
+                    "fallback_mode": True
+                },
+                "metadata": {
+                    "correlation_id": correlation_id,
+                    "generation_method": "ai_powered_fallback",
+                    "original_response": result.updated_spec_text[:500]
+                }
+            }
+
+        logger.info(f"Generated {len(response['test_cases'])} test cases for {operation_method.upper()} {operation_path}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Test case generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "TEST_GENERATION_FAILED",
+            "message": f"Failed to generate test cases: {str(e)}",
+            "operation": f"{request_data.get('method', '')} {request_data.get('path', '')}"
+        })
+
+
+def _get_test_priority(test_type: str) -> str:
+    """Determine test priority based on test type."""
+    priority_map = {
+        "positive": "high",
+        "negative": "medium",
+        "edge_case": "low"
+    }
+    return priority_map.get(test_type, "medium")
+
+
+@router.post("/ai/test-suite/generate")
+async def generate_test_suite(
+    request_data: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    Generate a complete test suite for an entire API specification.
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Generating complete test suite", extra={
+        "correlation_id": correlation_id,
+        "spec_size": len(request_data.get("spec_text", ""))
+    })
+
+    try:
+        spec_text = request_data.get("spec_text", "")
+        test_options = request_data.get("options", {})
+
+        if not spec_text:
+            raise ValueError("OpenAPI specification is required")
+
+        # Parse the specification to extract operations
+        try:
+            from prance import ResolvingParser
+            parser = ResolvingParser(spec_string=spec_text, backend='openapi-spec-validator')
+            spec = parser.specification
+        except Exception as e:
+            raise ValueError(f"Invalid OpenAPI specification: {str(e)}")
+
+        # Extract all operations
+        operations = []
+        paths = spec.get('paths', {})
+        for path, path_item in paths.items():
+            for method, operation in path_item.items():
+                if method.lower() in ['get', 'post', 'put', 'patch', 'delete', 'options', 'head']:
+                    operations.append({
+                        'path': path,
+                        'method': method,
+                        'summary': operation.get('summary', f'{method.upper()} {path}'),
+                        'operation_id': operation.get('operationId', f'{method}_{path.replace("/", "_")}')
+                    })
+
+        # Generate test cases for each operation
+        all_test_cases = []
+        for operation in operations[:10]:  # Limit to first 10 operations for performance
+            try:
+                operation_request = {
+                    "spec_text": spec_text,
+                    "path": operation['path'],
+                    "method": operation['method'],
+                    "operation_summary": operation['summary'],
+                    "test_types": test_options.get("test_types", ["positive", "negative"])
+                }
+
+                # Generate test cases for this operation
+                operation_tests = await generate_test_cases(operation_request)
+
+                # Add operation context to each test case
+                for test_case in operation_tests['test_cases']:
+                    test_case['operation_id'] = operation['operation_id']
+                    all_test_cases.append(test_case)
+
+            except Exception as e:
+                logger.warning(f"Failed to generate tests for {operation['method']} {operation['path']}: {str(e)}")
+
+        # Organize test suite
+        test_suite = {
+            "test_suite": {
+                "name": f"API Test Suite - {spec.get('info', {}).get('title', 'Unknown API')}",
+                "version": spec.get('info', {}).get('version', '1.0.0'),
+                "description": f"Comprehensive test suite generated for {len(operations)} operations",
+                "test_cases": all_test_cases,
+                "collections": _organize_tests_by_collection(all_test_cases),
+                "statistics": {
+                    "total_operations": len(operations),
+                    "total_tests": len(all_test_cases),
+                    "coverage": f"{min(len(operations), 10)}/{len(operations)} operations",
+                    "test_types": {
+                        "positive": len([tc for tc in all_test_cases if tc.get("type") == "positive"]),
+                        "negative": len([tc for tc in all_test_cases if tc.get("type") == "negative"]),
+                        "edge_cases": len([tc for tc in all_test_cases if tc.get("type") == "edge_case"])
+                    }
+                }
+            },
+            "execution_plan": {
+                "recommended_order": ["positive", "negative", "edge_case"],
+                "parallel_execution": True,
+                "estimated_duration": f"{len(all_test_cases) * 2}s"
+            },
+            "metadata": {
+                "generated_at": datetime.utcnow().isoformat(),
+                "correlation_id": correlation_id,
+                "generation_method": "ai_powered_suite"
+            }
+        }
+
+        logger.info(f"Generated complete test suite with {len(all_test_cases)} test cases for {len(operations)} operations")
+        return test_suite
+
+    except Exception as e:
+        logger.error(f"Test suite generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "TEST_SUITE_GENERATION_FAILED",
+            "message": f"Failed to generate test suite: {str(e)}"
+        })
+
+
+def _organize_tests_by_collection(test_cases: List[Dict]) -> Dict[str, List[Dict]]:
+    """Organize test cases into logical collections."""
+    collections = {}
+
+    for test_case in test_cases:
+        # Group by operation method
+        method = test_case.get('request', {}).get('method', 'unknown')
+        collection_name = f"{method.upper()} Operations"
+
+        if collection_name not in collections:
+            collections[collection_name] = []
+
+        collections[collection_name].append(test_case)
+
+    return collections

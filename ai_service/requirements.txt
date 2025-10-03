@@ -27,3 +27,23 @@ jsonschema
 # Data Validation and Settings
 pydantic[email]
 pydantic-settings
+
+
+# For RAG and GPU acceleration
+langchain
+langchain-community
+langchain-huggingface
+chromadb
+sentence-transformers
+pypdf
+unstructured
+lark
+beautifulsoup4
+html2text
+
+# System monitoring (optional but recommended)
+psutil
+
+# GPU acceleration (for NVIDIA 3060)
+torch
+transformers

@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Any, Union
 from pydantic import BaseModel, Field, validator
 from uuid import UUID, uuid4
+from ..core.config import settings
 
 
 class OperationType(str, Enum):
@@ -44,7 +45,7 @@ class LLMParameters(BaseModel):
     top_p: float = Field(default=0.9, ge=0.0, le=1.0)
     frequency_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
     presence_penalty: float = Field(default=0.0, ge=-2.0, le=2.0)
-    model: str = Field(default="mistral")
+    model: str = Field(default_factory=lambda: settings.default_model)
 
 
 class ContextWindow(BaseModel):

@@ -26,10 +26,10 @@ class Settings(BaseSettings):
     ollama_base_url: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
     ollama_chat_endpoint: str = Field(default="/api/chat", env="OLLAMA_CHAT_ENDPOINT")
     ollama_generate_endpoint: str = Field(default="/api/generate", env="OLLAMA_GENERATE_ENDPOINT")
-    default_model: str = Field(default="mistral", env="DEFAULT_LLM_MODEL")
+    default_model: str = Field(default="mistral:7b-instruct", env="DEFAULT_LLM_MODEL")
     model_temperature: float = Field(default=0.1, env="MODEL_TEMPERATURE")
-    max_tokens: int = Field(default=4096, env="MAX_TOKENS")
-    request_timeout: int = Field(default=300, env="REQUEST_TIMEOUT")
+    max_tokens: int = Field(default=2048, env="MAX_TOKENS")
+    request_timeout: int = Field(default=120, env="REQUEST_TIMEOUT")
 
     # Advanced LLM Settings
     enable_streaming: bool = Field(default=True, env="ENABLE_STREAMING")
@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     # Database (for advanced features like conversation history)
     database_url: Optional[str] = Field(default=None, env="DATABASE_URL")
     redis_url: Optional[str] = Field(default="redis://localhost:6379", env="REDIS_URL")
+
+    # AI Service Data Directory
+    ai_service_data_dir: str = Field(default=".", env="AI_SERVICE_DATA_DIR")
 
     class Config:
         env_file = ".env"

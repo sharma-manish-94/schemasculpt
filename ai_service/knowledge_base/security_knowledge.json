@@ -1,0 +1,27 @@
+[
+  {
+    "topic": "Authentication",
+    "content": "OpenAPI specifications should include proper authentication schemes. Common issues: missing auth, weak auth methods, exposed credentials in examples.",
+    "category": "security"
+  },
+  {
+    "topic": "Authorization",
+    "content": "APIs must implement proper authorization controls. Common issues: missing role-based access, insufficient endpoint protection, privilege escalation risks.",
+    "category": "security"
+  },
+  {
+    "topic": "Input Validation",
+    "content": "All API inputs must be validated. Common issues: missing validation schemas, inadequate type checking, injection vulnerabilities.",
+    "category": "security"
+  },
+  {
+    "topic": "Data Exposure",
+    "content": "APIs should not expose sensitive data unnecessarily. Common issues: returning sensitive fields, lack of field filtering, verbose error messages.",
+    "category": "security"
+  },
+  {
+    "topic": "HTTPS/TLS",
+    "content": "APIs must use HTTPS for all communications. Common issues: HTTP servers defined, missing security requirements, weak TLS configuration.",
+    "category": "security"
+  }
+]

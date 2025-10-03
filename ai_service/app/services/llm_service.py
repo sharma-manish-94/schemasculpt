@@ -53,6 +53,36 @@ class LLMService:
             "patch": self._get_patch_system_prompt()
         }
 
+        def run_security_analysis(self, spec_text: str, context: str) -> str:
+            """Performs a security analysis of a spec using the provided RAG context."""
+            messages = self._build_rag_security_prompt(spec_text, context)
+
+            payload = {"model": "codellama:13b-instruct-q4_K_M", "messages": messages, "stream": False,
+                       "options": {"temperature": 0.2}}
+            response = requests.post(OLLAMA_URL, json=payload)
+
+            if response.status_code == 200:
+                return self._extract_generated_text(response.json())
+            else:
+                return f"Error from Ollama service: {response.status_code} - {response.text}"
+
+        def _build_rag_security_prompt(self, spec: str, context: str) -> list:
+            """Builds a prompt that includes the retrieved context."""
+            system_prompt = "You are an expert API security auditor..."
+            user_prompt = f"""Please analyze the following OpenAPI specification.
+    <SPECIFICATION>
+    {spec}
+    </SPECIFICATION>
+
+    Use the following security best practices as your primary reference.
+    <CONTEXT>
+    {context}
+    </CONTEXT>
+
+    Based ONLY on the provided context, list any potential security issues in the specification."""
+
+            return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+
     async def process_ai_request(self, request: AIRequest) -> Union[AIResponse, AsyncGenerator[StreamingChunk, None]]:
         """
         Process AI request with advanced features including streaming and JSON patching.
@@ -88,6 +118,7 @@ class LLMService:
             if isinstance(e, (LLMError, ValidationError, OpenAPIError)):
                 raise
             raise LLMError(f"Unexpected error in AI processing: {str(e)}")
+
 
     async def _process_standard_request(self, request: AIRequest, start_time: float) -> AIResponse:
         """
