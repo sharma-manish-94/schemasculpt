@@ -224,32 +224,30 @@ public class AIService {
     }
 
     private void extractOperationDescriptions(String path, PathItem pathItem, List<DescriptionAnalysisRequest.DescriptionItem> items) {
-        Map<String, Operation> operations = Map.of(
-            "get", pathItem.getGet(),
-            "post", pathItem.getPost(),
-            "put", pathItem.getPut(),
-            "delete", pathItem.getDelete(),
-            "patch", pathItem.getPatch()
-        );
+        // Build map with only non-null operations (Map.of() doesn't accept null values)
+        Map<String, Operation> operations = new java.util.HashMap<>();
+        if (pathItem.getGet() != null) operations.put("get", pathItem.getGet());
+        if (pathItem.getPost() != null) operations.put("post", pathItem.getPost());
+        if (pathItem.getPut() != null) operations.put("put", pathItem.getPut());
+        if (pathItem.getDelete() != null) operations.put("delete", pathItem.getDelete());
+        if (pathItem.getPatch() != null) operations.put("patch", pathItem.getPatch());
 
         operations.forEach((method, operation) -> {
-            if (operation != null) {
-                String jsonPath = "/paths/" + path.replace("/", "~1") + "/" + method;
-                DescriptionAnalysisRequest.DescriptionContext context = new DescriptionAnalysisRequest.DescriptionContext(
-                    method.toUpperCase(),
-                    null,
-                    null,
-                    operation.getSummary(),
-                    null
-                );
+            String jsonPath = "/paths/" + path.replace("/", "~1") + "/" + method;
+            DescriptionAnalysisRequest.DescriptionContext context = new DescriptionAnalysisRequest.DescriptionContext(
+                method.toUpperCase(),
+                null,
+                null,
+                operation.getSummary(),
+                null
+            );
 
-                items.add(new DescriptionAnalysisRequest.DescriptionItem(
-                    jsonPath + "/description",
-                    "operation",
-                    operation.getDescription(),
-                    context
-                ));
-            }
+            items.add(new DescriptionAnalysisRequest.DescriptionItem(
+                jsonPath + "/description",
+                "operation",
+                operation.getDescription(),
+                context
+            ));
         });
     }
 

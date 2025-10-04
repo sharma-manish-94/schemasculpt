@@ -54,8 +54,20 @@ class DescriptionAnalysisService:
         prompt = self._build_batch_analysis_prompt(items)
 
         # Call LLM once for all descriptions
-        llm_response = await self.llm_adapter.generate(
-            prompt=prompt,
+        # LLMAdapter expects messages list, not a plain prompt
+        messages = [
+            {
+                "role": "system",
+                "content": "You are an API documentation quality analyzer specialized in OpenAPI/Swagger specifications."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+
+        llm_response = await self.llm_adapter.call_llm(
+            messages=messages,
             max_tokens=4000,
             temperature=0.3  # Lower temperature for more consistent quality analysis
         )
@@ -191,6 +203,11 @@ Be concise and actionable. Focus on practical improvements."""
 
             elif line.startswith("SUGGESTED:"):
                 suggested = line.split(":", 1)[1].strip()
+                # Remove surrounding quotes if LLM added them
+                if suggested.startswith('"') and suggested.endswith('"'):
+                    suggested = suggested[1:-1]
+                elif suggested.startswith("'") and suggested.endswith("'"):
+                    suggested = suggested[1:-1]
 
         # Create JSON Patch operation
         patch = JsonPatchOperation(

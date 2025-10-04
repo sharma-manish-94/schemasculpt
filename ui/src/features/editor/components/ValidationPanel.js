@@ -1,11 +1,56 @@
 import { useSpecStore } from "../../../store/specStore";
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import ValidationSuggestion from '../../../components/validation/ValidationSuggestion';
 import AIInsightsPanel from '../../../components/validation/AIInsightsPanel';
 import DescriptionQualityPanel from '../../../components/validation/DescriptionQualityPanel';
 import { groupSuggestionsByCategory, getSuggestionsSummary } from '../../../utils/suggestionGrouping';
 
 const ValidationPanel = React.memo(() => {
+    // Collapsible section state
+    const [expandedSections, setExpandedSections] = useState({
+        errors: true, // Errors always expanded by default
+        aiFriendly: false,
+        autoFix: false,
+        aiFix: false,
+        noFix: false,
+        aiInsights: false,
+        descriptionQuality: false
+    });
+
+    // Toggle individual section
+    const toggleSection = (section) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    };
+
+    // Expand all sections
+    const expandAll = () => {
+        setExpandedSections({
+            errors: true,
+            aiFriendly: true,
+            autoFix: true,
+            aiFix: true,
+            noFix: true,
+            aiInsights: true,
+            descriptionQuality: true
+        });
+    };
+
+    // Collapse all sections
+    const collapseAll = () => {
+        setExpandedSections({
+            errors: true, // Keep errors expanded
+            aiFriendly: false,
+            autoFix: false,
+            aiFix: false,
+            noFix: false,
+            aiInsights: false,
+            descriptionQuality: false
+        });
+    };
+
     // Get errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, and sessionId from the store
     const {
         errors,
@@ -129,14 +174,30 @@ const ValidationPanel = React.memo(() => {
                         <span className="count-badge success-count">All Clear</span>
                     )}
                 </div>
-                <button
-                    className="refresh-button"
-                    onClick={validateCurrentSpec}
-                    disabled={isLoading}
-                    title="Refresh validation"
-                >
-                    {isLoading ? '⟳' : '↻'} Refresh
-                </button>
+                <div className="validation-actions">
+                    <button
+                        className="toggle-button"
+                        onClick={expandAll}
+                        title="Expand all sections"
+                    >
+                        ▼ Expand All
+                    </button>
+                    <button
+                        className="toggle-button"
+                        onClick={collapseAll}
+                        title="Collapse all sections"
+                    >
+                        ▲ Collapse All
+                    </button>
+                    <button
+                        className="refresh-button"
+                        onClick={validateCurrentSpec}
+                        disabled={isLoading}
+                        title="Refresh validation"
+                    >
+                        {isLoading ? '⟳' : '↻'} Refresh
+                    </button>
+                </div>
             </div>
 
             {hasErrors && (
@@ -150,11 +211,16 @@ const ValidationPanel = React.memo(() => {
                     {/* AI-Friendly Suggestions Section - Highlighted Separately */}
                     {aiFriendlySuggestions.length > 0 && (
                         <div className="result-section ai-friendly-section">
-                            <h3 className="result-title-ai-friendly">
+                            <h3
+                                className="result-title-ai-friendly collapsible-title"
+                                onClick={() => toggleSection('aiFriendly')}
+                            >
+                                <span className="collapse-icon">{expandedSections.aiFriendly ? '▼' : '▶'}</span>
                                 <span className="fix-type-icon">🤖</span>
                                 AI-Friendly Suggestions ({aiFriendlySuggestions.length})
                                 <span className="ai-badge">MCP Ready</span>
                             </h3>
+                            {expandedSections.aiFriendly && (
                             <div className="suggestions-list">
                                 {aiFriendlySuggestions.map((sug, index) => {
                                     const suggestion = {
@@ -176,15 +242,21 @@ const ValidationPanel = React.memo(() => {
                                     );
                                 })}
                             </div>
+                            )}
                         </div>
                     )}
 
                     {autoFixSuggestions.length > 0 && (
                         <div className="result-section">
-                            <h3 className="result-title-autofix">
+                            <h3
+                                className="result-title-autofix collapsible-title"
+                                onClick={() => toggleSection('autoFix')}
+                            >
+                                <span className="collapse-icon">{expandedSections.autoFix ? '▼' : '▶'}</span>
                                 <span className="fix-type-icon">⚡</span>
                                 Auto-Fix Suggestions ({autoFixSuggestions.length})
                             </h3>
+                            {expandedSections.autoFix && (
                             <div className="suggestions-list">
                                 {autoFixSuggestions.map((sug, index) => {
                                     // Convert to ValidationSuggestion format
@@ -217,15 +289,21 @@ const ValidationPanel = React.memo(() => {
                                     );
                                 })}
                             </div>
+                            )}
                         </div>
                     )}
 
                     {aiFixSuggestions.length > 0 && (
                         <div className="result-section">
-                            <h3 className="result-title-aifix">
-                                <span className="fix-type-icon">🤖</span>
+                            <h3
+                                className="result-title-aifix collapsible-title"
+                                onClick={() => toggleSection('aiFix')}
+                            >
+                                <span className="collapse-icon">{expandedSections.aiFix ? '▼' : '▶'}</span>
+                                <span className="fix-type-icon">✨</span>
                                 AI-Fix Suggestions ({aiFixSuggestions.length})
                             </h3>
+                            {expandedSections.aiFix && (
                             <div className="suggestions-list">
                                 {aiFixSuggestions.map((sug, index) => {
                                     // Convert to ValidationSuggestion format
@@ -258,15 +336,21 @@ const ValidationPanel = React.memo(() => {
                                     );
                                 })}
                             </div>
+                            )}
                         </div>
                     )}
 
                     {noFixSuggestions.length > 0 && (
                         <div className="result-section">
-                            <h3 className="result-title-suggestion">
+                            <h3
+                                className="result-title-suggestion collapsible-title"
+                                onClick={() => toggleSection('noFix')}
+                            >
+                                <span className="collapse-icon">{expandedSections.noFix ? '▼' : '▶'}</span>
                                 <span className="fix-type-icon">💡</span>
                                 General Suggestions ({noFixSuggestions.length})
                             </h3>
+                            {expandedSections.noFix && (
                             <div className="suggestions-list">
                                 {noFixSuggestions.map((sug, index) => {
                                     // Convert to ValidationSuggestion format
@@ -287,43 +371,64 @@ const ValidationPanel = React.memo(() => {
                                     );
                                 })}
                             </div>
+                            )}
                         </div>
                     )}
                 </>
             )}
 
             {/* AI Insights Panel */}
-            <AIInsightsPanel
-                insights={aiInsights}
-                summary={aiSummary}
-                confidenceScore={aiConfidenceScore}
-                onRunAnalysis={runAIMetaAnalysis}
-                isLoading={isAIAnalysisLoading}
-            />
+            <div className="result-section ai-insights-section">
+                <h3
+                    className="result-title-ai-insights collapsible-title"
+                    onClick={() => toggleSection('aiInsights')}
+                >
+                    <span className="collapse-icon">{expandedSections.aiInsights ? '▼' : '▶'}</span>
+                    <span className="fix-type-icon">🧠</span>
+                    AI Insights
+                </h3>
+                {expandedSections.aiInsights && (
+                    <AIInsightsPanel
+                        insights={aiInsights}
+                        summary={aiSummary}
+                        confidenceScore={aiConfidenceScore}
+                        onRunAnalysis={runAIMetaAnalysis}
+                        isLoading={isAIAnalysisLoading}
+                    />
+                )}
+            </div>
 
             {/* Description Quality Panel */}
             <div className="result-section description-quality-section">
                 <div className="section-header">
-                    <h3 className="result-title-description">
+                    <h3
+                        className="result-title-description collapsible-title"
+                        onClick={() => toggleSection('descriptionQuality')}
+                    >
+                        <span className="collapse-icon">{expandedSections.descriptionQuality ? '▼' : '▶'}</span>
                         <span className="fix-type-icon">📝</span>
                         Description Quality Analysis
                     </h3>
-                    <button
-                        className="analyze-descriptions-btn"
-                        onClick={runDescriptionAnalysis}
-                        disabled={isDescriptionAnalysisLoading || !sessionId}
-                        title="Analyze description quality"
-                    >
-                        {isDescriptionAnalysisLoading ? '⟳ Analyzing...' : '🔍 Analyze Descriptions'}
-                    </button>
+                    {expandedSections.descriptionQuality && (
+                        <button
+                            className="analyze-descriptions-btn"
+                            onClick={runDescriptionAnalysis}
+                            disabled={isDescriptionAnalysisLoading || !sessionId}
+                            title="Analyze description quality"
+                        >
+                            {isDescriptionAnalysisLoading ? '⟳ Analyzing...' : '🔍 Analyze Descriptions'}
+                        </button>
+                    )}
                 </div>
-                <DescriptionQualityPanel
-                    results={descriptionQuality?.results || []}
-                    overallScore={descriptionQuality?.overallScore || 0}
-                    patches={descriptionQuality?.patches || []}
-                    onApplyPatches={applyDescriptionPatches}
-                    isLoading={isDescriptionAnalysisLoading}
-                />
+                {expandedSections.descriptionQuality && (
+                    <DescriptionQualityPanel
+                        results={descriptionQuality?.results || []}
+                        overallScore={descriptionQuality?.overallScore || 0}
+                        patches={descriptionQuality?.patches || []}
+                        onApplyPatches={applyDescriptionPatches}
+                        isLoading={isDescriptionAnalysisLoading}
+                    />
+                )}
             </div>
         </>
     );
