@@ -1,38 +1,54 @@
-import {validateSpec, applyQuickFix} from '../../api/validationService';
+import {validateSpec, applyQuickFix, updateSessionSpec} from '../../api/validationService';
 import {useSpecStore} from "../specStore";
 
 export const createValidationSlice = (set, get) => ({
     // --- STATE ---
     errors: [], suggestions: [], isLoading: false, // --- ACTIONS ---
     setIsLoading: (loading) => set({isLoading: loading}), validateCurrentSpec: async () => {
-        const {sessionId} = useSpecStore.getState();
+        const {sessionId, specText} = useSpecStore.getState();
         if (!sessionId) return;
 
         set({isLoading: true});
-        const result = await validateSpec(sessionId);
-        if (result.success) {
-            set({errors: result.data.errors, suggestions: result.data.suggestions});
-        } else {
-            set({errors: [{message: result.error}], suggestions: []});
+
+        try {
+            // CRITICAL FIX: Update the session with current spec BEFORE validation
+            // This ensures validation uses the latest changes from the editor
+            await updateSessionSpec(sessionId, specText);
+
+            // Now validate against the updated session spec
+            const result = await validateSpec(sessionId);
+            if (result.success) {
+                set({errors: result.data.errors, suggestions: result.data.suggestions});
+            } else {
+                set({errors: [{message: result.error}], suggestions: []});
+            }
+        } catch (error) {
+            console.error('Validation error:', error);
+            set({errors: [{message: 'Validation failed: ' + error.message}], suggestions: []});
         }
+
         set({isLoading: false});
     },
 
     applyQuickFix: async (suggestion) => {
-        const { sessionId, setSpecText, setSkipNextValidation } = useSpecStore.getState();
+        const { sessionId, specText, setSpecText, setSkipNextValidation } = useSpecStore.getState();
         const { format } = useSpecStore.getState();
 
         // Set loading state for this specific fix
         set({ isLoading: true });
 
-        // Create the fix request object
-        const fixRequest = {
-            ruleId: suggestion.ruleId,
-            context: suggestion.context,
-            format
-        };
-
         try {
+            // CRITICAL FIX: Update the session with current spec BEFORE applying fix
+            // This ensures the fix is applied to the latest changes from the editor
+            await updateSessionSpec(sessionId, specText);
+
+            // Create the fix request object
+            const fixRequest = {
+                ruleId: suggestion.ruleId,
+                context: suggestion.context,
+                format
+            };
+
             const result = await applyQuickFix(sessionId, fixRequest);
             if (result && result.success) {
                 const updatedSpecText = JSON.stringify(result.data, null, 2);

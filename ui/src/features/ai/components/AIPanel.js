@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSpecStore } from '../../../store/specStore';
 import Button from '../../../components/ui/Button';
 import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../../components/ui/ErrorMessage';
-import AIHealthStatus from './AIHealthStatus';
-import AIAgentManager from './AIAgentManager';
-import AIPromptBuilder from './AIPromptBuilder';
-import AIWorkflowRunner from './AIWorkflowRunner';
 import AISpecGenerator from './AISpecGenerator';
 import SecurityAnalysisTab from './SecurityAnalysisTab';
 import {
@@ -24,48 +20,17 @@ const AI_TABS = {
     SECURITY: 'security',
     HARDENING: 'hardening',
     TESTING: 'testing',
-    GENERATOR: 'generator',
-    AGENTS: 'agents',
-    WORKFLOWS: 'workflows',
-    PROMPTS: 'prompts',
-    HEALTH: 'health'
+    GENERATOR: 'generator'
 };
 
 function AIPanel() {
     const [activeTab, setActiveTab] = useState(AI_TABS.ASSISTANT);
     const {
-        aiPrompt,
-        setAiPrompt,
-        submitAIRequest,
-        isAiProcessing,
         aiResponse,
         aiError,
         clearAiResponse,
-        processSpecification,
-        generateSpecification,
-        checkAiHealth,
-        aiHealthStatus,
-        fetchAgentsStatus,
-        agentsStatus,
         specText
     } = useSpecStore();
-
-    useEffect(() => {
-        checkAiHealth();
-        fetchAgentsStatus();
-    }, [checkAiHealth, fetchAgentsStatus]);
-
-    const handleQuickAction = async (actionType, prompt) => {
-        clearAiResponse();
-
-        const request = {
-            operationType: actionType,
-            prompt: prompt,
-            streaming: false
-        };
-
-        await processSpecification(request);
-    };
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -79,14 +44,6 @@ function AIPanel() {
                 return <AITestingTab />;
             case AI_TABS.GENERATOR:
                 return <AISpecGenerator />;
-            case AI_TABS.AGENTS:
-                return <AIAgentManager />;
-            case AI_TABS.WORKFLOWS:
-                return <AIWorkflowRunner />;
-            case AI_TABS.PROMPTS:
-                return <AIPromptBuilder />;
-            case AI_TABS.HEALTH:
-                return <AIHealthStatus />;
             default:
                 return <AIAssistantTab />;
         }
@@ -111,45 +68,6 @@ function AIPanel() {
 
             <div className="ai-panel-content">
                 {renderTabContent()}
-            </div>
-
-            {/* Quick Actions Bar */}
-            <div className="ai-quick-actions">
-                <h4>Quick Actions</h4>
-                <div className="quick-action-buttons">
-                    <Button
-                        variant="ai"
-                        size="small"
-                        onClick={() => handleQuickAction('ENHANCE', 'Improve this API specification with better descriptions and examples')}
-                        loading={isAiProcessing}
-                    >
-                        Enhance
-                    </Button>
-                    <Button
-                        variant="ai"
-                        size="small"
-                        onClick={() => handleQuickAction('VALIDATE', 'Validate this API specification and suggest improvements')}
-                        loading={isAiProcessing}
-                    >
-                        Validate
-                    </Button>
-                    <Button
-                        variant="ai"
-                        size="small"
-                        onClick={() => handleQuickAction('DOCUMENT', 'Add comprehensive documentation to this API specification')}
-                        loading={isAiProcessing}
-                    >
-                        Document
-                    </Button>
-                    <Button
-                        variant="ai"
-                        size="small"
-                        onClick={() => handleQuickAction('OPTIMIZE', 'Optimize this API specification for better performance and usability')}
-                        loading={isAiProcessing}
-                    >
-                        Optimize
-                    </Button>
-                </div>
             </div>
 
             {/* Response/Error Display */}
