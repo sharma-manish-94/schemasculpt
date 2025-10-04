@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,9 @@ public class JacksonConfig {
     @Primary
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
+
+        // Register JavaTimeModule for Java 8 date/time support
+        mapper.registerModule(new JavaTimeModule());
 
         // Add mixin to ignore internal Swagger fields
         mapper.addMixIn(Schema.class, SchemaMixin.class);
@@ -60,6 +64,9 @@ public class JacksonConfig {
     @Bean("cleanObjectMapper")
     public ObjectMapper cleanObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
+
+        // Register JavaTimeModule for Java 8 date/time support
+        mapper.registerModule(new JavaTimeModule());
 
         // Add mixin to ignore internal Swagger fields
         mapper.addMixIn(Schema.class, SchemaMixin.class);
