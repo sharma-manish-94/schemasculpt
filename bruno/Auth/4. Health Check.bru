@@ -1,0 +1,22 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/health
+  body: none
+  auth: none
+}
+
+docs {
+  # Health Check
+
+  Public endpoint to check if the authentication service is running.
+}
+
+assert {
+  res.status: eq 200
+  res.body: eq "Authentication service is running"
+}

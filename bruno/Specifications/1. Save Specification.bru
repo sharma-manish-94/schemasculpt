@@ -1,0 +1,45 @@
+meta {
+  name: Save Specification
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects/{{projectId}}/specifications
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "specContent": "{\"openapi\":\"3.0.0\",\"info\":{\"title\":\"Petstore API\",\"version\":\"1.0.0\"},\"paths\":{\"/pets\":{\"get\":{\"summary\":\"List all pets\",\"responses\":{\"200\":{\"description\":\"Success\"}}}}}}",
+    "specFormat": "json",
+    "commitMessage": "Initial version of the API"
+  }
+}
+
+docs {
+  # Save Specification
+
+  Saves a new version of the specification.
+  - Automatically generates version number (v1, v2, v3...)
+  - Marks previous versions as not current
+  - Optionally include a commit message
+}
+
+script:post-response {
+  if (res.status === 201) {
+    const version = res.body.version;
+    bru.setEnvVar("specificationVersion", version);
+    console.log("Specification saved as version:", version);
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.isCurrent: eq true
+}

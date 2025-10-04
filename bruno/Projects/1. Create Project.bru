@@ -1,0 +1,43 @@
+meta {
+  name: Create Project
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/projects
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Petstore API",
+    "description": "OpenAPI specification for a pet store",
+    "isPublic": false
+  }
+}
+
+docs {
+  # Create Project
+
+  Creates a new project for the authenticated user.
+  Project names must be unique per user.
+}
+
+script:post-response {
+  if (res.status === 201) {
+    const projectId = res.body.id;
+    bru.setEnvVar("projectId", projectId);
+    console.log("Project created with ID:", projectId);
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.name: eq "Petstore API"
+}

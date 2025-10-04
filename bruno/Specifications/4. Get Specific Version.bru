@@ -1,0 +1,28 @@
+meta {
+  name: Get Specific Version
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/{{projectId}}/specifications/versions/{{specificationVersion}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Specific Version
+
+  Returns a specific version of the specification.
+  Includes the full spec content.
+
+  Version format: v1, v2, v3, etc.
+}
+
+assert {
+  res.status: eq 200
+}

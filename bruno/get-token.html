@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get JWT Token - SchemaSculpt</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .token-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+        .success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            display: none;
+        }
+        .user-info h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔑 Get JWT Token</h1>
+        <p class="subtitle">Extract your authentication token for Bruno API testing</p>
+
+        <div class="info">
+            <strong>Instructions:</strong>
+            <ol>
+                <li>Make sure you're logged in at <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                <li>Click "Get Token" below</li>
+                <li>Copy the token</li>
+                <li>Paste it into Bruno's environment variable <code>token</code></li>
+            </ol>
+        </div>
+
+        <button class="btn" onclick="getToken()">Get Token</button>
+        <button class="btn btn-secondary" onclick="getUserInfo()">Get User Info</button>
+        <button class="btn btn-secondary" onclick="clearToken()">Clear Token</button>
+
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+
+        <div id="token-container" style="display: none;">
+            <h3>Your JWT Token:</h3>
+            <div class="token-display" id="token"></div>
+            <button class="btn" onclick="copyToken()">📋 Copy to Clipboard</button>
+        </div>
+
+        <div id="user-info" class="user-info"></div>
+    </div>
+
+    <script>
+        function getToken() {
+            const token = localStorage.getItem('token');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            const tokenContainer = document.getElementById('token-container');
+            const tokenDiv = document.getElementById('token');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            if (token) {
+                tokenDiv.textContent = token;
+                tokenContainer.style.display = 'block';
+                successDiv.textContent = '✅ Token retrieved successfully!';
+                successDiv.style.display = 'block';
+            } else {
+                tokenContainer.style.display = 'none';
+                errorDiv.textContent = '❌ No token found. Please login first at http://localhost:3000';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function copyToken() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                navigator.clipboard.writeText(token).then(() => {
+                    const successDiv = document.getElementById('success');
+                    successDiv.textContent = '✅ Token copied to clipboard!';
+                    successDiv.style.display = 'block';
+                    setTimeout(() => {
+                        successDiv.style.display = 'none';
+                    }, 3000);
+                });
+            }
+        }
+
+        async function getUserInfo() {
+            const token = localStorage.getItem('token');
+            const errorDiv = document.getElementById('error');
+            const userInfoDiv = document.getElementById('user-info');
+
+            errorDiv.style.display = 'none';
+            userInfoDiv.style.display = 'none';
+
+            if (!token) {
+                errorDiv.textContent = '❌ No token found. Please login first.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    userInfoDiv.innerHTML = `
+                        <h3>👤 User Information</h3>
+                        <p><strong>Username:</strong> ${user.username}</p>
+                        <p><strong>Email:</strong> ${user.email || 'N/A'}</p>
+                        <p><strong>GitHub ID:</strong> ${user.githubId}</p>
+                        <p><strong>User ID:</strong> ${user.id}</p>
+                        ${user.avatarUrl ? `<img src="${user.avatarUrl}" alt="Avatar" width="50" height="50" style="border-radius: 50%">` : ''}
+                    `;
+                    userInfoDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = '❌ Failed to get user info. Token may be invalid or expired.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = '❌ Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function clearToken() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            document.getElementById('token-container').style.display = 'none';
+            document.getElementById('user-info').style.display = 'none';
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = '✅ Token cleared from localStorage';
+            successDiv.style.display = 'block';
+        }
+
+        // Auto-load token if available
+        window.onload = function() {
+            if (localStorage.getItem('token')) {
+                getToken();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+meta {
+  name: Get Token (After OAuth)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/token
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIzNDM5OTk1NCIsInVzZXJJZCI6MSwidXNlcm5hbWUiOiJzaGFybWEtbWFuaXNoLTk0IiwiYXZhdGFyVXJsIjoiaHR0cHM6Ly9hdmF0YXJzLmdpdGh1YnVzZXJjb250ZW50LmNvbS91LzM0Mzk5OTU0P3Y9NCIsImlhdCI6MTc1OTU4OTYxMiwiZXhwIjoxNzU5Njc2MDEyfQ.9cPXglRp6inKkUYzQecRr9m9BtaqeoIt_Ni9LnDNlRutNgvcPPvTC8GRL4Psz5QQH39rLOg39bxPVXmpTz6nNw
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const token = res.body.token;
+    bru.setEnvVar("token", token);
+    console.log("Token saved to environment:", token);
+  } else {
+    console.error("Failed to get token:", res.status);
+  }
+}
+
+docs {
+  # Get JWT Token
+  
+  This endpoint is called by the frontend after OAuth redirect.
+  It requires an active OAuth session (cookie).
+  
+  For testing in Bruno, it's easier to:
+  1. Login via browser
+  2. Copy token from localStorage
+  3. Paste into environment variable
+  
+  Or use the script in the next request to extract token.
+}

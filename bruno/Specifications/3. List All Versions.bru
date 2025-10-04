@@ -1,0 +1,27 @@
+meta {
+  name: List All Versions
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/{{projectId}}/specifications
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # List All Versions
+
+  Returns all versions of the specification.
+  Ordered by creation date (newest first).
+  Does not include spec content (use Get Specific Version for that).
+}
+
+assert {
+  res.status: eq 200
+}
