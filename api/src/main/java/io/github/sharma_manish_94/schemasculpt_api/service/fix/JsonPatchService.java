@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ai.JsonPatchOperation;
+import io.github.sharma_manish_94.schemasculpt_api.util.OpenAPIEnumFixer;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.slf4j.Logger;
@@ -36,11 +38,16 @@ public class JsonPatchService {
      */
     public OpenAPI applyPatch(OpenAPI openApi, List<JsonPatchOperation> patchOps) throws JsonPatchException {
         try {
-            // Convert OpenAPI to JsonNode
-            JsonNode specNode = objectMapper.valueToTree(openApi);
+            // CRITICAL: Use Swagger's Json.mapper() instead of Spring's ObjectMapper
+            // Swagger's mapper correctly serializes enums as lowercase (oauth2, apiKey, header)
+            // Spring's ObjectMapper was configured with WRITE_ENUMS_USING_TO_STRING which uppercases them
+            ObjectMapper swaggerMapper = Json.mapper();
+
+            // Convert OpenAPI to JsonNode using Swagger's mapper
+            JsonNode specNode = swaggerMapper.valueToTree(openApi);
 
             // Convert patch operations to JsonNode
-            JsonNode patchNode = objectMapper.valueToTree(patchOps);
+            JsonNode patchNode = swaggerMapper.valueToTree(patchOps);
 
             // Create JsonPatch from operations
             JsonPatch patch = JsonPatch.fromJson(patchNode);
@@ -48,8 +55,12 @@ public class JsonPatchService {
             // Apply patch
             JsonNode patchedNode = patch.apply(specNode);
 
-            // Convert back to OpenAPI
-            String patchedJson = objectMapper.writeValueAsString(patchedNode);
+            // Convert back to OpenAPI using Swagger's mapper
+            String patchedJson = swaggerMapper.writeValueAsString(patchedNode);
+
+            // CRITICAL: Fix uppercase enums that Swagger parser creates
+            patchedJson = OpenAPIEnumFixer.fixEnums(patchedJson);
+
             OpenAPI patchedOpenApi = new OpenAPIV3Parser().readContents(patchedJson).getOpenAPI();
 
             if (patchedOpenApi == null) {

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.core.ParameterizedTypeReference;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIProxyRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIResponse;
+import io.github.sharma_manish_94.schemasculpt_api.dto.ai.SmartAIFixRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.ai.SmartAIFixResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
 import io.github.sharma_manish_94.schemasculpt_api.service.SpecParsingService;
 import io.swagger.v3.core.util.Json;
@@ -34,13 +36,56 @@ public class AIService {
         log.info("Processing AI request for sessionId: {}", sessionId);
         OpenAPI openApi = sessionService.getSpecForSession(sessionId);
         String specText = Json.pretty(openApi);
-        AIProxyRequest aiRequest = new AIProxyRequest(specText, userPrompt);
-        String updatedSpecText = callAIService(aiRequest);
+
+        // Use smart fix endpoint for optimized processing
+        SmartAIFixRequest smartRequest = new SmartAIFixRequest(specText, userPrompt);
+        String updatedSpecText = callSmartAIFix(smartRequest);
+
         OpenAPI updatedOpenApi = specParsingService.parse(updatedSpecText).getOpenAPI();
         sessionService.updateSessionSpec(sessionId, updatedOpenApi);
         return updatedSpecText;
     }
 
+    /**
+     * Call the optimized smart AI fix endpoint.
+     * This endpoint intelligently chooses between JSON patches (fast, targeted)
+     * and full regeneration (slow, broad changes) based on the prompt.
+     */
+    private String callSmartAIFix(SmartAIFixRequest request) {
+        log.info("Calling smart AI fix endpoint");
+
+        try {
+            SmartAIFixResponse response = this.webClient.post()
+                    .uri("/ai/fix/smart")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(SmartAIFixResponse.class)
+                    .block();
+
+            if (response != null && response.updatedSpecText() != null) {
+                log.info("Smart AI fix completed using {} method in {}ms ({} tokens)",
+                        response.methodUsed(),
+                        response.processingTimeMs(),
+                        response.tokenCount());
+                return formatSpec(response.updatedSpecText());
+            } else {
+                log.warn("Smart AI fix returned null or empty response, response: {}", response);
+                throw new RuntimeException("AI service returned invalid response");
+            }
+        } catch (Exception e) {
+            log.error("Smart AI fix failed, falling back to legacy endpoint: {}", e.getMessage());
+            // Fallback to legacy endpoint if smart fix fails
+            AIProxyRequest legacyRequest = new AIProxyRequest(request.specText(), request.prompt());
+            return callAIService(legacyRequest);
+        }
+    }
+
+    /**
+     * Legacy method: Call the original /process endpoint for full regeneration.
+     * Kept for backward compatibility, but prefer callSmartAIFix() for better performance.
+     */
+    @Deprecated
     private String callAIService(AIProxyRequest aiRequest) {
         return this.webClient.post()
                 .uri("/process")

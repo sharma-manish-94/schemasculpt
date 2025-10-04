@@ -45,7 +45,11 @@ public class JacksonConfig {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+
+        // CRITICAL: DO NOT enable WRITE_ENUMS_USING_TO_STRING
+        // This causes OpenAPI enums to serialize as uppercase (OAUTH2, APIKEY, HEADER)
+        // instead of the correct lowercase values (oauth2, apiKey, header)
+        // mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
 
         return mapper;
     }

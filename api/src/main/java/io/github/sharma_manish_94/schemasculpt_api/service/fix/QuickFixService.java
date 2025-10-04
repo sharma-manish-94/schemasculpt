@@ -7,6 +7,8 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.QuickFixRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ai.PatchGenerationRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ai.PatchGenerationResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
+import io.github.sharma_manish_94.schemasculpt_api.util.OpenAPIEnumFixer;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -86,8 +88,12 @@ public class QuickFixService {
      */
     private OpenAPI applyAIFix(OpenAPI openApi, QuickFixRequest request) {
         try {
-            // Convert OpenAPI to JSON string
-            String specJson = objectMapper.writeValueAsString(openApi);
+            // CRITICAL: Use Swagger's Json.pretty() instead of Spring's ObjectMapper
+            // This ensures enums are serialized correctly as lowercase (oauth2, not OAUTH2)
+            String specJson = Json.pretty(openApi);
+
+            // Fix uppercase enums that Swagger parser stores in the model
+            specJson = OpenAPIEnumFixer.fixEnums(specJson);
 
             // Create request for AI service
             PatchGenerationRequest patchRequest = new PatchGenerationRequest(
