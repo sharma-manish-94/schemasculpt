@@ -2,6 +2,7 @@ import { useSpecStore } from "../../../store/specStore";
 import React, { useMemo, useCallback } from 'react';
 import ValidationSuggestion from '../../../components/validation/ValidationSuggestion';
 import AIInsightsPanel from '../../../components/validation/AIInsightsPanel';
+import DescriptionQualityPanel from '../../../components/validation/DescriptionQualityPanel';
 import { groupSuggestionsByCategory, getSuggestionsSummary } from '../../../utils/suggestionGrouping';
 
 const ValidationPanel = React.memo(() => {
@@ -18,7 +19,11 @@ const ValidationPanel = React.memo(() => {
         aiSummary,
         aiConfidenceScore,
         isAIAnalysisLoading,
-        runAIMetaAnalysis
+        runAIMetaAnalysis,
+        descriptionQuality,
+        isDescriptionAnalysisLoading,
+        runDescriptionAnalysis,
+        applyDescriptionPatches
     } = useSpecStore();
 
     // Define which rules can be auto-fixed vs require AI
@@ -295,6 +300,31 @@ const ValidationPanel = React.memo(() => {
                 onRunAnalysis={runAIMetaAnalysis}
                 isLoading={isAIAnalysisLoading}
             />
+
+            {/* Description Quality Panel */}
+            <div className="result-section description-quality-section">
+                <div className="section-header">
+                    <h3 className="result-title-description">
+                        <span className="fix-type-icon">📝</span>
+                        Description Quality Analysis
+                    </h3>
+                    <button
+                        className="analyze-descriptions-btn"
+                        onClick={runDescriptionAnalysis}
+                        disabled={isDescriptionAnalysisLoading || !sessionId}
+                        title="Analyze description quality"
+                    >
+                        {isDescriptionAnalysisLoading ? '⟳ Analyzing...' : '🔍 Analyze Descriptions'}
+                    </button>
+                </div>
+                <DescriptionQualityPanel
+                    results={descriptionQuality?.results || []}
+                    overallScore={descriptionQuality?.overallScore || 0}
+                    patches={descriptionQuality?.patches || []}
+                    onApplyPatches={applyDescriptionPatches}
+                    isLoading={isDescriptionAnalysisLoading}
+                />
+            </div>
         </>
     );
 });
