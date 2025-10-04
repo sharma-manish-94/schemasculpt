@@ -3,7 +3,7 @@ import { useSpecStore } from "../../../store/specStore";
 import EnhancedEditorPanel from "./EnhancedEditorPanel";
 import OperationSpecViewer from "./OperationSpecViewer";
 
-function DetailPanel() {
+function DetailPanel({ project }) {
     const { selectedNavItem, isNavItemLoading } = useSpecStore();
 
     if(isNavItemLoading) {
@@ -13,7 +13,7 @@ function DetailPanel() {
     return (
       <div className="detail-panel-wrapper">
       {!selectedNavItem ? (
-        <EnhancedEditorPanel />
+        <EnhancedEditorPanel project={project} />
       ) : (
         <OperationSpecViewer />
       )}

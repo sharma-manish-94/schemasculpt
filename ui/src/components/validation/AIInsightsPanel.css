@@ -1,0 +1,248 @@
+.ai-insights-panel {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.ai-insights-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.ai-insights-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #212529;
+}
+
+.ai-insights-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.confidence-badge {
+    padding: 4px 12px;
+    background: #e7f3ff;
+    color: #0066cc;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.run-analysis-button {
+    padding: 6px 16px;
+    background: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.run-analysis-button:hover:not(:disabled) {
+    background: #0052a3;
+}
+
+.run-analysis-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.ai-insights-loading,
+.ai-insights-empty {
+    text-align: center;
+    padding: 32px;
+    color: #6c757d;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0066cc;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ai-insights-subtitle {
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.ai-insights-summary {
+    background: white;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    border-left: 4px solid #0066cc;
+}
+
+.ai-insights-summary h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #495057;
+}
+
+.ai-insights-summary p {
+    margin: 0;
+    line-height: 1.6;
+    color: #212529;
+}
+
+.ai-insights-list h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #495057;
+}
+
+.ai-insight-card {
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    border-left: 4px solid #6c757d;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.ai-insight-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ai-insight-card.severity-critical {
+    border-left-color: #dc3545;
+}
+
+.ai-insight-card.severity-high {
+    border-left-color: #fd7e14;
+}
+
+.ai-insight-card.severity-medium {
+    border-left-color: #ffc107;
+}
+
+.ai-insight-card.severity-low {
+    border-left-color: #0dcaf0;
+}
+
+.ai-insight-card.severity-info {
+    border-left-color: #6c757d;
+}
+
+.ai-insight-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ai-insight-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.severity-icon,
+.category-icon {
+    font-size: 18px;
+}
+
+.ai-insight-title h5 {
+    margin: 0;
+    font-size: 15px;
+    color: #212529;
+    font-weight: 600;
+}
+
+.expand-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+.ai-insight-details {
+    padding: 0 16px 16px 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+.insight-description {
+    margin: 12px 0;
+    line-height: 1.6;
+    color: #495057;
+}
+
+.affected-paths,
+.related-issues {
+    margin: 12px 0;
+}
+
+.affected-paths strong,
+.related-issues strong {
+    display: block;
+    font-size: 13px;
+    color: #495057;
+    margin-bottom: 6px;
+}
+
+.affected-paths ul,
+.related-issues ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.affected-paths li,
+.related-issues li {
+    margin: 4px 0;
+    font-size: 13px;
+}
+
+.affected-paths code,
+.related-issues code {
+    background: #f1f3f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.insight-metadata {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-severity {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.badge-category {
+    background: #d1ecf1;
+    color: #0c5460;
+}

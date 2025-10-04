@@ -1,9 +1,16 @@
-import {validateSpec, applyQuickFix, updateSessionSpec} from '../../api/validationService';
+import {validateSpec, applyQuickFix, updateSessionSpec, performAIMetaAnalysis} from '../../api/validationService';
 import {useSpecStore} from "../specStore";
 
 export const createValidationSlice = (set, get) => ({
     // --- STATE ---
-    errors: [], suggestions: [], isLoading: false, // --- ACTIONS ---
+    errors: [],
+    suggestions: [],
+    isLoading: false,
+    aiInsights: [],
+    aiSummary: null,
+    aiConfidenceScore: 0,
+    isAIAnalysisLoading: false,
+    // --- ACTIONS ---
     setIsLoading: (loading) => set({isLoading: loading}), validateCurrentSpec: async () => {
         const {sessionId, specText} = useSpecStore.getState();
         if (!sessionId) return;
@@ -77,6 +84,42 @@ export const createValidationSlice = (set, get) => ({
         } catch (error) {
             console.error('Fix error:', error);
             set({ isLoading: false });
+        }
+    },
+
+    runAIMetaAnalysis: async () => {
+        const { sessionId } = useSpecStore.getState();
+        if (!sessionId) return;
+
+        set({ isAIAnalysisLoading: true });
+
+        try {
+            const result = await performAIMetaAnalysis(sessionId);
+
+            if (result && result.success) {
+                set({
+                    aiInsights: result.data.insights || [],
+                    aiSummary: result.data.summary || null,
+                    aiConfidenceScore: result.data.confidenceScore || 0,
+                    isAIAnalysisLoading: false
+                });
+            } else {
+                console.error('AI meta-analysis failed:', result?.error);
+                set({
+                    aiInsights: [],
+                    aiSummary: 'AI analysis failed: ' + (result?.error || 'Unknown error'),
+                    aiConfidenceScore: 0,
+                    isAIAnalysisLoading: false
+                });
+            }
+        } catch (error) {
+            console.error('AI meta-analysis error:', error);
+            set({
+                aiInsights: [],
+                aiSummary: 'AI analysis error: ' + error.message,
+                aiConfidenceScore: 0,
+                isAIAnalysisLoading: false
+            });
         }
     }
 });

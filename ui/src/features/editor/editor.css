@@ -135,6 +135,7 @@ body {
   overflow: hidden;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
@@ -2120,7 +2121,7 @@ body {
 /* ===== GROUPED SUGGESTION STYLING ===== */
 
 .result-title-autofix {
-  background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: var(--white);
   padding: 6px 12px;
   border-radius: var(--radius-md);
@@ -2323,6 +2324,249 @@ textarea:focus-visible {
   opacity: 0.5;
   cursor: not-allowed;
   background: var(--gray-400) !important;
+}
+
+/* Save Version Button */
+.save-version-button {
+  background: linear-gradient(135deg, var(--secondary-green) 0%, var(--secondary-green-hover) 100%) !important;
+  border-color: var(--secondary-green) !important;
+  color: var(--white) !important;
+}
+
+.save-version-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--secondary-green-hover) 0%, #006a47 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.save-version-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--gray-400) !important;
+}
+
+/* Commit Message Modal */
+.commit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.commit-modal {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  width: 90%;
+  max-width: 450px;
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn 0.3s ease-out;
+}
+
+.commit-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.commit-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.commit-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--gray-500);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.commit-modal-close:hover {
+  background: var(--gray-100);
+  color: var(--gray-800);
+}
+
+.commit-modal-body {
+  padding: 1.25rem;
+}
+
+.commit-modal-body label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  font-size: 0.875rem;
+}
+
+.commit-message-input {
+  width: 100%;
+  padding: 0.625rem;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  color: var(--gray-800);
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.commit-message-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--primary-blue-light);
+}
+
+.commit-message-input::placeholder {
+  color: var(--gray-400);
+}
+
+.commit-modal-hint {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.commit-modal-hint kbd {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--gray-700);
+}
+
+.commit-modal-footer {
+  display: flex;
+  gap: 0.625rem;
+  justify-content: flex-end;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.btn-cancel-commit {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel-commit:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.btn-save-commit {
+  background: linear-gradient(135deg, var(--secondary-green) 0%, var(--secondary-green-hover) 100%);
+  border: none;
+  color: var(--white);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-save-commit:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--secondary-green-hover) 0%, #006a47 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-save-commit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Version Dropdown */
+.version-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.version-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--gray-200);
+  transition: background 0.2s;
+}
+
+.version-item:last-child {
+  border-bottom: none;
+}
+
+.version-item:hover {
+  background: var(--gray-50);
+}
+
+.version-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.version-number {
+  font-weight: 600;
+  color: var(--gray-800);
+  font-size: 0.9em;
+}
+
+.current-badge {
+  background: var(--secondary-green);
+  color: var(--white);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
+.version-date {
+  font-size: 0.75em;
+  color: var(--gray-500);
 }
 
 /* Enhanced Monaco Editor container */
@@ -2648,3 +2892,118 @@ textarea:focus-visible {
   color: inherit !important;
 }
 
+
+/* ===== AI-FRIENDLY SUGGESTIONS STYLING ===== */
+
+/* AI-Friendly Section - Distinct visual treatment */
+.ai-friendly-section {
+  background: linear-gradient(135deg, #e6f2ff 0%, #f0f9ff 100%);
+  border-left: 4px solid #0066cc;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+/* AI-Friendly Title */
+.result-title-ai-friendly {
+  color: #0052a3;
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* MCP Ready Badge */
+.ai-badge {
+  background: linear-gradient(135deg, #0066cc, #0052a3);
+  color: white;
+  font-size: 0.7em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+}
+
+/* AI-Friendly Count Badge */
+.ai-friendly-count {
+  background: linear-gradient(135deg, #e6f2ff, #cce5ff);
+  color: #0052a3;
+  border: 2px solid #0066cc;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.15);
+}
+
+/* AI-Friendly suggestion items get a subtle highlight */
+.ai-friendly-section .suggestions-list {
+  background: white;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+/* Styling for general count badges and result titles (if they don't exist) */
+.count-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75em;
+  font-weight: 600;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.error-count {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.suggestion-count {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.security-count {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.success-count {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+/* Result section titles */
+.result-title-error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* .result-title-autofix is defined earlier with full styling - no override needed */
+
+.result-title-suggestion {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.fix-type-icon {
+  font-size: 1.2em;
+  margin-right: 4px;
+}
+
+.result-section {
+  margin-bottom: 16px;
+}
+
+.suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
