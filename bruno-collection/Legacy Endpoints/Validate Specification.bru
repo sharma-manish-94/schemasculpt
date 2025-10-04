@@ -1,0 +1,25 @@
+meta {
+  name: Validate Specification
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/validate
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return validation result", function() {
+    expect(res.getBody()).to.have.property('valid');
+    expect(res.getBody()).to.have.property('errors');
+    expect(res.getBody()).to.have.property('warnings');
+    expect(res.getBody().errors).to.be.an('array');
+    expect(res.getBody().warnings).to.be.an('array');
+  });
+}

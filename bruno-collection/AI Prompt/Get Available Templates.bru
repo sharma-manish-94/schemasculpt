@@ -1,0 +1,30 @@
+meta {
+  name: Get Available Templates
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/prompt/templates
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return templates list", function() {
+    expect(res.getBody()).to.have.property('templates');
+    expect(res.getBody()).to.have.property('total_templates');
+    expect(res.getBody()).to.have.property('status', 'available');
+  });
+
+  test("Templates should include expected ones", function() {
+    const templates = res.getBody().templates;
+    expect(templates).to.have.property('specification_enhancement');
+    expect(templates).to.have.property('mock_data_generation');
+    expect(templates).to.have.property('api_documentation');
+  });
+}

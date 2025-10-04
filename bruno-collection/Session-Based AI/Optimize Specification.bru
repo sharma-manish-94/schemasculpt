@@ -1,0 +1,39 @@
+meta {
+  name: Optimize Specification
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/ai/optimize
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "focus_areas": ["documentation", "security", "performance", "maintainability"],
+    "target_audience": "enterprise developers",
+    "compliance_standards": ["OpenAPI 3.0.3", "REST API Guidelines", "Security Best Practices"],
+    "goal": "production_readiness",
+    "enhancement_level": "comprehensive"
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return optimization results", function() {
+    expect(res.getBody()).to.have.property('updated_spec_text');
+    expect(res.getBody()).to.have.property('operation_type', 'optimize');
+    expect(res.getBody()).to.have.property('success');
+  });
+
+  test("Should include suggestions if available", function() {
+    if (res.getBody().suggestions) {
+      expect(res.getBody().suggestions).to.be.an('array');
+    }
+  });
+}

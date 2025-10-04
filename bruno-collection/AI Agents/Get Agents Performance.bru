@@ -1,0 +1,31 @@
+meta {
+  name: Get Agents Performance
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/agents/performance
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return performance metrics", function() {
+    expect(res.getBody()).to.have.property('overall_performance');
+    expect(res.getBody()).to.have.property('agent_metrics');
+    expect(res.getBody()).to.have.property('total_agents_monitored');
+  });
+
+  test("Performance score should be valid", function() {
+    if (res.getBody().performance_score !== undefined) {
+      expect(res.getBody().performance_score).to.be.a('number');
+      expect(res.getBody().performance_score).to.be.at.least(0);
+      expect(res.getBody().performance_score).to.be.at.most(100);
+    }
+  });
+}

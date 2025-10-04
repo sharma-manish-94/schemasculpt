@@ -23,3 +23,9 @@ pom.xml.next
 release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
+# Environment variables
+.env
+
+# Exclude all markdown files except README.md
+*.md
+!README.md

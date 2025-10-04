@@ -1,0 +1,53 @@
+meta {
+  name: Get Available Workflows
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/ai/workflows
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+docs {
+  # List Available Workflows
+
+  Retrieves all predefined workflows available in the system.
+
+  **Test Scenario:**
+  - Get list of available AI workflows
+  - Test workflow discovery mechanism
+  - Validate workflow metadata
+
+  **Expected Response:**
+  - Array of available workflow names
+  - Workflow descriptions or metadata
+  - System timestamp
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return workflows list", function() {
+    expect(res.getBody().workflows).to.be.an('array');
+  });
+
+  test("Should include timestamp", function() {
+    expect(res.getBody().timestamp).to.be.a('string');
+  });
+
+  test("Workflows should have proper structure", function() {
+    if (res.getBody().workflows.length > 0) {
+      const workflow = res.getBody().workflows[0];
+      expect(workflow).to.be.an('object');
+    }
+  });
+}

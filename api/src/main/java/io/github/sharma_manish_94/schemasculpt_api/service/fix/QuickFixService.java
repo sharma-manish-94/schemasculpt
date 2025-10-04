@@ -1,23 +1,65 @@
 package io.github.sharma_manish_94.schemasculpt_api.service.fix;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatchException;
 import com.google.common.base.CaseFormat;
 import io.github.sharma_manish_94.schemasculpt_api.dto.QuickFixRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.ai.PatchGenerationRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.ai.PatchGenerationResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
+import io.github.sharma_manish_94.schemasculpt_api.util.OpenAPIEnumFixer;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 @Service
 public class QuickFixService {
 
+    private static final Logger log = LoggerFactory.getLogger(QuickFixService.class);
     private static final Pattern PATH_PARAM_PATTERN = Pattern.compile("\\{([^}]+)}");
-    private final SessionService sessionService;
 
-    public QuickFixService(SessionService sessionService) {
+    // Rules that can be fixed automatically without AI
+    private static final Set<String> AUTO_FIXABLE_RULES = new HashSet<>(Arrays.asList(
+            "remove-unused-component",
+            "generate-operation-id",
+            "use-https",
+            "use-https-for-production",
+            "remove-trailing-slash",
+            "fix-consecutive-slashes",
+            "use-kebab-case",
+            "replace-underscores-with-hyphens",
+            "convert-camelcase-to-kebab",
+            "add-success-response"
+    ));
+
+    private final SessionService sessionService;
+    private final JsonPatchService jsonPatchService;
+    private final ObjectMapper objectMapper;
+    private final WebClient aiServiceClient;
+
+    public QuickFixService(
+            SessionService sessionService,
+            JsonPatchService jsonPatchService,
+            ObjectMapper objectMapper,
+            @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl
+    ) {
         this.sessionService = sessionService;
+        this.jsonPatchService = jsonPatchService;
+        this.objectMapper = objectMapper;
+        this.aiServiceClient = WebClient.builder()
+                .baseUrl(aiServiceUrl)
+                .build();
     }
 
     public OpenAPI applyFix(String sessionId, QuickFixRequest request) {
@@ -25,9 +67,72 @@ public class QuickFixService {
         if (openApi == null) {
             throw new IllegalArgumentException("Cannot apply fix to a null OpenAPI object.");
         }
-        updateOpenAPI(request, openApi);
+
+        // Check if this is an auto-fixable rule
+        if (AUTO_FIXABLE_RULES.contains(request.ruleId())) {
+            log.info("Applying auto-fix for rule: {}", request.ruleId());
+            updateOpenAPI(request, openApi);
+        } else {
+            // Use AI service with JSON Patch approach
+            log.info("Applying AI-powered fix for rule: {}", request.ruleId());
+            openApi = applyAIFix(openApi, request);
+        }
+
         sessionService.updateSessionSpec(sessionId, openApi);
         return openApi;
+    }
+
+    /**
+     * Apply AI-powered fix using JSON Patch (RFC 6902).
+     * The AI service generates precise patch operations instead of the full spec.
+     */
+    private OpenAPI applyAIFix(OpenAPI openApi, QuickFixRequest request) {
+        try {
+            // CRITICAL: Use Swagger's Json.pretty() instead of Spring's ObjectMapper
+            // This ensures enums are serialized correctly as lowercase (oauth2, not OAUTH2)
+            String specJson = Json.pretty(openApi);
+
+            // Fix uppercase enums that Swagger parser stores in the model
+            specJson = OpenAPIEnumFixer.fixEnums(specJson);
+
+            // Create request for AI service
+            PatchGenerationRequest patchRequest = new PatchGenerationRequest(
+                    specJson,
+                    request.ruleId(),
+                    request.context(),
+                    "Generated fix for: " + request.ruleId()
+            );
+
+            // Call AI service to generate JSON Patch
+            PatchGenerationResponse patchResponse = aiServiceClient
+                    .post()
+                    .uri("/ai/patch/generate")
+                    .bodyValue(patchRequest)
+                    .retrieve()
+                    .bodyToMono(PatchGenerationResponse.class)
+                    .block();
+
+            if (patchResponse == null || patchResponse.patches().isEmpty()) {
+                log.warn("AI service returned no patch operations for rule: {}", request.ruleId());
+                return openApi; // Return unchanged
+            }
+
+            log.info("AI service generated {} patch operations with confidence: {}",
+                    patchResponse.patches().size(), patchResponse.confidence());
+
+            // Apply the JSON Patch operations
+            OpenAPI patchedSpec = jsonPatchService.applyPatch(openApi, patchResponse.patches());
+
+            log.info("Successfully applied AI-generated patch. Explanation: {}", patchResponse.explanation());
+            return patchedSpec;
+
+        } catch (JsonPatchException e) {
+            log.error("Failed to apply AI-generated patch: {}", e.getMessage());
+            throw new RuntimeException("AI fix failed: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("AI service call failed: {}", e.getMessage());
+            throw new RuntimeException("AI service error: " + e.getMessage(), e);
+        }
     }
 
     private void updateOpenAPI(QuickFixRequest request, OpenAPI openApi) {
@@ -135,9 +240,9 @@ public class QuickFixService {
         if (openApi.getPaths() != null && openApi.getPaths().containsKey(originalPath)) {
             // Convert segment to kebab-case
             String fixedSegment = segment
-                .replaceAll("([a-z])([A-Z])", "$1-$2") // Convert camelCase to kebab-case first
-                .replaceAll("_", "-") // Replace underscores with hyphens
-                .toLowerCase();
+                    .replaceAll("([a-z])([A-Z])", "$1-$2") // Convert camelCase to kebab-case first
+                    .replaceAll("_", "-") // Replace underscores with hyphens
+                    .toLowerCase();
 
             String fixedPath = originalPath.replace(segment, fixedSegment);
             PathItem pathItem = openApi.getPaths().remove(originalPath);
@@ -158,14 +263,14 @@ public class QuickFixService {
 
         // Add a default 200 response if no success response exists
         boolean hasSuccessResponse = operation.getResponses().keySet().stream()
-            .anyMatch(code -> {
-                try {
-                    int statusCode = Integer.parseInt(code);
-                    return statusCode >= 200 && statusCode < 400;
-                } catch (NumberFormatException e) {
-                    return false;
-                }
-            });
+                .anyMatch(code -> {
+                    try {
+                        int statusCode = Integer.parseInt(code);
+                        return statusCode >= 200 && statusCode < 400;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                });
 
         if (!hasSuccessResponse) {
             io.swagger.v3.oas.models.responses.ApiResponse successResponse = new io.swagger.v3.oas.models.responses.ApiResponse();

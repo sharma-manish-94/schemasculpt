@@ -1,0 +1,51 @@
+meta {
+  name: Security Analysis - Basic
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{aiServiceUrl}}/ai/analyze/security
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "openapi: 3.0.0\ninfo:\n  title: Sample API\n  version: 1.0.0\npaths:\n  /users:\n    get:\n      responses:\n        200:\n          description: Success\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  id:\n                    type: string\n                  email:\n                    type: string",
+    "prompt": "Analyze this API for security vulnerabilities",
+    "operation_type": "validate",
+    "streaming": "disabled",
+    "session_id": "{{sampleSessionId}}",
+    "user_id": "{{sampleUserId}}",
+    "tags": [
+      "security",
+      "basic_test"
+    ]
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Should return security analysis", function() {
+    expect(res.getBody()).to.have.property('updated_spec_text');
+    expect(res.getBody()).to.have.property('operation_type');
+    expect(res.getBody()).to.have.property('success');
+  });
+  
+  test("Should identify security issues", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis).to.include.oneOf(['authentication', 'authorization', 'security']);
+  });
+  
+  test("Should include RAG context", function() {
+    const metadata = res.getBody().metadata;
+    if (metadata) {
+      expect(metadata).to.have.property('analysis_type');
+      expect(metadata.analysis_type).to.equal('security_rag_enhanced');
+    }
+  });
+}

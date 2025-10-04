@@ -1,10 +1,25 @@
 import { useSpecStore } from "../../../store/specStore";
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import ValidationSuggestion from '../../../components/validation/ValidationSuggestion';
+import AIInsightsPanel from '../../../components/validation/AIInsightsPanel';
+import { groupSuggestionsByCategory, getSuggestionsSummary } from '../../../utils/suggestionGrouping';
 
-function ValidationPanel() {
+const ValidationPanel = React.memo(() => {
     // Get errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, and sessionId from the store
-    const { errors, suggestions, isLoading, applyQuickFix, validateCurrentSpec, specText, sessionId } = useSpecStore();
+    const {
+        errors,
+        suggestions,
+        isLoading,
+        applyQuickFix,
+        validateCurrentSpec,
+        specText,
+        sessionId,
+        aiInsights,
+        aiSummary,
+        aiConfidenceScore,
+        isAIAnalysisLoading,
+        runAIMetaAnalysis
+    } = useSpecStore();
 
     // Define which rules can be auto-fixed vs require AI
     const autoFixableRules = [
@@ -41,18 +56,32 @@ function ValidationPanel() {
         return 'AI-powered fix';
     };
 
-    // Group suggestions by fix type
+    // Group suggestions by fix type and category
     const groupSuggestions = (suggestions) => {
         const autoFixSuggestions = suggestions.filter(sug =>
-            sug.ruleId && autoFixableRules.includes(sug.ruleId)
+            sug.ruleId && autoFixableRules.includes(sug.ruleId) && sug.category !== 'ai-friendliness'
         );
         const aiFixSuggestions = suggestions.filter(sug =>
-            sug.ruleId && !autoFixableRules.includes(sug.ruleId)
+            sug.ruleId && !autoFixableRules.includes(sug.ruleId) && sug.category !== 'ai-friendliness'
         );
-        const noFixSuggestions = suggestions.filter(sug => !sug.ruleId);
+        const noFixSuggestions = suggestions.filter(sug => !sug.ruleId && sug.category !== 'ai-friendliness');
 
-        return { autoFixSuggestions, aiFixSuggestions, noFixSuggestions };
+        // NEW: Separate AI-friendly suggestions
+        const aiFriendlySuggestions = suggestions.filter(sug => sug.category === 'ai-friendliness');
+
+        return { autoFixSuggestions, aiFixSuggestions, noFixSuggestions, aiFriendlySuggestions };
     };
+
+    // Group suggestions by category
+    const groupedByCategory = useMemo(() =>
+        groupSuggestionsByCategory(suggestions),
+        [suggestions]
+    );
+
+    const suggestionsSummary = useMemo(() =>
+        getSuggestionsSummary(suggestions),
+        [suggestions]
+    );
 
     if (isLoading) {
         return <p className="loading-text">Validating...</p>;
@@ -60,11 +89,12 @@ function ValidationPanel() {
 
     const hasErrors = errors.length > 0;
     const hasSuggestions = suggestions.length > 0;
-    const { autoFixSuggestions, aiFixSuggestions, noFixSuggestions } = groupSuggestions(suggestions);
 
     if (!hasErrors && !hasSuggestions) {
         return <p className="no-errors">No validation errors or suggestions found.</p>;
     }
+
+    const { autoFixSuggestions, aiFixSuggestions, noFixSuggestions, aiFriendlySuggestions } = groupSuggestions(suggestions);
 
     return (
         <>
@@ -78,6 +108,16 @@ function ValidationPanel() {
                     {hasSuggestions && (
                         <span className="count-badge suggestion-count">
                             {suggestions.length} Suggestion{suggestions.length !== 1 ? 's' : ''}
+                        </span>
+                    )}
+                    {suggestionsSummary.byCategory.Security > 0 && (
+                        <span className="count-badge security-count" title="Security-related suggestions">
+                            🔐 {suggestionsSummary.byCategory.Security} Security
+                        </span>
+                    )}
+                    {aiFriendlySuggestions.length > 0 && (
+                        <span className="count-badge ai-friendly-count" title="AI-friendliness suggestions">
+                            🤖 {aiFriendlySuggestions.length} AI-Friendly
                         </span>
                     )}
                     {!hasErrors && !hasSuggestions && (
@@ -102,6 +142,38 @@ function ValidationPanel() {
             )}
             {hasSuggestions && (
                 <>
+                    {/* AI-Friendly Suggestions Section - Highlighted Separately */}
+                    {aiFriendlySuggestions.length > 0 && (
+                        <div className="result-section ai-friendly-section">
+                            <h3 className="result-title-ai-friendly">
+                                <span className="fix-type-icon">🤖</span>
+                                AI-Friendly Suggestions ({aiFriendlySuggestions.length})
+                                <span className="ai-badge">MCP Ready</span>
+                            </h3>
+                            <div className="suggestions-list">
+                                {aiFriendlySuggestions.map((sug, index) => {
+                                    const suggestion = {
+                                        message: sug.message,
+                                        ruleId: sug.ruleId,
+                                        severity: sug.severity || 'info',
+                                        context: sug.context || {},
+                                        explainable: true
+                                    };
+
+                                    return (
+                                        <ValidationSuggestion
+                                            key={`ai-friendly-${index}`}
+                                            suggestion={suggestion}
+                                            sessionId={sessionId}
+                                            specText={specText}
+                                            isAIFriendly={true}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {autoFixSuggestions.length > 0 && (
                         <div className="result-section">
                             <h3 className="result-title-autofix">
@@ -214,8 +286,19 @@ function ValidationPanel() {
                     )}
                 </>
             )}
+
+            {/* AI Insights Panel */}
+            <AIInsightsPanel
+                insights={aiInsights}
+                summary={aiSummary}
+                confidenceScore={aiConfidenceScore}
+                onRunAnalysis={runAIMetaAnalysis}
+                isLoading={isAIAnalysisLoading}
+            />
         </>
     );
-}
+});
+
+ValidationPanel.displayName = 'ValidationPanel';
 
 export default ValidationPanel;

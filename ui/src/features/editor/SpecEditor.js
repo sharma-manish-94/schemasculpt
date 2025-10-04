@@ -3,7 +3,7 @@ import { useSpecStore } from "../../store/specStore";
 import ThreePanelLayout from "./components/ThreePanelLayout"; // Import our new layout
 import "./editor.css";
 
-function SpecEditor() {
+function SpecEditor({ project }) {
   const createSession = useSpecStore((state) => state.createSession);
   const connectWebSocket = useSpecStore((state) => state.connectWebSocket);
   const specText = useSpecStore((state) => state.specText);
@@ -29,7 +29,7 @@ function SpecEditor() {
     parseEndpoints();
   }, [specText, parseEndpoints]);
 
-  return <ThreePanelLayout />;
+  return <ThreePanelLayout project={project} />;
 }
 
 export default SpecEditor;

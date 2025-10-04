@@ -1,0 +1,26 @@
+meta {
+  name: Get Current User
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Current User
+
+  Returns the authenticated user's profile information.
+  Requires JWT token in Authorization header.
+}
+
+assert {
+  res.status: eq 200
+}

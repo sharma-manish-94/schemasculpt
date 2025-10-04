@@ -1,0 +1,71 @@
+meta {
+  name: Generate Simple API
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/ai/generate
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+body:json {
+  {
+    "prompt": "Create a simple task management API with CRUD operations for tasks",
+    "domain": "productivity",
+    "complexity_level": "simple",
+    "include_examples": true,
+    "include_security": false,
+    "user_id": "{{userId}}",
+    "project_name": "TaskManager"
+  }
+}
+
+docs {
+  # Simple API Generation
+
+  Tests agentic workflow for generating complete OpenAPI specifications.
+
+  **Test Scenario:**
+  - Generate a simple task management API
+  - Use domain-specific knowledge (productivity)
+  - Include examples but no security for simplicity
+  - Test basic CRUD operations generation
+
+  **Expected Output:**
+  - Complete OpenAPI 3.0.0 specification
+  - Task-related endpoints (GET, POST, PUT, DELETE)
+  - Appropriate schemas for Task entity
+  - Response examples
+  - Proper HTTP status codes
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should generate valid OpenAPI spec", function() {
+    const spec = JSON.parse(res.getBody().updated_spec_text);
+    expect(spec).to.have.property('openapi');
+    expect(spec).to.have.property('info');
+    expect(spec).to.have.property('paths');
+  });
+
+  test("Should have task-related endpoints", function() {
+    const spec = JSON.parse(res.getBody().updated_spec_text);
+    const paths = Object.keys(spec.paths);
+    const hasTaskEndpoints = paths.some(path => path.includes('task'));
+    expect(hasTaskEndpoints).to.equal(true);
+  });
+
+  test("Operation type should be generate", function() {
+    expect(res.getBody().operation_type).to.equal('generate');
+  });
+}

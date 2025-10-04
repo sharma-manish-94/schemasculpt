@@ -1,164 +1,631 @@
 # SchemaSculpt 🗿
 
-### Your AI Co-pilot for Flawless APIs
+<div align="center">
 
-SchemaSculpt is an intelligent, locally-run assistant for crafting perfect API specifications. It goes beyond simple validation by providing smart suggestions, one-click fixes, and AI-powered editing to streamline your API design workflow.
+**Your AI-Powered Co-Pilot for Building Production-Ready APIs**
 
-![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)
+[![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-25-orange)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-green)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
+[![Python](https://img.shields.io/badge/Python-3.10+-yellow)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-teal)](https://fastapi.tiangolo.com/)
 
-![SchemaSculpt Overview](./assets/images/overview.png)
+_Transform OpenAPI specification authoring from tedious to effortless with intelligent linting, AI-powered editing, and real-time validation._
 
-## About The Project
+[Features](#-key-features) • [Getting Started](#-getting-started) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Roadmap](#-roadmap)
 
-Writing and maintaining OpenAPI specifications can be tedious. It's easy to make mistakes, leave unused components lying around, or forget best practices. SchemaSculpt was built to solve this problem by acting as your AI partner for API design.
+</div>
 
-It uses a powerful, locally-run LLM (via Ollama) to understand natural language commands, allowing you to edit and extend your API specs just by having a conversation. The built-in linter and quick-fix engine help you adhere to best practices and keep your specifications clean and maintainable.
+---
 
-## Key Features
+## 📋 Table of Contents
 
-- **🧪 Live API Lab & Testing**: Interactively build and send requests to any endpoint defined in your spec. Target either the built-in AI Mock Server or your own live server, all without leaving the editor.
-  ![API Lab Mock Response](./assets/images/mock-response.png)
+- [About SchemaSculpt](#-about-schemasculpt)
+- [Why SchemaSculpt?](#-why-schemasculpt)
+- [Key Features](#-key-features)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Advanced Features](#-advanced-features)
+- [Documentation](#-documentation)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-- **🤖 AI-Powered Mock Server**: With a single click, spin up a mock server that uses an LLM to generate realistic, context-aware mock data on the fly. The server stays in sync with your latest changes via a "Refresh" button.
-- **🤖 AI-Powered Editing**: Use natural language prompts (e.g., "add a GET endpoint for /health") to have a local LLM modify your API specification.
-  ![AI Assistant](./assets/images/ai-assistant.png)
+---
 
-- **⚡ Real-time Validation**: Instantly see parsing and OpenAPI validation errors as you type.
-- **💡 Intelligent Linter**: Get smart suggestions that go beyond basic validation, including:
-  _ Detecting unused component schemas.
-  _ Flagging operations with missing `summaries` or `tags`.
-  _ Enforcing `PascalCase` naming conventions for schemas.
-  _ Finding operations with a missing `operationId`.
-  ![Linter and Quick Fixes](./assets/images/linter-and-fixes.png)
+## 🎯 About SchemaSculpt
 
-- **🪄 One-Click Quick Fixes**: Automatically fix linter suggestions—like removing unused components or generating a missing `operationId`—with the click of a button.
-- **👁️ Live Swagger UI Visualization**: Instantly see your API rendered in a beautiful, interactive documentation panel in a separate tab.
-  ![Swagger UI Visualization](./assets/images/swagger-ui.png)
+SchemaSculpt is an **intelligent, locally-run IDE** for crafting perfect OpenAPI 3.x specifications. It combines the power of **Large Language Models (LLMs)** with **deterministic linting** and **real-time validation** to help developers, architects, and API designers build production-ready APIs faster and with fewer errors.
 
-- **🔄 JSON <> YAML Conversion**: Seamlessly write in and convert between JSON and YAML formats with a single click.
-- **✨ Modern UI**: A clean, professional, and resizable split-pane view that feels like a modern IDE.
+Unlike traditional API design tools, SchemaSculpt:
 
-## Tech Stack
+- ✅ Runs **100% locally** - Your API specifications never leave your machine
+- ✅ Uses **AI for intelligent suggestions** - Not just syntax checking
+- ✅ Provides **one-click auto-fixes** - Save hours of manual editing
+- ✅ Offers **AI-friendly API analysis** - Optimize your APIs for AI agent consumption (MCP-ready)
+- ✅ Generates **realistic mock data** - Test your APIs immediately with AI-powered mocks
 
-| Frontend                 | Backend (API Gateway)     | Backend (AI Service)               |
-| :----------------------- | :------------------------ | :--------------------------------- |
-| React                    | Java 25                   | Python 3                           |
-| Monaco Editor            | Spring Boot 3             | FastAPI                            |
-| `react-resizable-panels` | Spring Boot WebSockets    | Ollama                             |
-| `swagger-ui-react`       | Spring Boot Data Redis    | `prance`, `openapi-spec-validator` |
-| `SockJS` & `StompJS`     | Spring Boot Webflux       | `httpx`                            |
-| `axios` & `js-yaml`      | `swagger-parser`, JUnit 5 |                                    |
+### Intended Audience
 
-## Getting Started
+SchemaSculpt is designed for:
 
-To get the full local environment running, you'll need to install the prerequisites and then start the four services in the correct order.
+- **Backend Developers** building RESTful APIs
+- **API Architects** designing microservices ecosystems
+- **DevOps Engineers** implementing API gateways
+- **QA Engineers** validating API contracts
+- **Technical Writers** documenting API specifications
+- **AI/ML Engineers** building AI-friendly APIs for agent consumption
+
+---
+
+## 💡 Why SchemaSculpt?
+
+### The Problem
+
+Writing and maintaining OpenAPI specifications is **tedious and error-prone**:
+
+- ❌ Manual validation catches only syntax errors, not design issues
+- ❌ Unused components accumulate as APIs evolve
+- ❌ Inconsistent naming conventions across teams
+- ❌ Missing descriptions, examples, and security definitions
+- ❌ No guidance for building AI-agent-friendly APIs
+- ❌ Testing requires deploying servers or using external tools
+
+### The SchemaSculpt Solution
+
+SchemaSculpt acts as your **intelligent API design partner**:
+
+- ✅ **AI-Augmented Linting**: Combines deterministic rules with AI reasoning to detect patterns human developers miss
+- ✅ **Natural Language Editing**: "Add a health check endpoint" → Done ✨
+- ✅ **Instant Feedback**: See errors, warnings, and suggestions as you type
+- ✅ **Built-in Testing**: Interactive API Lab with AI-powered mock server
+- ✅ **MCP Compliance**: Ensures your APIs are optimized for AI agent consumption
+- ✅ **Zero Configuration**: Works out of the box with sensible defaults
+
+---
+
+## 🚀 Key Features
+
+### 🧠 AI-Powered Intelligence
+
+#### 1. **Linter-Augmented AI Analyst**
+
+The flagship feature that sets SchemaSculpt apart. Instead of just finding basic issues, the AI performs **meta-analysis** on linter findings to detect higher-order patterns:
+
+- 🔴 **Security Threat Detection**: "This public endpoint returns PII without authentication"
+- 🎨 **Design Pattern Analysis**: "Inconsistent naming conventions detected across 12 endpoints"
+- ⚡ **Performance Insights**: "Missing pagination on collection endpoints will cause timeouts"
+- 📋 **Governance Violations**: "API lacks standardized error responses"
+
+**How it works:**
+
+1. Deterministic linters find factual issues (fast & accurate)
+2. AI analyzes linter findings to connect dots (intelligent reasoning)
+3. Get actionable insights that individual rules can't detect
+
+#### 2. **MCP-Ready API Analysis** 🤖
+
+Optimize your APIs for consumption by AI agents (Model Context Protocol):
+
+- **Batch Endpoint Suggestions**: "Add `POST /users/batch-get` to reduce 100 calls to 1"
+- **Pagination Detection**: Prevent AI agents from fetching massive datasets
+- **Standardized Response Formats**: RFC 7807 compliance for machine-readable errors
+- **AI-Friendly Scoring**: See how well your API works with AI agents
+
+#### 3. **Natural Language API Editing**
+
+Use plain English to modify your specifications:
+
+```
+"Add a GET endpoint for /health that returns a 200 status"
+"Create a User schema with email, name, and createdAt fields"
+"Add OAuth2 security to all /admin/* endpoints"
+```
+
+The AI understands context and follows OpenAPI best practices.
+
+### ⚡ Intelligent Linting & Auto-Fix
+
+#### 11+ Built-in Linter Rules:
+
+- ✅ **Unused Component Detection**: Remove dead schemas, parameters, and responses
+- ✅ **Security Requirements**: Enforce authentication on sensitive endpoints
+- ✅ **Naming Conventions**: PascalCase for schemas, kebab-case for paths
+- ✅ **Missing Metadata**: Detect missing operationIds, summaries, descriptions
+- ✅ **Best Practices**: HTTPS-only, proper HTTP methods, response schemas
+- ✅ **AI-Friendliness**: Pagination support, batch endpoints, error formatting
+
+#### One-Click Quick Fixes:
+
+Each linter suggestion includes an **⚡ Auto-Fix** or **✨ AI-Fix** button:
+
+- **Auto-Fix** (⚡): Deterministic, instant fixes (remove unused schema, generate operationId)
+- **AI-Fix** (✨): Context-aware AI edits (add missing descriptions, improve examples)
+
+### 🧪 Built-in API Lab & Testing
+
+**Test your APIs without deploying servers:**
+
+1. **Interactive Request Builder**
+
+   - Visual form for building requests
+   - Auto-completion from your spec
+   - Support for path params, query params, headers, body
+
+2. **AI-Powered Mock Server**
+
+   - One-click mock server startup
+   - LLM generates realistic, context-aware mock data
+   - Stays in sync with your latest spec changes
+
+3. **Dual Target Mode**
+
+   - Test against AI mocks (instant feedback)
+   - Test against your real server (integration testing)
+
+4. **Response Visualization**
+   - Syntax-highlighted JSON/XML responses
+   - HTTP status code validation
+   - Response time tracking
+
+### 🎨 Professional Developer Experience
+
+- **Monaco Editor Integration**: Same editor that powers VS Code
+- **Real-time Validation**: Instant feedback as you type (powered by `swagger-parser`)
+- **JSON ⟷ YAML Conversion**: Seamless format switching
+- **Live Swagger UI**: Interactive API documentation in a separate panel
+- **Resizable Panels**: Customize your workspace layout
+- **Syntax Highlighting**: Full OpenAPI 3.x support
+- **Auto-completion**: Context-aware suggestions
+
+### 🔐 Security & Privacy First
+
+- **100% Local Execution**: All AI processing happens on your machine via Ollama
+- **No Data Transmission**: Your specifications never leave your network
+- **No Telemetry**: Zero tracking or analytics
+- **No Cloud Dependencies**: Works completely offline (except optional OAuth login)
+
+---
+
+## 🏗️ Architecture
+
+SchemaSculpt uses a **three-tier microservices architecture** optimized for AI workloads:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Browser (UI)                            │
+│  React 19 • Monaco Editor • Zustand • WebSockets               │
+└────────────────┬────────────────────────────────────────────────┘
+                 │ REST API + WebSocket
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   API Gateway (Backend)                         │
+│  Java 25 • Spring Boot 3 • WebFlux • Redis Sessions            │
+│  ├─ Validation Service (swagger-parser)                        │
+│  ├─ Linter Engine (11+ rules)                                  │
+│  ├─ Session Manager (Redis)                                    │
+│  ├─ WebSocket Handler (real-time validation)                   │
+│  └─ AI Service Proxy                                           │
+└────────────────┬────────────────────────────────────────────────┘
+                 │ HTTP (AI requests)
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    AI Service (Python)                          │
+│  Python 3.10+ • FastAPI • Ollama Integration                   │
+│  ├─ LLM Service (mistral, llama3, etc.)                        │
+│  ├─ Prompt Engineering (optimized for OpenAPI)                 │
+│  ├─ JSON Patch Generator (precise edits)                       │
+│  ├─ Smart Fix Service (AI + deterministic)                     │
+│  ├─ Meta-Analysis Engine (linter augmentation)                 │
+│  ├─ RAG Service (OpenAPI best practices knowledge base)        │
+│  └─ Mock Data Generator (context-aware)                        │
+└─────────────────────────────────────────────────────────────────┘
+                 │
+                 ▼
+         ┌───────────────┐         ┌──────────────┐
+         │ Ollama (LLM)  │         │ Redis Cache  │
+         │ mistral/llama │         │ Sessions     │
+         └───────────────┘         └──────────────┘
+```
+
+### Service Communication
+
+| From                             | To        | Protocol                     | Purpose                         |
+| -------------------------------- | --------- | ---------------------------- | ------------------------------- |
+| **UI** → **API Gateway**         | REST      | `axios`                      | CRUD operations on specs        |
+| **UI** → **API Gateway**         | WebSocket | `SockJS`/`STOMP`             | Real-time validation updates    |
+| **API Gateway** → **AI Service** | HTTP      | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis |
+| **API Gateway** → **Redis**      | TCP       | Spring Data Redis            | Session storage                 |
+| **AI Service** → **Ollama**      | HTTP      | `httpx`                      | LLM inference                   |
+
+### Data Flow Example: AI Meta-Analysis
+
+```
+1. User clicks "Run AI Analysis" in UI
+2. UI → API Gateway: POST /sessions/{id}/spec/ai-analysis
+3. API Gateway runs all linter rules → Collects errors + suggestions
+4. API Gateway → AI Service: POST /ai/meta-analysis (spec + findings)
+5. AI Service builds augmented prompt with linter results
+6. AI Service → Ollama: LLM inference request
+7. Ollama returns insights about patterns detected
+8. AI Service structures response → Returns JSON
+9. API Gateway → UI: AI insights with severity, category, affected paths
+10. UI displays insights in dedicated "AI Insights" panel with blue theme
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend (React)
+
+| Technology                 | Version | Purpose                       |
+| -------------------------- | ------- | ----------------------------- |
+| **React**                  | 19      | UI framework                  |
+| **Monaco Editor**          | Latest  | Code editor (same as VS Code) |
+| **Zustand**                | Latest  | State management              |
+| **react-resizable-panels** | Latest  | Resizable layout              |
+| **SockJS** + **STOMP**     | Latest  | WebSocket communication       |
+| **swagger-ui-react**       | Latest  | API documentation rendering   |
+| **axios**                  | Latest  | HTTP client                   |
+| **js-yaml**                | Latest  | YAML parsing/serialization    |
+
+### Backend (Java)
+
+| Technology                       | Version | Purpose                           |
+| -------------------------------- | ------- | --------------------------------- |
+| **Java**                         | 25      | Programming language              |
+| **Spring Boot**                  | 3.x     | Application framework             |
+| **Spring WebFlux**               | 3.x     | Reactive HTTP client (AI service) |
+| **Spring WebSockets**            | 3.x     | Real-time validation updates      |
+| **Spring Data Redis**            | 3.x     | Session storage                   |
+| **swagger-parser**               | Latest  | OpenAPI validation                |
+| **JUnit 5** + **Testcontainers** | Latest  | Testing                           |
+
+### AI Service (Python)
+
+| Technology                 | Version | Purpose               |
+| -------------------------- | ------- | --------------------- |
+| **Python**                 | 3.10+   | Programming language  |
+| **FastAPI**                | Latest  | Web framework         |
+| **Ollama**                 | Latest  | Local LLM inference   |
+| **prance**                 | Latest  | OpenAPI spec parsing  |
+| **openapi-spec-validator** | Latest  | OpenAPI validation    |
+| **httpx**                  | Latest  | Async HTTP client     |
+| **ChromaDB**               | Latest  | Vector database (RAG) |
+
+### Infrastructure
+
+| Technology | Purpose                                   |
+| ---------- | ----------------------------------------- |
+| **Redis**  | Session storage, caching                  |
+| **Docker** | Redis containerization                    |
+| **Ollama** | Local LLM hosting (mistral, llama3, etc.) |
+
+---
+
+## 🚦 Getting Started
 
 ### Prerequisites
 
-- **Java 25** (or higher) & **Maven**
-- **Python 3.10+** & **Pip**
-- **Node.js** & **npm**
-- **Docker**
-- **Ollama**: Download and install from [ollama.com](https://ollama.com)
+Before starting, ensure you have:
 
-### Step-by-Step Local Setup
+- ✅ **Java 25+** ([Download](https://jdk.java.net/))
+- ✅ **Maven 3.9+** (included with `./mvnw`)
+- ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
+- ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
+- ✅ **Docker** ([Download](https://www.docker.com/))
+- ✅ **Ollama** ([Download](https://ollama.com/))
 
-Follow these steps in order, each in a **separate terminal window**.
+### Quick Start (5 Minutes)
 
-#### **1. Start Redis**
+Follow these steps in **separate terminal windows**:
 
-This is our session cache. It needs to be running before the backend starts.
+#### 1️⃣ Start Redis
 
 ```bash
 docker run -d --name schemasculpt-redis -p 6379:6379 redis
 ```
 
-_To verify it's running, you can use `docker ps`._
+Verify: `docker ps` should show the running container.
 
-#### **2. Start the AI Model**
-
-The local LLM must be running for the AI service to use it.
+#### 2️⃣ Start Ollama & Pull Model
 
 ```bash
-# First, ensure you have the model downloaded
+# Download the Mistral model (first time only)
 ollama pull mistral
 
-# Ollama runs as a background service, just ensure it's active.
-# You can test it by running `ollama list`.
+# Verify Ollama is running
+ollama list
 ```
 
-#### **3. Start the Python AI Service**
-
-This service handles all AI-related tasks.
+#### 3️⃣ Start AI Service
 
 ```bash
-# Navigate to the ai_service directory
-cd schemasculpt/ai_service
+cd ai_service
 
-# Set up the environment (only needed the first time)
+# Create virtual environment (first time only)
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies (first time only)
 pip install -r requirements.txt
 
-# Create your local environment file (only needed the first time)
+# Copy environment template (first time only)
 cp .env.example .env
-# Now, edit the .env file and add your Hugging Face API token if needed.
 
-# Run the server
+# Start the service
 uvicorn app.main:app --reload
 ```
 
-_The AI service will start on `http://localhost:8000`._
+✅ AI Service running at `http://localhost:8000`
 
-#### **4. Start the Java Backend**
-
-This is the main API gateway.
+#### 4️⃣ Start Java Backend
 
 ```bash
-# Navigate to the api directory
-cd schemasculpt/api
+cd api
 
-# Run the server
+# Start Spring Boot application
 ./mvnw spring-boot:run
 ```
 
-_The Java backend will start on `http://localhost:8080`._
+✅ API Gateway running at `http://localhost:8080`
 
-#### **5. Start the React Frontend**
-
-This is the user interface.
+#### 5️⃣ Start React Frontend
 
 ```bash
-# Navigate to the ui directory
-cd schemasculpt/ui
+cd ui
 
-# Install dependencies (only needed the first time)
+# Install dependencies (first time only)
 npm install
 
-# Run the development server
+# Start development server
 npm start
 ```
 
-_Your browser will open to `http://localhost:3000`._
+✅ Browser opens automatically at `http://localhost:3000`
 
-You now have the complete SchemaSculpt application running locally!
+### First Steps
 
-## 🚀 Future Roadmap
+1. **Create a New Project** or **Load an Example Spec**
+2. **See Real-time Validation** - The right panel shows errors and suggestions
+3. **Click "Run AI Analysis"** - Get intelligent insights about your API
+4. **Try a Quick Fix** - Click ⚡ or ✨ on any suggestion
+5. **Ask the AI** - Use natural language to edit: "Add a GET /health endpoint"
+6. **Test Your API** - Click the "API Lab" tab and send test requests
 
-The current features provide a powerful foundation. The vision is to continue making SchemaSculpt a more indispensable AI partner for developers:
+---
 
-- **AI-Powered Semantic Refactoring**: The next major feature. Enable the AI to suggest high-level architectural improvements, such as consolidating redundant schemas or standardizing path structures.
-- **AI-Generated Test Cases**: Automatically generate a suite of "happy path" and "sad path" test cases that can be run from the API Lab.
-- **Automated Documentation**: Generate high-quality `summary` and `description` fields for all parts of the spec based on context.
+## 🎓 Advanced Features
 
-## Contributing
+### 🧪 API Hardening
 
-The kitchen is a bit of a mess right now, and the chef (that's me) is still trying to perfect the recipe. To avoid any unexpected explosions of code, I'm not accepting contributions just yet.
+Automatically enhance your API's production-readiness:
 
-However, feel free to open an issue to share ideas or report bugs!
+- **Add Security Schemes**: OAuth2, API Key, JWT
+- **Add Rate Limiting**: `X-RateLimit-*` headers
+- **Add Caching**: `Cache-Control`, `ETag` headers
+- **Add Pagination**: `limit`, `offset`, `cursor` parameters
+- **Add Error Responses**: Standardized error formats (RFC 7807)
 
-## License
+### 📊 Validation Categories
 
-This digital territory is currently an independent sovereignty with a benevolent dictator. A formal constitution (i.e., a license) is forthcoming.
+Suggestions are grouped by category for easy prioritization:
 
-Until then, all rights are reserved.
+| Category            | Icon | Description                    | Examples                                       |
+| ------------------- | ---- | ------------------------------ | ---------------------------------------------- |
+| **AI-Friendliness** | 🤖   | MCP-ready API design           | Pagination, batch endpoints, error formats     |
+| **Security**        | 🔐   | Authentication & authorization | Missing security schemes, public PII endpoints |
+| **Best Practices**  | 💡   | OpenAPI conventions            | HTTPS-only, proper HTTP methods                |
+| **Naming**          | 🏷️   | Consistency & conventions      | PascalCase schemas, kebab-case paths           |
+| **Documentation**   | 📝   | Completeness                   | Missing descriptions, examples                 |
+| **Performance**     | ⚡   | Scalability concerns           | Missing pagination, large responses            |
+
+### 🎯 Smart Fix System
+
+SchemaSculpt uses a **hybrid fix approach**:
+
+1. **Deterministic Fixes (⚡ Auto-Fix)**
+
+   - Fast, reliable, reversible
+   - Examples: Remove unused schema, generate operationId
+   - No LLM needed
+
+2. **AI-Powered Fixes (✨ AI-Fix)**
+
+   - Context-aware, intelligent
+   - Examples: Add descriptions, improve examples
+   - Uses Ollama for generation
+
+3. **Hybrid Smart Fix**
+   - Chooses best method automatically
+   - Small changes → JSON Patch (fast)
+   - Large changes → Full regeneration (comprehensive)
+
+### 🔍 Explanation System
+
+Every suggestion is **explainable**:
+
+- Click **?** button on any suggestion
+- Get AI-generated explanation with:
+  - **Why** this matters
+  - **Best practices** related to the issue
+  - **Example solutions** with code
+  - **Additional resources** (links to specs, RFCs)
+  - **Knowledge sources** (RAG-powered)
+
+Explanations are **cached** for performance.
+
+---
+
+## 📚 Documentation
+
+### User Guides
+
+- [Getting Started Guide](./DEVELOPER_ONBOARDING_GUIDE.md) - Comprehensive setup and usage
+- [AI Features Guide](./LINTER_AUGMENTED_AI_ANALYST.md) - Understanding AI meta-analysis
+- [MCP Compliance Guide](./MCP_AI_FRIENDLY_COMPLIANCE.md) - Building AI-ready APIs
+
+### Developer Guides
+
+- [Architecture Overview](./CLAUDE.md) - System design and service communication
+- [Contributing Guide](./CONTRIBUTING.md) - How to contribute (coming soon)
+- [API Documentation](./api/README.md) - Backend API reference (coming soon)
+
+### Implementation Details
+
+- [Linter Rules](./api/src/main/java/io/github/sharma_manish_94/schemasculpt_api/service/linter/) - All linter rule implementations
+- [AI Service Architecture](./AI_SERVICE_REFACTORING_GUIDE.md) - Python AI service design
+- [Frontend Architecture](./REACT_REFACTORING_SUMMARY.md) - React component structure
+
+---
+
+## 🗺️ Roadmap
+
+### ✅ Completed Features
+
+- [x] Real-time OpenAPI validation
+- [x] 11+ intelligent linter rules
+- [x] One-click auto-fixes (deterministic)
+- [x] AI-powered natural language editing
+- [x] AI-powered mock server
+- [x] Interactive API Lab for testing
+- [x] WebSocket-based real-time updates
+- [x] Session management with Redis
+- [x] Linter-augmented AI analyst
+- [x] MCP/AI-friendly API analysis
+- [x] AI explanation system with RAG
+- [x] Smart fix service (hybrid AI + deterministic)
+- [x] JSON Patch-based precise edits
+
+### 🚧 In Progress
+
+- [ ] AI-powered description quality analysis
+- [ ] Workflow documentation detection
+- [ ] Count endpoint suggestions
+- [ ] HATEOAS link validation
+
+### 🔮 Future Vision
+
+#### Phase 1: Enhanced AI Analysis (Q1 2026)
+
+- [ ] **Semantic API Differencing**: Detect breaking vs non-breaking changes
+- [ ] **Custom Governance Rules**: User-defined organizational standards
+- [ ] **API Migration Tools**: Auto-upgrade Swagger 2.0 → OpenAPI 3.1
+
+#### Phase 2: Testing & Quality (Q2 2026)
+
+- [ ] **AI-Generated Test Cases**: Happy path + edge cases
+- [ ] **Test Suite Generator**: Complete integration test suites
+- [ ] **Contract Testing**: Validate implementation against spec
+- [ ] **Performance Testing**: Load test mock servers
+
+#### Phase 3: Collaboration (Q3 2026)
+
+- [ ] **Git Integration**: Track spec changes over time
+- [ ] **Team Workspaces**: Shared projects and review workflows
+- [ ] **Comment System**: Inline comments on specifications
+- [ ] **Change Approval**: Review and approve AI suggestions
+
+#### Phase 4: Enterprise Features (Q4 2026)
+
+- [ ] **API Catalog**: Discover and reuse components across projects
+- [ ] **Design System**: Enforce organizational API standards
+- [ ] **Compliance Reports**: GDPR, PCI-DSS, SOC 2 compliance checking
+- [ ] **Multi-LLM Support**: Choose between Ollama models or cloud providers
+
+### 💡 Community Requests
+
+Vote on features you'd like to see:
+
+- [ ] GraphQL schema support
+- [ ] AsyncAPI support (WebSocket, MQTT APIs)
+- [ ] Postman collection export
+- [ ] CI/CD integration (GitHub Actions, GitLab CI)
+- [ ] VS Code extension
+
+[Submit a feature request →](https://github.com/sharma-manish-94/schemasculpt/issues/new)
+
+---
+
+## 🤝 Contributing
+
+**Status**: Currently in active development by the core team.
+
+We're not accepting external contributions yet while we stabilize the architecture and establish contribution guidelines. However, we **welcome feedback**:
+
+- 🐛 **Report Bugs**: [Open an issue](https://github.com/sharma-manish-94/schemasculpt/issues/new)
+- 💡 **Suggest Features**: [Open a discussion](https://github.com/sharma-manish-94/schemasculpt/discussions/new)
+- 📝 **Improve Documentation**: Typos? Unclear sections? Let us know!
+
+### Future Contribution Areas
+
+Once we open contributions, we'll be looking for help with:
+
+- Additional linter rules
+- New AI prompts for specific use cases
+- UI/UX improvements
+- Documentation and tutorials
+- Test coverage
+- Performance optimizations
+
+---
+
+## 📄 License
+
+**All Rights Reserved** © 2025 Manish Sharma
+
+This software is currently more protected than Fort Knox 🔒, but we're planning to open-source it eventually (probably Apache 2.0 or MIT, because we're not monsters).
+
+**The Fine Print** (written in human, not legalese):
+
+- ✅ Go ahead and **use** SchemaSculpt - build amazing APIs, impress your boss, get that promotion!
+- ✅ **Study** the code all you want - we believe in learning (and we know you're curious)
+- ❌ **Don't redistribute** it - we're not ready for our code to go viral just yet
+- ❌ **Don't copy-paste** it into your projects - let's talk first, we're friendly!
+
+**TL;DR**: Use it, learn from it, but don't clone it. Think of it as "look but don't touch... too much."
+
+Questions? Bribes? Love letters? [Email us](mailto:code.manish94@gmail.com) 💌
+
+---
+
+## 🙏 Acknowledgments
+
+SchemaSculpt stands on the shoulders of giants:
+
+- **[Ollama](https://ollama.com/)** - Making local LLMs accessible and easy
+- **[Spring Boot](https://spring.io/projects/spring-boot)** - Excellent Java framework
+- **[FastAPI](https://fastapi.tiangolo.com/)** - Modern Python web framework
+- **[Monaco Editor](https://microsoft.github.io/monaco-editor/)** - The editor that powers VS Code
+- **[Swagger UI](https://swagger.io/tools/swagger-ui/)** - Beautiful API documentation
+- **[OpenAPI Initiative](https://www.openapis.org/)** - The standard that makes this all possible
+
+Special thanks to:
+
+- The **Anthropic Claude** team for AI assistance during development
+- The **open-source community** for countless libraries and tools
+- **Early users** providing feedback and bug reports
+
+---
+
+## 📞 Support & Contact
+
+- 📧 **Email**: code.manish94@gmail.com
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/sharma-manish-94/schemasculpt/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/sharma-manish-94/schemasculpt/issues)
+- 📖 **Documentation**: [Project Wiki](https://github.com/sharma-manish-94/schemasculpt/wiki)
+
+---
+
+<div align="center">
+
+**Built with ❤️ using AI-assisted development**
+
+If SchemaSculpt helps you build better APIs, consider starring the repo! ⭐
+
+[⬆ Back to Top](#schemasculpt-)
+
+</div>

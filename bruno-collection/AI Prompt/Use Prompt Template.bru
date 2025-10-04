@@ -1,0 +1,37 @@
+meta {
+  name: Use Prompt Template
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/prompt/template/specification_enhancement
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Sample API\",\n    \"version\": \"1.0.0\"\n  }\n}",
+    "enhancement_type": "comprehensive",
+    "target_style": "developer-friendly",
+    "include_examples": true
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return template result", function() {
+    expect(res.getBody()).to.have.property('template_name', 'specification_enhancement');
+    expect(res.getBody()).to.have.property('generated_prompt');
+    expect(res.getBody()).to.have.property('variables_used');
+  });
+
+  test("Variables used should match input", function() {
+    expect(res.getBody().variables_used).to.have.property('enhancement_type', 'comprehensive');
+    expect(res.getBody().variables_used).to.have.property('include_examples', true);
+  });
+}

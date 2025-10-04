@@ -1,0 +1,25 @@
+meta {
+  name: Get Mock Server Info
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mock/{{sampleMockId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200 or 404", function() {
+    expect([200, 404]).to.include(res.getStatus());
+  });
+
+  test("If found, should return mock server info", function() {
+    if (res.getStatus() === 200) {
+      expect(res.getBody()).to.have.property('mock_id');
+      expect(res.getBody()).to.have.property('title');
+      expect(res.getBody()).to.have.property('total_endpoints');
+    }
+  });
+}

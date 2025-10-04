@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(./mvnw clean:*)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(./mvnw:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

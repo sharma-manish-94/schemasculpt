@@ -1,13 +1,22 @@
 import { useSpecStore } from "../../../store/specStore";
-import React, { useRef, useEffect, useMemo } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { projectAPI } from "../../../api/projectAPI";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
 import yaml from "js-yaml";
 import { updateSessionSpec } from "../../../api/validationService";
 import * as websocketService from "../../../api/websocketService";
 
-function EditorToolbar() {
+function EditorToolbar({ project }) {
     const { format, convertToJSON, convertToYAML, setSpecText, sessionId, specText } = useSpecStore();
+    const { token } = useAuth();
     const fileInputRef = useRef(null);
+    const [saving, setSaving] = useState(false);
+    const [loadingVersions, setLoadingVersions] = useState(false);
+    const [versions, setVersions] = useState([]);
+    const [showVersions, setShowVersions] = useState(false);
+    const [showCommitModal, setShowCommitModal] = useState(false);
+    const [commitMessage, setCommitMessage] = useState('');
 
     const handleLoadClick = () => {
         fileInputRef.current.click();
@@ -67,6 +76,94 @@ function EditorToolbar() {
         URL.revokeObjectURL(url);
     };
 
+    const handleSaveVersionClick = () => {
+        if (!project) {
+            alert('No project selected');
+            return;
+        }
+        setCommitMessage('');
+        setShowCommitModal(true);
+    };
+
+    const handleSaveVersion = async () => {
+        if (!commitMessage.trim()) {
+            return;
+        }
+
+        setSaving(true);
+        setShowCommitModal(false);
+        try {
+            const specData = {
+                specContent: specText,
+                specFormat: format,
+                commitMessage: commitMessage.trim()
+            };
+
+            await projectAPI.saveSpecification(token, project.id, specData);
+            alert('Version saved successfully!');
+            setCommitMessage('');
+            // Refresh versions list if it's open
+            if (showVersions) {
+                await loadVersions();
+            }
+        } catch (error) {
+            console.error('Failed to save version:', error);
+            alert(error.response?.data?.message || 'Failed to save version');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const loadVersions = async () => {
+        if (!project) return;
+
+        setLoadingVersions(true);
+        try {
+            const versionList = await projectAPI.getSpecificationVersions(token, project.id);
+            setVersions(versionList);
+        } catch (error) {
+            console.error('Failed to load versions:', error);
+            alert('Failed to load versions');
+        } finally {
+            setLoadingVersions(false);
+        }
+    };
+
+    const handleLoadVersion = async (version) => {
+        if (!project) return;
+
+        try {
+            const spec = await projectAPI.getSpecificationVersion(token, project.id, version);
+            setSpecText(spec.specContent);
+            setShowVersions(false);
+            if (sessionId) {
+                await updateSessionSpec(sessionId, spec.specContent);
+            }
+        } catch (error) {
+            console.error('Failed to load version:', error);
+            alert('Failed to load version');
+        }
+    };
+
+    const toggleVersions = async () => {
+        if (!showVersions && versions.length === 0) {
+            await loadVersions();
+        }
+        setShowVersions(!showVersions);
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showVersions && !event.target.closest('.version-dropdown') && !event.target.closest('[title="Load previous version"]')) {
+                setShowVersions(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showVersions]);
+
     return (
         <div className="editor-toolbar">
             <div className="toolbar-left-group">
@@ -76,6 +173,104 @@ function EditorToolbar() {
                 <button onClick={handleDownload} className="toolbar-button">
                     💾 Download
                 </button>
+                {project && (
+                    <>
+                        <button
+                            onClick={handleSaveVersionClick}
+                            disabled={saving}
+                            className="toolbar-button save-version-button"
+                            title="Save current spec as new version"
+                        >
+                            {saving ? '⏳ Saving...' : '🔖 Save Version'}
+                        </button>
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                onClick={toggleVersions}
+                                className="toolbar-button"
+                                title="Load previous version"
+                            >
+                                📜 Versions
+                            </button>
+                            {showVersions && (
+                                <div className="version-dropdown">
+                                    {loadingVersions ? (
+                                        <div className="version-item">Loading versions...</div>
+                                    ) : versions.length === 0 ? (
+                                        <div className="version-item">No versions yet</div>
+                                    ) : (
+                                        versions.map((v) => (
+                                            <div
+                                                key={v.version}
+                                                className="version-item"
+                                                onClick={() => handleLoadVersion(v.version)}
+                                            >
+                                                <div className="version-header">
+                                                    <span className="version-number">{v.version}</span>
+                                                    {v.isCurrent && <span className="current-badge">Current</span>}
+                                                </div>
+                                                <div className="version-date">
+                                                    {new Date(v.createdAt).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {/* Commit Message Modal */}
+                {showCommitModal && (
+                    <div className="commit-modal-overlay" onClick={() => setShowCommitModal(false)}>
+                        <div className="commit-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="commit-modal-header">
+                                <h3>💾 Save New Version</h3>
+                                <button
+                                    className="commit-modal-close"
+                                    onClick={() => setShowCommitModal(false)}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                            <div className="commit-modal-body">
+                                <label htmlFor="commit-message">Commit Message</label>
+                                <textarea
+                                    id="commit-message"
+                                    className="commit-message-input"
+                                    placeholder="Describe what changed in this version..."
+                                    value={commitMessage}
+                                    onChange={(e) => setCommitMessage(e.target.value)}
+                                    rows={3}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && e.ctrlKey) {
+                                            handleSaveVersion();
+                                        }
+                                    }}
+                                />
+                                <div className="commit-modal-hint">
+                                    💡 Tip: Press <kbd>Ctrl + Enter</kbd> to save quickly
+                                </div>
+                            </div>
+                            <div className="commit-modal-footer">
+                                <button
+                                    className="btn-cancel-commit"
+                                    onClick={() => setShowCommitModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="btn-save-commit"
+                                    onClick={handleSaveVersion}
+                                    disabled={!commitMessage.trim()}
+                                >
+                                    💾 Save Version
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -165,7 +360,7 @@ function AiAssistantBar() {
 }
 
 // Enhanced Editor Panel component
-function EnhancedEditorPanel() {
+function EnhancedEditorPanel({ project }) {
     const { specText, setSpecText, format, validateCurrentSpec, sessionId } = useSpecStore();
     const parseEndpoints = useSpecStore((state) => state.parseEndpoints);
 
@@ -213,7 +408,7 @@ function EnhancedEditorPanel() {
 
     return (
         <div className="editor-container">
-            <EditorToolbar />
+            <EditorToolbar project={project} />
             <div className="editor-wrapper">
                 <Editor
                     height="100%"

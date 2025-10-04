@@ -1,0 +1,26 @@
+meta {
+  name: Delete Project
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/projects/{{projectId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Delete Project
+
+  Deletes a project and all its specifications.
+  This action cannot be undone.
+}
+
+assert {
+  res.status: eq 204
+}

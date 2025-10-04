@@ -1,0 +1,41 @@
+meta {
+  name: Get Agents Capabilities
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/agents/capabilities
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return agents capabilities", function() {
+    expect(res.getBody()).to.have.property('agents');
+    expect(res.getBody()).to.have.property('total_agents');
+    expect(res.getBody()).to.have.property('framework_version');
+  });
+
+  test("Should include expected agents", function() {
+    const agents = res.getBody().agents;
+    expect(agents).to.have.property('specification_agent');
+    expect(agents).to.have.property('generation_agent');
+    expect(agents).to.have.property('validation_agent');
+    expect(agents).to.have.property('mock_agent');
+  });
+
+  test("Each agent should have required properties", function() {
+    const agents = res.getBody().agents;
+    Object.values(agents).forEach(agent => {
+      expect(agent).to.have.property('name');
+      expect(agent).to.have.property('description');
+      expect(agent).to.have.property('capabilities');
+      expect(agent.capabilities).to.be.an('array');
+    });
+  });
+}

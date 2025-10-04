@@ -823,10 +823,12 @@ const initialJsonObject = yaml.load(initialYamlSpec);
 const initialJsonSpec = JSON.stringify(initialJsonObject, null, 2);
 export const coreSlice = (set, get) => ({
     // --- STATE ---
-    specText: initialJsonSpec, sessionId: null, format: "json", activeTab: "api_explorer",
+    specText: initialJsonSpec, sessionId: null, format: "json", activeTab: "api_explorer", skipNextValidation: false,
 
     // --- ACTIONS ---
     setActiveTab: (tabName) => set({activeTab: tabName}),
+
+    setSkipNextValidation: (skip) => set({skipNextValidation: skip}),
 
     connectWebSocket: () => {
       const handleMessage = (message) => {

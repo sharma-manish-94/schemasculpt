@@ -1,0 +1,28 @@
+meta {
+  name: Get Session Summary
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/context/session/{{sampleSessionId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return session summary", function() {
+    expect(res.getBody()).to.have.property('session_id', '{{sampleSessionId}}');
+    expect(res.getBody()).to.have.property('conversation_turns');
+    expect(res.getBody()).to.have.property('session_summary');
+    expect(res.getBody()).to.have.property('suggestions');
+  });
+
+  test("Suggestions should be an array", function() {
+    expect(res.getBody().suggestions).to.be.an('array');
+  });
+}

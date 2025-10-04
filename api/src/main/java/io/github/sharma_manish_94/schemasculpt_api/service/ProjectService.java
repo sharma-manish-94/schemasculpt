@@ -1,0 +1,126 @@
+package io.github.sharma_manish_94.schemasculpt_api.service;
+
+import io.github.sharma_manish_94.schemasculpt_api.entity.Project;
+import io.github.sharma_manish_94.schemasculpt_api.entity.User;
+import io.github.sharma_manish_94.schemasculpt_api.exception.ForbiddenException;
+import io.github.sharma_manish_94.schemasculpt_api.exception.ProjectAlreadyExistsException;
+import io.github.sharma_manish_94.schemasculpt_api.exception.ProjectNotFoundException;
+import io.github.sharma_manish_94.schemasculpt_api.exception.UserNotFoundException;
+import io.github.sharma_manish_94.schemasculpt_api.repository.ProjectRepository;
+import io.github.sharma_manish_94.schemasculpt_api.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * Service for managing user projects
+ */
+@Service
+@Slf4j
+public class ProjectService {
+
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
+
+    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
+        this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Create a new project for a user
+     */
+    @Transactional
+    public Project createProject(Long userId, String name, String description, Boolean isPublic) {
+        log.info("Creating project '{}' for user {}", name, userId);
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
+
+        // Check if project with same name already exists for user
+        if (projectRepository.findByUserIdAndName(userId, name).isPresent()) {
+            throw new ProjectAlreadyExistsException(name);
+        }
+
+        Project project = new Project();
+        project.setUser(user);
+        project.setName(name);
+        project.setDescription(description);
+        project.setIsPublic(isPublic != null ? isPublic : false);
+
+        Project savedProject = projectRepository.save(project);
+        log.info("Created project with ID: {}", savedProject.getId());
+
+        return savedProject;
+    }
+
+    /**
+     * Get all projects for a user
+     */
+    @Transactional(readOnly = true)
+    public List<Project> getUserProjects(Long userId) {
+        log.debug("Fetching projects for user {}", userId);
+        return projectRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    /**
+     * Get a specific project by ID
+     */
+    @Transactional(readOnly = true)
+    public Project getProject(Long projectId, Long userId) {
+        log.debug("Fetching project {} for user {}", projectId, userId);
+
+        Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        // Verify ownership
+        if (!project.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("You don't have access to this project");
+        }
+
+        return project;
+    }
+
+    /**
+     * Update project details
+     */
+    @Transactional
+    public Project updateProject(Long projectId, Long userId, String name, String description, Boolean isPublic) {
+        log.info("Updating project {} for user {}", projectId, userId);
+
+        Project project = getProject(projectId, userId);
+
+        // Check if new name conflicts with existing project
+        if (name != null && !name.equals(project.getName())) {
+            if (projectRepository.findByUserIdAndName(userId, name).isPresent()) {
+                throw new ProjectAlreadyExistsException(name);
+            }
+            project.setName(name);
+        }
+
+        if (description != null) {
+            project.setDescription(description);
+        }
+
+        if (isPublic != null) {
+            project.setIsPublic(isPublic);
+        }
+
+        return projectRepository.save(project);
+    }
+
+    /**
+     * Delete a project and all its specifications
+     */
+    @Transactional
+    public void deleteProject(Long projectId, Long userId) {
+        log.info("Deleting project {} for user {}", projectId, userId);
+
+        Project project = getProject(projectId, userId);
+        projectRepository.delete(project);
+
+        log.info("Deleted project {}", projectId);
+    }
+}

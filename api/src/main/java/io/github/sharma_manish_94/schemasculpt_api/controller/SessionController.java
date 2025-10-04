@@ -8,6 +8,7 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.request.CreateSessionRequ
 import io.github.sharma_manish_94.schemasculpt_api.dto.request.UpdateSpecRequest;
 import io.github.sharma_manish_94.schemasculpt_api.exception.SessionNotFoundException;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
+import io.github.sharma_manish_94.schemasculpt_api.util.OpenAPIEnumFixer;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.validation.Valid;
@@ -73,6 +74,10 @@ public class SessionController {
         }
 
         String specText = Yaml.pretty(openAPI);
+
+        // CRITICAL: Fix uppercase enums before returning to UI
+        specText = OpenAPIEnumFixer.fixEnums(specText);
+
         return ResponseEntity.ok(specText);
     }
 

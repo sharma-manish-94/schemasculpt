@@ -1,0 +1,27 @@
+meta {
+  name: Get Current Specification
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/{{projectId}}/specifications/current
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Current Specification
+
+  Returns the current (latest) version of the specification.
+  Includes the full spec content.
+}
+
+assert {
+  res.status: eq 200
+  res.body.isCurrent: eq true
+}

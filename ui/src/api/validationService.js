@@ -521,3 +521,33 @@ export const generateOperationTestCases = async (sessionId, path, method, operat
         return handleApiError(error, "Failed to generate test cases for operation");
     }
 };
+
+/**
+ * Perform AI meta-analysis on linter findings.
+ * This is the "linter-augmented AI analyst" feature.
+ */
+export const performAIMetaAnalysis = async (sessionId) => {
+    if (!sessionId) {
+        return {
+            success: false,
+            error: "Session ID is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/ai-analysis`,
+            {},
+            {
+                timeout: 60000 // 60 second timeout for AI analysis
+            }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "AI meta-analysis failed");
+    }
+};

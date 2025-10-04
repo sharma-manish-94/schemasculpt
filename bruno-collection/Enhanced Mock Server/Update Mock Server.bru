@@ -1,0 +1,32 @@
+meta {
+  name: Update Mock Server
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/v1/mock/{{sampleMockId}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Updated Mock API\",\n    \"version\": \"1.1.0\",\n    \"description\": \"An updated sample API for testing mock functionality\"\n  },\n  \"paths\": {\n    \"/users\": {\n      \"get\": {\n        \"summary\": \"Get users\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\"\n          }\n        }\n      }\n    },\n    \"/products\": {\n      \"get\": {\n        \"summary\": \"Get products\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\"\n          }\n        }\n      }\n    }\n  }\n}",
+    "use_ai_responses": true,
+    "response_delay_ms": 50
+  }
+}
+
+tests {
+  test("Status should be 200 or 500", function() {
+    expect([200, 500]).to.include(res.getStatus());
+  });
+
+  test("Should return update response", function() {
+    expect(res.getBody()).to.have.property('mock_id');
+    if (res.getStatus() === 200) {
+      expect(res.getBody()).to.have.property('status', 'updated');
+    }
+  });
+}

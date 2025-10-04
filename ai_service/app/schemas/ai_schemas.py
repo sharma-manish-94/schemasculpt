@@ -67,8 +67,8 @@ class JSONPatchOperation(BaseModel):
 class AIRequest(BaseModel):
     """Enhanced AI request with advanced capabilities."""
 
-    # Core fields
-    spec_text: str = Field(..., description="OpenAPI specification text")
+    # Core fields - support both camelCase (Spring Boot) and snake_case (Python)
+    spec_text: str = Field(..., description="OpenAPI specification text", alias="specText")
     prompt: str = Field(..., min_length=1, description="User prompt for AI")
     operation_type: OperationType = Field(default=OperationType.MODIFY)
 
@@ -91,6 +91,9 @@ class AIRequest(BaseModel):
     user_id: Optional[str] = Field(default=None)
     session_id: Optional[UUID] = Field(default=None)
     tags: List[str] = Field(default_factory=list)
+
+    # Pydantic v2 configuration
+    model_config = {"populate_by_name": True}  # Allow both spec_text and specText
 
     @validator('json_patches')
     def validate_patches(cls, v):

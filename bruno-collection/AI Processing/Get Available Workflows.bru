@@ -1,0 +1,22 @@
+meta {
+  name: Get Available Workflows
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/workflows
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return workflows list", function() {
+    expect(res.getBody()).to.have.property('workflows');
+    expect(res.getBody().workflows).to.be.an('array');
+  });
+}

@@ -1,0 +1,43 @@
+meta {
+  name: Generate Specification for Session
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sampleSessionId}}/spec/ai/generate-spec
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "domain": "inventory_management",
+    "description": "A comprehensive inventory management API for tracking products, stock levels, and warehouse operations",
+    "api_type": "REST",
+    "complexity_level": "advanced",
+    "include_examples": true,
+    "authentication_type": "oauth2",
+    "additional_requirements": [
+      "Include audit trails",
+      "Support bulk operations",
+      "Add real-time notifications",
+      "Include reporting endpoints"
+    ],
+    "streaming": "disabled",
+    "user_id": "{{sampleUserId}}",
+    "target_version": "3.0.3"
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return generated specification", function() {
+    expect(res.getBody()).to.have.property('updated_spec_text');
+    expect(res.getBody()).to.have.property('operation_type', 'generate');
+    expect(res.getBody()).to.have.property('success');
+  });
+}

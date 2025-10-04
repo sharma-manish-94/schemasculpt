@@ -1,0 +1,43 @@
+meta {
+  name: Start Mock Server
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/mock/start
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "{\n  \"openapi\": \"3.0.3\",\n  \"info\": {\n    \"title\": \"Sample Mock API\",\n    \"version\": \"1.0.0\",\n    \"description\": \"A sample API for testing mock functionality\"\n  },\n  \"paths\": {\n    \"/users\": {\n      \"get\": {\n        \"summary\": \"Get users\",\n        \"responses\": {\n          \"200\": {\n            \"description\": \"Success\",\n            \"content\": {\n              \"application/json\": {\n                \"schema\": {\n                  \"type\": \"array\",\n                  \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                      \"id\": { \"type\": \"integer\" },\n                      \"name\": { \"type\": \"string\" },\n                      \"email\": { \"type\": \"string\" }\n                    }\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+    "host": "localhost",
+    "port": 3001,
+    "use_ai_responses": true,
+    "response_delay_ms": 100,
+    "error_rate": 0.05,
+    "response_variety": 3
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return mock server details", function() {
+    expect(res.getBody()).to.have.property('mock_id');
+    expect(res.getBody()).to.have.property('base_url');
+    expect(res.getBody()).to.have.property('available_endpoints');
+    expect(res.getBody()).to.have.property('total_endpoints');
+  });
+
+  test("Mock server should have valid configuration", function() {
+    expect(res.getBody().mock_id).to.be.a('string');
+    expect(res.getBody().available_endpoints).to.be.an('array');
+    expect(res.getBody().total_endpoints).to.be.a('number');
+    expect(res.getBody().total_endpoints).to.be.greaterThan(0);
+  });
+}

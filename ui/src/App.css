@@ -77,3 +77,34 @@ body {
 .header-right a:hover {
   color: var(--text-primary);
 }
+
+/* Project header styles */
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.current-project {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.btn-back-to-projects {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.btn-back-to-projects:hover {
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+}

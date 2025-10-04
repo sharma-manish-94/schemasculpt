@@ -1,0 +1,26 @@
+meta {
+  name: List Projects
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # List Projects
+
+  Returns all projects for the authenticated user.
+  Projects are ordered by creation date (newest first).
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,11 +1,46 @@
 import { useSpecStore } from "../../../store/specStore";
-import React from "react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { projectAPI } from "../../../api/projectAPI";
+import React, { useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import NavigationPanel from "./NavigationPanel";
 import DetailPanel from "./DetailPanel";
 import RightPanel from "./RightPanel";
 
-function ThreePanelLayout() {
+function ThreePanelLayout({ project }) {
+  const specText = useSpecStore((state) => state.specText);
+  const { token } = useAuth();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!project) {
+      alert('No project selected');
+      return;
+    }
+
+    const commitMessage = prompt('Enter a commit message for this version:');
+    if (!commitMessage) {
+      return; // User cancelled
+    }
+
+    setSaving(true);
+    try {
+      const specData = {
+        specContent: specText,
+        specFormat: 'yaml',
+        commitMessage
+      };
+
+      await projectAPI.saveSpecification(token, project.id, specData);
+      alert('Specification saved successfully!');
+    } catch (error) {
+      console.error('Failed to save specification:', error);
+      alert(error.response?.data?.message || 'Failed to save specification');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <PanelGroup direction="horizontal" className="main-layout">
       {/* Column 1 */}
@@ -21,7 +56,7 @@ function ThreePanelLayout() {
           Spec Editor
         </div>
         <div className="panel-content editor-panel-content">
-          <DetailPanel />
+          <DetailPanel project={project} />
         </div>
       </Panel>
       <PanelResizeHandle className="resize-handle" />

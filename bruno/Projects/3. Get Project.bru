@@ -1,0 +1,26 @@
+meta {
+  name: Get Project
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/projects/{{projectId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Project
+
+  Returns details of a specific project.
+  User must be the owner of the project.
+}
+
+assert {
+  res.status: eq 200
+}

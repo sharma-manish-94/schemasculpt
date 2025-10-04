@@ -1,0 +1,48 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ai/health
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  X-Correlation-ID: {{correlationId}}
+}
+
+docs {
+  # Health Check
+
+  Comprehensive health check for all AI services including:
+  - Service status
+  - Dependencies (Ollama, agents, context manager)
+  - Performance metrics
+  - Error rates
+
+  **Expected Response:**
+  - Status: 200 OK
+  - Body: HealthResponse with service status and metrics
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response should have status field", function() {
+    expect(res.getBody().status).to.be.oneOf(['healthy', 'unhealthy']);
+  });
+
+  test("Response should have version", function() {
+    expect(res.getBody().version).to.be.a('string');
+  });
+
+  test("Dependencies should be present", function() {
+    expect(res.getBody().dependencies).to.be.an('object');
+  });
+}

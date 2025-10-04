@@ -1,0 +1,28 @@
+meta {
+  name: AI Health Check
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ai/health
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return health status", function() {
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('version');
+    expect(res.getBody()).to.have.property('dependencies');
+  });
+
+  test("Health status should be valid", function() {
+    const validStatuses = ['healthy', 'unhealthy', 'degraded'];
+    expect(validStatuses).to.include(res.getBody().status);
+  });
+}

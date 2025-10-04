@@ -1,0 +1,39 @@
+meta {
+  name: Optimize Prompt
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ai/prompt/optimize
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "prompt": "Make this API better with more stuff and things that are good for users to understand what it does and how to use it properly with examples",
+    "operation_type": "modify",
+    "goal": "clarity",
+    "target_audience": "developers",
+    "optimization_focus": ["clarity", "specificity", "actionability"]
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should return optimization result", function() {
+    expect(res.getBody()).to.have.property('original_prompt');
+    expect(res.getBody()).to.have.property('optimized_prompt');
+    expect(res.getBody()).to.have.property('improvement_score');
+  });
+
+  test("Improvement score should be valid", function() {
+    expect(res.getBody().improvement_score).to.be.a('number');
+    expect(res.getBody().improvement_score).to.be.at.least(0);
+    expect(res.getBody().improvement_score).to.be.at.most(10);
+  });
+}

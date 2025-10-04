@@ -71,21 +71,27 @@ public class PathNamingRule implements LinterRule {
                 continue;
             }
 
-            // Check for kebab-case
-            if (!KEBAB_CASE_PATTERN.matcher(segment).matches() && !segment.isEmpty()) {
-                suggestions.add(new ValidationSuggestion(
-                    String.format("Path segment '%s' in path '%s' should use kebab-case (lowercase with hyphens).",
-                        segment, path),
-                    "use-kebab-case",
-                    "warning",
-                    "general",
-                    Map.of("path", path, "segment", segment, "issue", "naming-convention"),
-                    true
-                ));
+            // Skip empty segments
+            if (segment.isEmpty()) {
+                continue;
             }
 
-            // Check for underscores (should use hyphens instead)
-            if (segment.contains("_")) {
+            // Check for naming convention issues (prioritized to avoid duplicates)
+            // Priority order: camelCase > underscores > general kebab-case
+
+            if (segment.matches(".*[A-Z].*")) {
+                // Has uppercase letters - camelCase issue
+                suggestions.add(new ValidationSuggestion(
+                    String.format("Path segment '%s' in path '%s' should not use camelCase. Use kebab-case instead.",
+                        segment, path),
+                    "convert-camelcase-to-kebab",
+                    "warning",
+                    "general",
+                    Map.of("path", path, "segment", segment, "issue", "camelcase-usage"),
+                    true
+                ));
+            } else if (segment.contains("_")) {
+                // Has underscores
                 suggestions.add(new ValidationSuggestion(
                     String.format("Path segment '%s' in path '%s' should use hyphens instead of underscores.",
                         segment, path),
@@ -95,17 +101,15 @@ public class PathNamingRule implements LinterRule {
                     Map.of("path", path, "segment", segment, "issue", "underscore-usage"),
                     true
                 ));
-            }
-
-            // Check for camelCase (should use kebab-case)
-            if (segment.matches(".*[A-Z].*")) {
+            } else if (!KEBAB_CASE_PATTERN.matcher(segment).matches()) {
+                // Doesn't match kebab-case pattern (but no specific issue identified above)
                 suggestions.add(new ValidationSuggestion(
-                    String.format("Path segment '%s' in path '%s' should not use camelCase. Use kebab-case instead.",
+                    String.format("Path segment '%s' in path '%s' should use kebab-case (lowercase with hyphens).",
                         segment, path),
-                    "convert-camelcase-to-kebab",
+                    "use-kebab-case",
                     "warning",
                     "general",
-                    Map.of("path", path, "segment", segment, "issue", "camelcase-usage"),
+                    Map.of("path", path, "segment", segment, "issue", "naming-convention"),
                     true
                 ));
             }

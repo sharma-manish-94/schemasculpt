@@ -5,7 +5,7 @@ import { explainValidationIssue } from '../../api/validationService';
 import explanationCache from '../../utils/explanationCache';
 import './ValidationSuggestion.css';
 
-const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActions }) => {
+const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActions, isAIFriendly = false }) => {
     const [explanation, setExplanation] = useState(null);
     const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
     const [showExplanation, setShowExplanation] = useState(false);
@@ -25,7 +25,8 @@ const ValidationSuggestion = ({ suggestion, sessionId, specText, additionalActio
     };
 
     const getSeverityClass = (severity) => {
-        return `suggestion-item severity-${severity || 'info'}`;
+        const baseClass = `suggestion-item severity-${severity || 'info'}`;
+        return isAIFriendly ? `${baseClass} ai-friendly-item` : baseClass;
     };
 
     // Check cache on component mount

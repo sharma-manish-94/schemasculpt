@@ -1,0 +1,54 @@
+meta {
+  name: Security Analysis - OAuth API
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{aiServiceUrl}}/ai/analyze/security
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_text": "openapi: 3.0.0\ninfo:\n  title: OAuth Protected API\n  version: 1.0.0\nsecurity:\n  - oauth2: []\ncomponents:\n  securitySchemes:\n    oauth2:\n      type: oauth2\n      flows:\n        authorizationCode:\n          authorizationUrl: https://auth.example.com/oauth/authorize\n          tokenUrl: https://auth.example.com/oauth/token\n          scopes:\n            read:users: Read user data\n            write:users: Modify user data\npaths:\n  /users:\n    get:\n      security:\n        - oauth2: [read:users]\n      responses:\n        200:\n          description: Users list\n    post:\n      security:\n        - oauth2: [write:users]\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n              properties:\n                name:\n                  type: string\n                email:\n                  type: string\n      responses:\n        201:\n          description: User created",
+    "prompt": "Analyze this OAuth-protected API for security best practices and potential vulnerabilities",
+    "operation_type": "validate",
+    "streaming": "disabled",
+    "session_id": "{{sampleSessionId}}",
+    "user_id": "{{sampleUserId}}",
+    "tags": ["security", "oauth", "best_practices"]
+  }
+}
+
+tests {
+  test("Status should be 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Should analyze OAuth implementation", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['oauth', 'authorization', 'token']);
+  });
+
+  test("Should reference OAuth standards", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['rfc 6749', 'oauth 2.0', 'authorization code']);
+  });
+
+  test("Should analyze scope configuration", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['scope', 'permission', 'access']);
+  });
+
+  test("Should mention HTTPS requirements", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['https', 'tls', 'ssl']);
+  });
+
+  test("Should analyze security headers", function() {
+    const analysis = res.getBody().updated_spec_text;
+    expect(analysis.toLowerCase()).to.include.oneOf(['header', 'cors', 'csrf']);
+  });
+}
