@@ -30,6 +30,9 @@ from ..schemas.patch_schemas import (
     PatchApplicationRequest, PatchApplicationResponse,
     SmartAIFixRequest, SmartAIFixResponse
 )
+from ..schemas.meta_analysis_schemas import (
+    AIMetaAnalysisRequest, AIMetaAnalysisResponse
+)
 from ..services.agent_manager import AgentManager
 from ..services.context_manager import ContextManager
 from ..services.llm_service import LLMService
@@ -38,6 +41,7 @@ from ..services.rag_service import RAGService
 from ..services.security import SecurityAnalysisWorkflow
 from ..services.patch_generator import PatchGenerator, apply_json_patch
 from ..services.smart_fix_service import SmartFixService
+from ..services.meta_analysis_service import MetaAnalysisService
 
 # Initialize services
 router = APIRouter()
@@ -52,6 +56,7 @@ rag_service = RAGService()
 security_workflow = SecurityAnalysisWorkflow(llm_service)
 patch_generator = PatchGenerator(llm_service)
 smart_fix_service = SmartFixService(llm_service)
+meta_analysis_service = MetaAnalysisService(llm_service)
 
 # Mock server storage
 MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
@@ -543,6 +548,44 @@ async def process_specification_legacy(request: AIRequest):
 async def generate_specification_legacy(request: GenerateSpecRequest):
     """Legacy endpoint for backward compatibility."""
     return await generate_specification_agentic(request)
+
+
+@router.post("/ai/meta-analysis", response_model=AIMetaAnalysisResponse)
+async def perform_meta_analysis(request: AIMetaAnalysisRequest, _: None = Depends(handle_exceptions)):
+    """
+    Perform AI meta-analysis on linter findings to detect higher-order patterns.
+
+    This is the "linter-augmented AI analyst" feature. It takes the results from
+    deterministic linters and uses AI to find patterns, combinations, and higher-level
+    issues that individual linter rules cannot detect.
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info(f"Performing meta-analysis with {len(request.errors)} errors, "
+                f"{len(request.suggestions)} suggestions", extra={
+        "correlation_id": correlation_id,
+        "error_count": len(request.errors),
+        "suggestion_count": len(request.suggestions)
+    })
+
+    try:
+        result = await meta_analysis_service.analyze(request)
+
+        logger.info(f"Meta-analysis completed with {len(result.insights)} insights", extra={
+            "correlation_id": correlation_id,
+            "insight_count": len(result.insights),
+            "confidence": result.confidenceScore
+        })
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Meta-analysis failed: {str(e)}", extra={"correlation_id": correlation_id})
+        raise HTTPException(status_code=500, detail={
+            "error": "META_ANALYSIS_FAILED",
+            "message": "Failed to perform meta-analysis",
+            "details": {"original_error": str(e)}
+        })
 
 
 def _get_cache_key(spec_text: str, prompt: str) -> str:
