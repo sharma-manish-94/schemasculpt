@@ -423,7 +423,7 @@
 .ai-friendly-item {
   border-left: 3px solid #0066cc !important;
   background: linear-gradient(to right, rgba(0, 102, 204, 0.05), transparent);
-  padding: 12px 16px; /* More padding for better readability with long WHY sections */
+  padding: 8px 12px; /* Same as regular suggestions for consistency */
 }
 
 .ai-friendly-item:hover {

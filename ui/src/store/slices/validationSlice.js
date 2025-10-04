@@ -1,4 +1,4 @@
-import {validateSpec, applyQuickFix, updateSessionSpec, performAIMetaAnalysis} from '../../api/validationService';
+import {validateSpec, applyQuickFix, updateSessionSpec, performAIMetaAnalysis, analyzeDescriptions} from '../../api/validationService';
 import {useSpecStore} from "../specStore";
 
 export const createValidationSlice = (set, get) => ({
@@ -10,6 +10,12 @@ export const createValidationSlice = (set, get) => ({
     aiSummary: null,
     aiConfidenceScore: 0,
     isAIAnalysisLoading: false,
+    descriptionQuality: {
+        results: [],
+        overallScore: 0,
+        patches: []
+    },
+    isDescriptionAnalysisLoading: false,
     // --- ACTIONS ---
     setIsLoading: (loading) => set({isLoading: loading}), validateCurrentSpec: async () => {
         const {sessionId, specText} = useSpecStore.getState();
@@ -120,6 +126,96 @@ export const createValidationSlice = (set, get) => ({
                 aiConfidenceScore: 0,
                 isAIAnalysisLoading: false
             });
+        }
+    },
+
+    runDescriptionAnalysis: async () => {
+        const { sessionId, specText } = useSpecStore.getState();
+        if (!sessionId) return;
+
+        set({ isDescriptionAnalysisLoading: true });
+
+        try {
+            // Update session with current spec before analysis
+            await updateSessionSpec(sessionId, specText);
+
+            const result = await analyzeDescriptions(sessionId);
+
+            if (result && result.success) {
+                set({
+                    descriptionQuality: {
+                        results: result.data.results || [],
+                        overallScore: result.data.overallScore || 0,
+                        patches: result.data.patches || []
+                    },
+                    isDescriptionAnalysisLoading: false
+                });
+            } else {
+                console.error('Description analysis failed:', result?.error);
+                set({
+                    descriptionQuality: {
+                        results: [],
+                        overallScore: 0,
+                        patches: []
+                    },
+                    isDescriptionAnalysisLoading: false
+                });
+            }
+        } catch (error) {
+            console.error('Description analysis error:', error);
+            set({
+                descriptionQuality: {
+                    results: [],
+                    overallScore: 0,
+                    patches: []
+                },
+                isDescriptionAnalysisLoading: false
+            });
+        }
+    },
+
+    applyDescriptionPatches: async (patches) => {
+        const { sessionId, specText, setSpecText } = useSpecStore.getState();
+        if (!sessionId || !patches || patches.length === 0) return;
+
+        try {
+            // Parse current spec
+            let spec = JSON.parse(specText);
+
+            // Apply each JSON Patch operation
+            patches.forEach(patch => {
+                const pathParts = patch.path.split('/').filter(p => p);
+                let current = spec;
+
+                // Navigate to the parent of the target
+                for (let i = 0; i < pathParts.length - 1; i++) {
+                    const part = pathParts[i].replace(/~1/g, '/').replace(/~0/g, '~');
+                    if (!current[part]) {
+                        current[part] = {};
+                    }
+                    current = current[part];
+                }
+
+                // Apply the operation
+                const lastPart = pathParts[pathParts.length - 1].replace(/~1/g, '/').replace(/~0/g, '~');
+                if (patch.op === 'add' || patch.op === 'replace') {
+                    current[lastPart] = patch.value;
+                } else if (patch.op === 'remove') {
+                    delete current[lastPart];
+                }
+            });
+
+            // Update spec
+            const updatedSpecText = JSON.stringify(spec, null, 2);
+            setSpecText(updatedSpecText);
+
+            // Update session
+            await updateSessionSpec(sessionId, updatedSpecText);
+
+            // Re-run analysis to get updated scores
+            await get().runDescriptionAnalysis();
+        } catch (error) {
+            console.error('Failed to apply description patches:', error);
         }
     }
 });

@@ -551,3 +551,33 @@ export const performAIMetaAnalysis = async (sessionId) => {
         return handleApiError(error, "AI meta-analysis failed");
     }
 };
+
+/**
+ * Analyze description quality for all operations and schemas.
+ * Returns quality scores and JSON Patch operations for improvements.
+ */
+export const analyzeDescriptions = async (sessionId) => {
+    if (!sessionId) {
+        return {
+            success: false,
+            error: "Session ID is required",
+            type: ERROR_TYPES.VALIDATION_ERROR
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_CONFIG.BASE_URL}/sessions/${sessionId}/spec/analyze-descriptions`,
+            {},
+            {
+                timeout: 60000 // 60 second timeout for AI analysis
+            }
+        );
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return handleApiError(error, "Description analysis failed");
+    }
+};

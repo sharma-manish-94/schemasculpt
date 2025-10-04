@@ -2901,7 +2901,6 @@ textarea:focus-visible {
   border-left: 4px solid #0066cc;
   border-radius: 8px;
   margin-bottom: 16px;
-  padding: 12px;
 }
 
 /* AI-Friendly Title */
@@ -3007,3 +3006,121 @@ textarea:focus-visible {
   flex-direction: column;
   gap: 8px;
 }
+
+/* Description Quality Section */
+.description-quality-section {
+  margin-top: 16px;
+}
+
+.description-quality-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.result-title-description {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+}
+
+.analyze-descriptions-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+}
+
+.analyze-descriptions-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+}
+
+.analyze-descriptions-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.analyze-descriptions-btn:disabled:hover {
+  transform: none;
+}
+
+/* Collapsible Section Styles */
+.collapsible-title {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collapsible-title:hover {
+  opacity: 0.8;
+}
+
+.collapse-icon {
+  font-size: 0.8em;
+  transition: transform 0.2s ease;
+  min-width: 12px;
+}
+
+.validation-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toggle-button {
+  padding: 6px 12px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-button:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+/* AI Insights Section Title */
+.result-title-ai-insights {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.ai-insights-section {
+  margin-top: 16px;
+}
+

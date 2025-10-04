@@ -33,6 +33,9 @@ from ..schemas.patch_schemas import (
 from ..schemas.meta_analysis_schemas import (
     AIMetaAnalysisRequest, AIMetaAnalysisResponse
 )
+from ..schemas.description_schemas import (
+    DescriptionAnalysisRequest, DescriptionAnalysisResponse
+)
 from ..services.agent_manager import AgentManager
 from ..services.context_manager import ContextManager
 from ..services.llm_service import LLMService
@@ -42,6 +45,8 @@ from ..services.security import SecurityAnalysisWorkflow
 from ..services.patch_generator import PatchGenerator, apply_json_patch
 from ..services.smart_fix_service import SmartFixService
 from ..services.meta_analysis_service import MetaAnalysisService
+from ..services.description_analysis_service import DescriptionAnalysisService
+from ..services.llm_adapter import LLMAdapter
 
 # Initialize services
 router = APIRouter()
@@ -49,6 +54,7 @@ logger = get_logger("api.endpoints")
 
 # Service instances
 llm_service = LLMService()
+llm_adapter = LLMAdapter()
 agent_manager = AgentManager(llm_service)
 context_manager = ContextManager()
 prompt_engine = PromptEngine()
@@ -57,6 +63,7 @@ security_workflow = SecurityAnalysisWorkflow(llm_service)
 patch_generator = PatchGenerator(llm_service)
 smart_fix_service = SmartFixService(llm_service)
 meta_analysis_service = MetaAnalysisService(llm_service)
+description_analysis_service = DescriptionAnalysisService(llm_adapter)
 
 # Mock server storage
 MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
@@ -584,6 +591,44 @@ async def perform_meta_analysis(request: AIMetaAnalysisRequest, _: None = Depend
         raise HTTPException(status_code=500, detail={
             "error": "META_ANALYSIS_FAILED",
             "message": "Failed to perform meta-analysis",
+            "details": {"original_error": str(e)}
+        })
+
+
+@router.post("/ai/analyze-descriptions", response_model=DescriptionAnalysisResponse)
+async def analyze_descriptions(request: DescriptionAnalysisRequest, _: None = Depends(handle_exceptions)):
+    """
+    Analyze description quality using AI.
+
+    This endpoint:
+    - Accepts ONLY descriptions + minimal context (NOT entire spec)
+    - Analyzes quality (completeness, clarity, accuracy, best practices)
+    - Returns quality scores + JSON Patch operations for improvements
+    - Batches multiple descriptions in a single LLM call for efficiency
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info(f"Analyzing {len(request.items)} descriptions", extra={
+        "correlation_id": correlation_id,
+        "item_count": len(request.items)
+    })
+
+    try:
+        result = await description_analysis_service.analyze(request)
+
+        logger.info(f"Description analysis completed with overall score: {result.overall_score}", extra={
+            "correlation_id": correlation_id,
+            "overall_score": result.overall_score,
+            "patches_count": len(result.patches)
+        })
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Description analysis failed: {str(e)}", extra={"correlation_id": correlation_id})
+        raise HTTPException(status_code=500, detail={
+            "error": "DESCRIPTION_ANALYSIS_FAILED",
+            "message": "Failed to analyze description quality",
             "details": {"original_error": str(e)}
         })
 
