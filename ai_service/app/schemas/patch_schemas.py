@@ -106,3 +106,49 @@ class PatchApplicationResponse(BaseModel):
         default_factory=list,
         description="Validation errors if validate_after=True"
     )
+
+
+class SmartAIFixRequest(BaseModel):
+    """
+    Smart AI fix request that intelligently chooses between patch and full spec regeneration.
+    Optimized for targeted fixes with minimal LLM overhead.
+    """
+
+    spec_text: str = Field(..., description="OpenAPI specification", alias="specText")
+    prompt: str = Field(..., description="User prompt describing the fix needed")
+
+    # Optional targeting information
+    target_path: Optional[str] = Field(None, description="Specific API path to target (e.g., '/user/{id}')")
+    target_method: Optional[str] = Field(None, description="Specific HTTP method (e.g., 'get', 'post')")
+    validation_errors: List[str] = Field(
+        default_factory=list,
+        description="Specific validation errors to fix"
+    )
+
+    # Mode selection
+    force_full_regeneration: bool = Field(
+        default=False,
+        description="Force full spec regeneration instead of patches"
+    )
+
+    # Pydantic v2 configuration
+    model_config = {"populate_by_name": True}
+
+
+class SmartAIFixResponse(BaseModel):
+    """Response from smart AI fix, includes method used and performance metrics."""
+
+    updated_spec_text: str = Field(..., description="Updated OpenAPI specification")
+    method_used: Literal["patch", "full_regeneration"] = Field(
+        ...,
+        description="Method used to apply the fix"
+    )
+    patches_applied: Optional[List[JsonPatchOperation]] = Field(
+        None,
+        description="Patches if patch method was used"
+    )
+    explanation: str = Field(..., description="Explanation of changes made")
+    confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+    processing_time_ms: float = Field(..., description="Processing time in milliseconds")
+    token_count: int = Field(..., description="Number of LLM tokens used")
+    warnings: List[str] = Field(default_factory=list)

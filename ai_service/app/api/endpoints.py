@@ -27,7 +27,8 @@ from ..schemas.security_schemas import (
 )
 from ..schemas.patch_schemas import (
     PatchGenerationRequest, PatchGenerationResponse,
-    PatchApplicationRequest, PatchApplicationResponse
+    PatchApplicationRequest, PatchApplicationResponse,
+    SmartAIFixRequest, SmartAIFixResponse
 )
 from ..services.agent_manager import AgentManager
 from ..services.context_manager import ContextManager
@@ -36,6 +37,7 @@ from ..services.prompt_engine import PromptEngine
 from ..services.rag_service import RAGService
 from ..services.security import SecurityAnalysisWorkflow
 from ..services.patch_generator import PatchGenerator, apply_json_patch
+from ..services.smart_fix_service import SmartFixService
 
 # Initialize services
 router = APIRouter()
@@ -49,6 +51,7 @@ prompt_engine = PromptEngine()
 rag_service = RAGService()
 security_workflow = SecurityAnalysisWorkflow(llm_service)
 patch_generator = PatchGenerator(llm_service)
+smart_fix_service = SmartFixService(llm_service)
 
 # Mock server storage
 MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
@@ -1658,6 +1661,54 @@ async def apply_patch(request: PatchApplicationRequest):
         raise HTTPException(status_code=500, detail={
             "error": "PATCH_APPLICATION_FAILED",
             "message": f"Failed to apply patch: {str(e)}"
+        })
+
+
+@router.post("/ai/fix/smart", response_model=SmartAIFixResponse)
+async def smart_ai_fix(request: SmartAIFixRequest):
+    """
+    Smart AI fix that intelligently chooses between JSON patches and full spec regeneration.
+
+    This endpoint optimizes performance by:
+    - Using JSON patches for targeted fixes (faster, more accurate)
+    - Using full regeneration only when necessary (broad changes)
+
+    The decision is made based on:
+    - Prompt analysis (targeted vs broad)
+    - Target scope (specific operation vs entire spec)
+    - Spec size (small specs can regenerate quickly)
+    - Validation errors (targeted fixes use patches)
+
+    Performance comparison:
+    - Patch mode: ~2-5 seconds, ~100-500 tokens
+    - Full regen: ~10-30 seconds, ~2000-8000 tokens
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info(f"Smart AI fix request: {request.prompt[:100]}...")
+
+    try:
+        response = await smart_fix_service.process_smart_fix(request)
+
+        logger.info(
+            f"Smart fix completed using {response.method_used} method in "
+            f"{response.processing_time_ms:.0f}ms ({response.token_count} tokens)"
+        )
+
+        return response
+
+    except ValueError as e:
+        logger.error(f"Invalid request: {str(e)}")
+        raise HTTPException(status_code=400, detail={
+            "error": "INVALID_REQUEST",
+            "message": str(e)
+        })
+    except Exception as e:
+        logger.error(f"Smart fix failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "SMART_FIX_FAILED",
+            "message": f"Failed to process smart fix: {str(e)}"
         })
 
 

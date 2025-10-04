@@ -22,14 +22,27 @@ class Settings(BaseSettings):
     api_prefix: str = Field(default="/api/v2", env="API_PREFIX")
     allowed_hosts: List[str] = Field(default=["*"], env="ALLOWED_HOSTS")
 
-    # LLM Configuration
-    ollama_base_url: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
-    ollama_chat_endpoint: str = Field(default="/api/chat", env="OLLAMA_CHAT_ENDPOINT")
-    ollama_generate_endpoint: str = Field(default="/api/generate", env="OLLAMA_GENERATE_ENDPOINT")
+    # LLM Provider Configuration
+    llm_provider: str = Field(default="ollama", env="LLM_PROVIDER")  # ollama, huggingface, vcap
     default_model: str = Field(default="mistral:7b-instruct", env="DEFAULT_LLM_MODEL")
     model_temperature: float = Field(default=0.1, env="MODEL_TEMPERATURE")
     max_tokens: int = Field(default=2048, env="MAX_TOKENS")
     request_timeout: int = Field(default=120, env="REQUEST_TIMEOUT")
+
+    # Ollama Configuration
+    ollama_base_url: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
+    ollama_chat_endpoint: str = Field(default="/api/chat", env="OLLAMA_CHAT_ENDPOINT")
+    ollama_generate_endpoint: str = Field(default="/api/generate", env="OLLAMA_GENERATE_ENDPOINT")
+
+    # HuggingFace Configuration
+    huggingface_api_key: Optional[str] = Field(default=None, env="HUGGINGFACE_API_KEY")
+    huggingface_api_url: str = Field(default="https://api-inference.huggingface.co/models", env="HUGGINGFACE_API_URL")
+    huggingface_use_local: bool = Field(default=False, env="HUGGINGFACE_USE_LOCAL")
+
+    # VCAP/Cloud Foundry Configuration
+    vcap_service_name: str = Field(default="aicore", env="VCAP_SERVICE_NAME")
+    vcap_api_url: Optional[str] = Field(default=None, env="VCAP_API_URL")
+    vcap_api_key: Optional[str] = Field(default=None, env="VCAP_API_KEY")
 
     # Advanced LLM Settings
     enable_streaming: bool = Field(default=True, env="ENABLE_STREAMING")
@@ -65,6 +78,33 @@ class Settings(BaseSettings):
 
     # AI Service Data Directory
     ai_service_data_dir: str = Field(default=".", env="AI_SERVICE_DATA_DIR")
+
+    def get_provider_config(self) -> dict:
+        """Get provider-specific configuration based on llm_provider setting."""
+        if self.llm_provider == "ollama":
+            return {
+                "base_url": self.ollama_base_url,
+                "default_model": self.default_model,
+                "timeout": self.request_timeout
+            }
+        elif self.llm_provider == "huggingface":
+            return {
+                "api_key": self.huggingface_api_key,
+                "api_url": self.huggingface_api_url,
+                "default_model": self.default_model,
+                "timeout": self.request_timeout,
+                "use_local": self.huggingface_use_local
+            }
+        elif self.llm_provider == "vcap":
+            return {
+                "service_name": self.vcap_service_name,
+                "api_url": self.vcap_api_url,
+                "api_key": self.vcap_api_key,
+                "default_model": self.default_model,
+                "timeout": self.request_timeout
+            }
+        else:
+            raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
 
     class Config:
         env_file = ".env"

@@ -992,6 +992,64 @@ You are a JSON Patch specialist for OpenAPI specifications.
     async def __aenter__(self):
         return self
 
+    async def generate_json_response(
+        self,
+        prompt: str,
+        schema_description: str = "JSON response",
+        max_tokens: int = 2048
+    ) -> str:
+        """
+        Generate a JSON response from the LLM.
+        This is a compatibility method for PatchGenerator and other services.
+
+        Args:
+            prompt: The prompt to send to the LLM
+            schema_description: Description of expected JSON schema
+            max_tokens: Maximum tokens to generate
+
+        Returns:
+            JSON string from the LLM
+        """
+        try:
+            messages = [
+                {
+                    "role": "system",
+                    "content": f"You are a helpful assistant that responds only with valid JSON. {schema_description}"
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+
+            payload = {
+                "model": settings.default_model,
+                "messages": messages,
+                "stream": False,
+                "format": "json",  # Force JSON output
+                "options": {
+                    "temperature": 0.2,  # Lower temperature for more consistent JSON
+                    "num_predict": max_tokens,
+                    "num_ctx": 4096  # Increase context window
+                }
+            }
+
+            self.logger.debug(f"Sending JSON generation request to Ollama, max_tokens={max_tokens}")
+
+            response = await self.client.post(self.chat_endpoint, json=payload)
+
+            if response.status_code != 200:
+                error_msg = f"LLM request failed: {response.status_code} - {response.text}"
+                self.logger.error(error_msg)
+                raise LLMError(error_msg)
+
+            response_data = response.json()
+            return self._extract_and_clean_response(response_data)
+
+        except Exception as e:
+            self.logger.error(f"JSON response generation failed: {str(e)}")
+            raise LLMError(f"Failed to generate JSON response: {str(e)}")
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._auto_close_client:
             await self.client.aclose()

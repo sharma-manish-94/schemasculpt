@@ -1,49 +1,70 @@
-# Web Framework
-fastapi
+# =====================================================================
+# SchemaSculpt AI Service Dependencies
+# =====================================================================
 
-# ASGI Server
-uvicorn
+# ---------------------------------------------------------------------
+# Core Web Framework
+# ---------------------------------------------------------------------
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
 
-# HTTP Client
-httpx
-requests
+# ---------------------------------------------------------------------
+# HTTP Clients
+# ---------------------------------------------------------------------
+httpx>=0.25.0  # Async HTTP client (used by all providers)
+requests>=2.31.0  # Sync HTTP client (fallback)
 
-# OpenAPI Spec Parsing
-prance
-openapi-spec-validator
+# ---------------------------------------------------------------------
+# OpenAPI Spec Processing
+# ---------------------------------------------------------------------
+prance>=23.6.0
+openapi-spec-validator>=0.7.0
 
-# Environment Variables
-python-dotenv
+# ---------------------------------------------------------------------
+# Configuration & Environment
+# ---------------------------------------------------------------------
+python-dotenv>=1.0.0
+pydantic[email]>=2.0.0
+pydantic-settings>=2.0.0
 
-# YAML Parsing
-PyYAML
+# ---------------------------------------------------------------------
+# Data Formats
+# ---------------------------------------------------------------------
+PyYAML>=6.0.1
 
-# JSON Patch Operations
-jsonpatch
+# ---------------------------------------------------------------------
+# JSON Operations
+# ---------------------------------------------------------------------
+jsonpatch>=1.33
+jsonschema>=4.19.0
 
-# JSON Schema Validation
-jsonschema
+# ---------------------------------------------------------------------
+# RAG and Vector Search (Optional - for security analysis)
+# Install if using RAG features:
+# pip install "schemasculpt-ai[rag]"
+# ---------------------------------------------------------------------
+langchain>=0.1.0
+langchain-community>=0.0.20
+langchain-huggingface>=0.0.1
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+pypdf>=3.17.0
+unstructured>=0.11.0
+lark>=1.1.0
+beautifulsoup4>=4.12.0
+html2text>=2020.1.16
 
-# Data Validation and Settings
-pydantic[email]
-pydantic-settings
+# ---------------------------------------------------------------------
+# LLM Provider Dependencies
+# ---------------------------------------------------------------------
 
+# For HuggingFace Provider (Optional)
+# Install if using HuggingFace:
+# pip install "schemasculpt-ai[huggingface]"
+torch>=2.1.0; platform_machine != "aarch64"  # GPU acceleration
+transformers>=4.35.0  # HuggingFace transformers
 
-# For RAG and GPU acceleration
-langchain
-langchain-community
-langchain-huggingface
-chromadb
-sentence-transformers
-pypdf
-unstructured
-lark
-beautifulsoup4
-html2text
-
-# System monitoring (optional but recommended)
-psutil
-
-# GPU acceleration (for NVIDIA 3060)
-torch
-transformers
+# ---------------------------------------------------------------------
+# System Monitoring (Optional)
+# ---------------------------------------------------------------------
+psutil>=5.9.0
