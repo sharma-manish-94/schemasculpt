@@ -2,6 +2,8 @@ package io.github.sharma_manish_94.schemasculpt_api.service.ai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.core.ParameterizedTypeReference;
+import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIProxyRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ai.SmartAIFixRequest;
@@ -153,6 +155,37 @@ public class AIService {
         } catch (Exception e) {
             log.error("Failed to generate test suite from AI service: {}", e.getMessage(), e);
             throw new RuntimeException("AI test suite generation service unavailable", e);
+        }
+    }
+
+    /**
+     * Perform AI meta-analysis on linter findings to detect higher-order patterns,
+     * security threats, and design issues.
+     */
+    public AIMetaAnalysisResponse performMetaAnalysis(AIMetaAnalysisRequest request) {
+        log.info("Requesting AI meta-analysis with {} errors and {} suggestions",
+                request.errors().size(), request.suggestions().size());
+
+        try {
+            AIMetaAnalysisResponse response = this.webClient.post()
+                    .uri("/ai/meta-analysis")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(AIMetaAnalysisResponse.class)
+                    .block();
+
+            if (response != null) {
+                log.info("Meta-analysis completed with {} insights (confidence: {})",
+                        response.insights().size(), response.confidenceScore());
+                return response;
+            } else {
+                log.warn("Meta-analysis returned null response");
+                throw new RuntimeException("AI meta-analysis service returned invalid response");
+            }
+        } catch (Exception e) {
+            log.error("Failed to perform AI meta-analysis: {}", e.getMessage(), e);
+            throw new RuntimeException("AI meta-analysis service unavailable", e);
         }
     }
 

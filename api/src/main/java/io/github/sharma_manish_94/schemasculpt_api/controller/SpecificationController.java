@@ -2,6 +2,8 @@ package io.github.sharma_manish_94.schemasculpt_api.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIProxyRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.QuickFixRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationResult;
@@ -43,6 +45,28 @@ public class SpecificationController {
         OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
         ValidationResult validationResult = validationService.analyze(openAPI);
         return ResponseEntity.ok(validationResult);
+    }
+
+    @PostMapping("/ai-analysis")
+    public ResponseEntity<AIMetaAnalysisResponse> performAIMetaAnalysis(@PathVariable String sessionId) {
+        log.info("Performing AI meta-analysis for session: {}", sessionId);
+
+        // Step 1: Get the spec and run standard validation + linting
+        OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
+        ValidationResult validationResult = validationService.analyze(openAPI);
+
+        // Step 2: Prepare request with spec text and linter findings
+        String specText = Json.pretty(openAPI);
+        AIMetaAnalysisRequest request = new AIMetaAnalysisRequest(
+            specText,
+            validationResult.errors(),
+            validationResult.suggestions()
+        );
+
+        // Step 3: Send to AI service for meta-analysis
+        AIMetaAnalysisResponse aiAnalysis = aiService.performMetaAnalysis(request);
+
+        return ResponseEntity.ok(aiAnalysis);
     }
 
     @PostMapping("/fix")
