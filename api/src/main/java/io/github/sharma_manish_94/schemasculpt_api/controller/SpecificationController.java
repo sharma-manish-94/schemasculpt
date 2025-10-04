@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIProxyRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.DescriptionAnalysisRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.DescriptionAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.QuickFixRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationResult;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
@@ -67,6 +69,22 @@ public class SpecificationController {
         AIMetaAnalysisResponse aiAnalysis = aiService.performMetaAnalysis(request);
 
         return ResponseEntity.ok(aiAnalysis);
+    }
+
+    @PostMapping("/analyze-descriptions")
+    public ResponseEntity<DescriptionAnalysisResponse> analyzeDescriptions(@PathVariable String sessionId) {
+        log.info("Analyzing description quality for session: {}", sessionId);
+
+        // Get the spec
+        OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
+
+        // Extract descriptions and build minimal context (NOT sending entire spec)
+        DescriptionAnalysisRequest request = aiService.extractDescriptionsForAnalysis(openAPI);
+
+        // Send to AI service for quality analysis
+        DescriptionAnalysisResponse analysis = aiService.analyzeDescriptionQuality(request);
+
+        return ResponseEntity.ok(analysis);
     }
 
     @PostMapping("/fix")

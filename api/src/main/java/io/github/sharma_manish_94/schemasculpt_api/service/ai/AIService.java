@@ -6,6 +6,8 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIMetaAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIProxyRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.AIResponse;
+import io.github.sharma_manish_94.schemasculpt_api.dto.DescriptionAnalysisRequest;
+import io.github.sharma_manish_94.schemasculpt_api.dto.DescriptionAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ai.SmartAIFixRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ai.SmartAIFixResponse;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
@@ -13,12 +15,19 @@ import io.github.sharma_manish_94.schemasculpt_api.service.SpecParsingService;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -186,6 +195,115 @@ public class AIService {
         } catch (Exception e) {
             log.error("Failed to perform AI meta-analysis: {}", e.getMessage(), e);
             throw new RuntimeException("AI meta-analysis service unavailable", e);
+        }
+    }
+
+    /**
+     * Extract descriptions from OpenAPI spec with minimal context.
+     * This method DOES NOT send the entire spec to AI, only descriptions and necessary context.
+     */
+    public DescriptionAnalysisRequest extractDescriptionsForAnalysis(OpenAPI openAPI) {
+        List<DescriptionAnalysisRequest.DescriptionItem> items = new ArrayList<>();
+
+        // Extract operation descriptions
+        if (openAPI.getPaths() != null) {
+            openAPI.getPaths().forEach((path, pathItem) -> {
+                extractOperationDescriptions(path, pathItem, items);
+            });
+        }
+
+        // Extract schema descriptions
+        if (openAPI.getComponents() != null && openAPI.getComponents().getSchemas() != null) {
+            openAPI.getComponents().getSchemas().forEach((schemaName, schema) -> {
+                extractSchemaDescription(schemaName, schema, items);
+            });
+        }
+
+        log.info("Extracted {} descriptions for quality analysis", items.size());
+        return new DescriptionAnalysisRequest(items);
+    }
+
+    private void extractOperationDescriptions(String path, PathItem pathItem, List<DescriptionAnalysisRequest.DescriptionItem> items) {
+        Map<String, Operation> operations = Map.of(
+            "get", pathItem.getGet(),
+            "post", pathItem.getPost(),
+            "put", pathItem.getPut(),
+            "delete", pathItem.getDelete(),
+            "patch", pathItem.getPatch()
+        );
+
+        operations.forEach((method, operation) -> {
+            if (operation != null) {
+                String jsonPath = "/paths/" + path.replace("/", "~1") + "/" + method;
+                DescriptionAnalysisRequest.DescriptionContext context = new DescriptionAnalysisRequest.DescriptionContext(
+                    method.toUpperCase(),
+                    null,
+                    null,
+                    operation.getSummary(),
+                    null
+                );
+
+                items.add(new DescriptionAnalysisRequest.DescriptionItem(
+                    jsonPath + "/description",
+                    "operation",
+                    operation.getDescription(),
+                    context
+                ));
+            }
+        });
+    }
+
+    private void extractSchemaDescription(String schemaName, Schema schema, List<DescriptionAnalysisRequest.DescriptionItem> items) {
+        String jsonPath = "/components/schemas/" + schemaName;
+
+        List<String> propertyNames = null;
+        if (schema.getProperties() != null) {
+            propertyNames = new ArrayList<>(schema.getProperties().keySet());
+        }
+
+        DescriptionAnalysisRequest.DescriptionContext context = new DescriptionAnalysisRequest.DescriptionContext(
+            null,
+            schema.getType(),
+            propertyNames,
+            null,
+            null
+        );
+
+        items.add(new DescriptionAnalysisRequest.DescriptionItem(
+            jsonPath + "/description",
+            "schema",
+            schema.getDescription(),
+            context
+        ));
+    }
+
+    /**
+     * Analyze description quality using AI service.
+     * Returns quality scores, issues, and JSON Patch operations for improvements.
+     */
+    public DescriptionAnalysisResponse analyzeDescriptionQuality(DescriptionAnalysisRequest request) {
+        log.info("Requesting description quality analysis for {} items", request.items().size());
+
+        try {
+            DescriptionAnalysisResponse response = this.webClient.post()
+                    .uri("/ai/analyze-descriptions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(DescriptionAnalysisResponse.class)
+                    .block();
+
+            if (response != null) {
+                log.info("Description analysis completed with overall score: {} ({} patches generated)",
+                        response.overallScore(), response.patches().size());
+                return response;
+            } else {
+                log.warn("Description analysis returned null response");
+                throw new RuntimeException("AI description analysis service returned invalid response");
+            }
+        } catch (Exception e) {
+            log.error("Failed to analyze description quality: {}", e.getMessage(), e);
+            throw new RuntimeException("AI description analysis service unavailable", e);
         }
     }
 
