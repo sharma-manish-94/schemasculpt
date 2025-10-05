@@ -1,5 +1,6 @@
 package io.github.sharma_manish_94.schemasculpt_api.controller;
 
+import io.github.sharma_manish_94.schemasculpt_api.dto.CreateMockSessionRequest;
 import io.github.sharma_manish_94.schemasculpt_api.dto.MockSessionDetails;
 import io.github.sharma_manish_94.schemasculpt_api.dto.MockSessionResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.MockStartRequest;
@@ -50,11 +51,11 @@ public class SessionController {
     }
 
     @PostMapping("/mock")
-    public Mono<MockSessionResponse> createMockSession(@RequestBody String specText) {
+    public Mono<MockSessionResponse> createMockSession(@RequestBody CreateMockSessionRequest request) {
         return this.webClient.post()
                 .uri("/mock/start")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new MockStartRequest(specText))
+                .bodyValue(new MockStartRequest(request.specText()))
                 .retrieve()
                 .bodyToMono(MockSessionDetails.class)
                 .map(mockSessionDetails -> {
