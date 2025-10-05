@@ -29,6 +29,13 @@
     <properties>
         <java.version>25</java.version>
     </properties>
+    <repositories>
+        <repository>
+            <id>mulesoft-releases</id>
+            <name>MuleSoft Releases Repository</name>
+            <url>https://repository-master.mulesoft.org/nexus/content/groups/releases-group/</url>
+        </repository>
+    </repositories>
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -138,6 +145,13 @@
             <groupId>com.github.java-json-tools</groupId>
             <artifactId>json-patch</artifactId>
             <version>1.13</version>
+        </dependency>
+
+        <!-- amf support for deep analysis -->
+        <dependency>
+            <groupId>com.github.amlorg</groupId>
+            <artifactId>amf-api-contract_2.12</artifactId>
+            <version>5.9.1</version>
         </dependency>
 
         <dependency>
