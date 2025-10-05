@@ -9,9 +9,7 @@ import {
     addOAuth2Security,
     addRateLimiting,
     addCaching,
-    hardenOperationComplete,
-    generateOperationTestCases,
-    generateTestSuite
+    hardenOperationComplete
 } from '../../../api/validationService';
 import '../ai-features.css';
 
@@ -19,7 +17,6 @@ const AI_TABS = {
     ASSISTANT: 'assistant',
     SECURITY: 'security',
     HARDENING: 'hardening',
-    TESTING: 'testing',
     GENERATOR: 'generator'
 };
 
@@ -40,8 +37,6 @@ function AIPanel() {
                 return <SecurityAnalysisTab specContent={specText} />;
             case AI_TABS.HARDENING:
                 return <AIHardeningTab />;
-            case AI_TABS.TESTING:
-                return <AITestingTab />;
             case AI_TABS.GENERATOR:
                 return <AISpecGenerator />;
             default:
@@ -349,146 +344,6 @@ function AIHardeningTab() {
                     <li>HTTP caching with ETag and 304 responses</li>
                     <li>Idempotency keys for safe retries</li>
                     <li>Standard error response patterns</li>
-                </ul>
-            </div>
-        </div>
-    );
-}
-
-function AITestingTab() {
-    const { sessionId, specText } = useSpecStore();
-    const [selectedPath, setSelectedPath] = useState('/users');
-    const [selectedMethod, setSelectedMethod] = useState('GET');
-    const [operationSummary, setOperationSummary] = useState('Get list of users');
-    const [loading, setLoading] = useState({});
-    const [results, setResults] = useState({});
-    const [errors, setErrors] = useState({});
-
-    const runTestGeneration = async (type, apiCall) => {
-        setLoading(prev => ({ ...prev, [type]: true }));
-        setErrors(prev => ({ ...prev, [type]: null }));
-
-        try {
-            const result = await apiCall();
-            setResults(prev => ({ ...prev, [type]: result }));
-        } catch (error) {
-            setErrors(prev => ({ ...prev, [type]: error.message || 'Test generation failed' }));
-        } finally {
-            setLoading(prev => ({ ...prev, [type]: false }));
-        }
-    };
-
-    return (
-        <div className="ai-testing-tab">
-            <h4>🧪 AI Test Generation</h4>
-            <p>Generate comprehensive test cases for your API operations using AI.</p>
-
-            <div className="test-controls">
-                <div className="input-group">
-                    <label>Path:</label>
-                    <input
-                        type="text"
-                        value={selectedPath}
-                        onChange={(e) => setSelectedPath(e.target.value)}
-                        placeholder="/users"
-                    />
-                </div>
-                <div className="input-group">
-                    <label>Method:</label>
-                    <select value={selectedMethod} onChange={(e) => setSelectedMethod(e.target.value)}>
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="DELETE">DELETE</option>
-                        <option value="PATCH">PATCH</option>
-                    </select>
-                </div>
-                <div className="input-group">
-                    <label>Summary:</label>
-                    <input
-                        type="text"
-                        value={operationSummary}
-                        onChange={(e) => setOperationSummary(e.target.value)}
-                        placeholder="Operation summary"
-                    />
-                </div>
-            </div>
-
-            <div className="test-buttons">
-                <Button
-                    variant="primary"
-                    onClick={() => runTestGeneration('operation', () =>
-                        generateOperationTestCases(sessionId, selectedPath, selectedMethod, operationSummary)
-                    )}
-                    loading={loading['operation']}
-                >
-                    Generate Operation Tests
-                </Button>
-
-                <Button
-                    variant="ai"
-                    onClick={() => runTestGeneration('suite', () =>
-                        generateTestSuite(specText, { testTypes: ['positive', 'negative', 'edge_cases'], maxOperations: 5 })
-                    )}
-                    loading={loading['suite']}
-                >
-                    Generate Complete Test Suite
-                </Button>
-            </div>
-
-            {results['operation']?.success && (
-                <div className="result-success">
-                    <h5>✅ Test Cases Generated</h5>
-                    <div className="test-summary">
-                        <p><strong>Operation:</strong> {results['operation'].data.summary?.operation}</p>
-                        <p><strong>Total Tests:</strong> {results['operation'].data.summary?.total_tests}</p>
-                        <p><strong>Positive:</strong> {results['operation'].data.summary?.positive_tests}</p>
-                        <p><strong>Negative:</strong> {results['operation'].data.summary?.negative_tests}</p>
-                        <p><strong>Edge Cases:</strong> {results['operation'].data.summary?.edge_case_tests}</p>
-                    </div>
-
-                    <div className="test-cases">
-                        <h6>Sample Test Cases:</h6>
-                        {results['operation'].data.test_cases?.slice(0, 3).map((testCase, index) => (
-                            <div key={index} className="test-case">
-                                <div className="test-header">
-                                    <span className={`test-type ${testCase.type}`}>{testCase.type}</span>
-                                    <span className="test-name">{testCase.name}</span>
-                                </div>
-                                <p className="test-description">{testCase.description}</p>
-                                <div className="test-details">
-                                    <p><strong>Expected Status:</strong> {testCase.expected_response?.status_code}</p>
-                                    <p><strong>Assertions:</strong> {testCase.assertions?.length || 0}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {results['suite']?.success && (
-                <div className="result-success">
-                    <h5>✅ Test Suite Generated</h5>
-                    <div className="suite-summary">
-                        <p><strong>Suite:</strong> {results['suite'].data.test_suite?.name}</p>
-                        <p><strong>Total Tests:</strong> {results['suite'].data.test_suite?.statistics?.total_tests}</p>
-                        <p><strong>Coverage:</strong> {results['suite'].data.test_suite?.statistics?.coverage}</p>
-                        <p><strong>Estimated Duration:</strong> {results['suite'].data.execution_plan?.estimated_duration}</p>
-                    </div>
-                </div>
-            )}
-
-            {Object.entries(errors).map(([key, error]) => (
-                error && <ErrorMessage key={key} message={error} />
-            ))}
-
-            <div className="features-info">
-                <h5>✨ Features:</h5>
-                <ul>
-                    <li>AI-powered test case generation with realistic data</li>
-                    <li>Positive, negative, and edge case coverage</li>
-                    <li>Framework-agnostic test structure</li>
-                    <li>Complete test suite generation for entire APIs</li>
                 </ul>
             </div>
         </div>
