@@ -8,119 +8,109 @@ import io.github.sharma_manish_94.schemasculpt_api.exception.ProjectNotFoundExce
 import io.github.sharma_manish_94.schemasculpt_api.exception.UserNotFoundException;
 import io.github.sharma_manish_94.schemasculpt_api.repository.ProjectRepository;
 import io.github.sharma_manish_94.schemasculpt_api.repository.UserRepository;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
-/**
- * Service for managing user projects
- */
+/** Service for managing user projects */
 @Service
 @Slf4j
 public class ProjectService {
 
-    private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
+  private final ProjectRepository projectRepository;
+  private final UserRepository userRepository;
 
-    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
-        this.projectRepository = projectRepository;
-        this.userRepository = userRepository;
+  public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
+    this.projectRepository = projectRepository;
+    this.userRepository = userRepository;
+  }
+
+  /** Create a new project for a user */
+  @Transactional
+  public Project createProject(Long userId, String name, String description, Boolean isPublic) {
+    log.info("Creating project '{}' for user {}", name, userId);
+
+    User user =
+        userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
+
+    // Check if project with same name already exists for user
+    if (projectRepository.findByUserIdAndName(userId, name).isPresent()) {
+      throw new ProjectAlreadyExistsException(name);
     }
 
-    /**
-     * Create a new project for a user
-     */
-    @Transactional
-    public Project createProject(Long userId, String name, String description, Boolean isPublic) {
-        log.info("Creating project '{}' for user {}", name, userId);
+    Project project = new Project();
+    project.setUser(user);
+    project.setName(name);
+    project.setDescription(description);
+    project.setIsPublic(isPublic != null ? isPublic : false);
 
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException(userId));
+    Project savedProject = projectRepository.save(project);
+    log.info("Created project with ID: {}", savedProject.getId());
 
-        // Check if project with same name already exists for user
-        if (projectRepository.findByUserIdAndName(userId, name).isPresent()) {
-            throw new ProjectAlreadyExistsException(name);
-        }
+    return savedProject;
+  }
 
-        Project project = new Project();
-        project.setUser(user);
-        project.setName(name);
-        project.setDescription(description);
-        project.setIsPublic(isPublic != null ? isPublic : false);
+  /** Get all projects for a user */
+  @Transactional(readOnly = true)
+  public List<Project> getUserProjects(Long userId) {
+    log.debug("Fetching projects for user {}", userId);
+    return projectRepository.findByUserIdOrderByCreatedAtDesc(userId);
+  }
 
-        Project savedProject = projectRepository.save(project);
-        log.info("Created project with ID: {}", savedProject.getId());
+  /** Get a specific project by ID */
+  @Transactional(readOnly = true)
+  public Project getProject(Long projectId, Long userId) {
+    log.debug("Fetching project {} for user {}", projectId, userId);
 
-        return savedProject;
-    }
-
-    /**
-     * Get all projects for a user
-     */
-    @Transactional(readOnly = true)
-    public List<Project> getUserProjects(Long userId) {
-        log.debug("Fetching projects for user {}", userId);
-        return projectRepository.findByUserIdOrderByCreatedAtDesc(userId);
-    }
-
-    /**
-     * Get a specific project by ID
-     */
-    @Transactional(readOnly = true)
-    public Project getProject(Long projectId, Long userId) {
-        log.debug("Fetching project {} for user {}", projectId, userId);
-
-        Project project = projectRepository.findById(projectId)
+    Project project =
+        projectRepository
+            .findById(projectId)
             .orElseThrow(() -> new ProjectNotFoundException(projectId));
 
-        // Verify ownership
-        if (!project.getUser().getId().equals(userId)) {
-            throw new ForbiddenException("You don't have access to this project");
-        }
-
-        return project;
+    // Verify ownership
+    if (!project.getUser().getId().equals(userId)) {
+      throw new ForbiddenException("You don't have access to this project");
     }
 
-    /**
-     * Update project details
-     */
-    @Transactional
-    public Project updateProject(Long projectId, Long userId, String name, String description, Boolean isPublic) {
-        log.info("Updating project {} for user {}", projectId, userId);
+    return project;
+  }
 
-        Project project = getProject(projectId, userId);
+  /** Update project details */
+  @Transactional
+  public Project updateProject(
+      Long projectId, Long userId, String name, String description, Boolean isPublic) {
+    log.info("Updating project {} for user {}", projectId, userId);
 
-        // Check if new name conflicts with existing project
-        if (name != null && !name.equals(project.getName())) {
-            if (projectRepository.findByUserIdAndName(userId, name).isPresent()) {
-                throw new ProjectAlreadyExistsException(name);
-            }
-            project.setName(name);
-        }
+    Project project = getProject(projectId, userId);
 
-        if (description != null) {
-            project.setDescription(description);
-        }
-
-        if (isPublic != null) {
-            project.setIsPublic(isPublic);
-        }
-
-        return projectRepository.save(project);
+    // Check if new name conflicts with existing project
+    if (name != null && !name.equals(project.getName())) {
+      if (projectRepository.findByUserIdAndName(userId, name).isPresent()) {
+        throw new ProjectAlreadyExistsException(name);
+      }
+      project.setName(name);
     }
 
-    /**
-     * Delete a project and all its specifications
-     */
-    @Transactional
-    public void deleteProject(Long projectId, Long userId) {
-        log.info("Deleting project {} for user {}", projectId, userId);
-
-        Project project = getProject(projectId, userId);
-        projectRepository.delete(project);
-
-        log.info("Deleted project {}", projectId);
+    if (description != null) {
+      project.setDescription(description);
     }
+
+    if (isPublic != null) {
+      project.setIsPublic(isPublic);
+    }
+
+    return projectRepository.save(project);
+  }
+
+  /** Delete a project and all its specifications */
+  @Transactional
+  public void deleteProject(Long projectId, Long userId) {
+    log.info("Deleting project {} for user {}", projectId, userId);
+
+    Project project = getProject(projectId, userId);
+    projectRepository.delete(project);
+
+    log.info("Deleted project {}", projectId);
+  }
 }

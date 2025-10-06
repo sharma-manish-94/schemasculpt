@@ -1,5 +1,7 @@
 package io.github.sharma_manish_94.schemasculpt_api.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.junit.jupiter.api.Test;
@@ -13,36 +15,33 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 @Testcontainers
 @SpringBootTest
 public class SessionServiceImplIntegrationTest {
 
-    @Container
-    static final GenericContainer<?> redis = new GenericContainer<>(DockerImageName.parse("redis:latest"))
-            .withExposedPorts(6379);
-    @Autowired
-    private SessionService sessionService;
-    @Autowired
-    private RedisTemplate<String, OpenAPI> redisTemplate;
+  @Container
+  static final GenericContainer<?> redis =
+      new GenericContainer<>(DockerImageName.parse("redis:latest")).withExposedPorts(6379);
 
-    @DynamicPropertySource
-    static void setProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", redis::getHost);
-        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
-    }
+  @Autowired private SessionService sessionService;
+  @Autowired private RedisTemplate<String, OpenAPI> redisTemplate;
 
-    @Test
-    void createSession_shouldStoreSpecInRedis() {
-        String specText = "openapi: 3.0.0\ninfo:\n  title: Test API\n  version: 1.0.0\npaths: {}";
+  @DynamicPropertySource
+  static void setProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.data.redis.host", redis::getHost);
+    registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+  }
 
-        String sessionId = sessionService.createSession(specText);
+  @Test
+  void createSession_shouldStoreSpecInRedis() {
+    String specText = "openapi: 3.0.0\ninfo:\n  title: Test API\n  version: 1.0.0\npaths: {}";
 
-        assertThat(sessionId).isNotNull();
+    String sessionId = sessionService.createSession(specText);
 
-        OpenAPI storedSpec = redisTemplate.opsForValue().get(sessionId);
-        assertThat(storedSpec).isNotNull();
-        assertThat(storedSpec.getInfo().getTitle()).isEqualTo("Test API");
-    }
+    assertThat(sessionId).isNotNull();
+
+    OpenAPI storedSpec = redisTemplate.opsForValue().get(sessionId);
+    assertThat(storedSpec).isNotNull();
+    assertThat(storedSpec.getInfo().getTitle()).isEqualTo("Test API");
+  }
 }

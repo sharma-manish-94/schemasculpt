@@ -223,6 +223,22 @@
                     </excludes>
                 </configuration>
             </plugin>
+	        <plugin>
+		        <groupId>com.diffplug.spotless</groupId>
+		        <artifactId>spotless-maven-plugin</artifactId>
+		        <version>2.43.0</version>
+		        <configuration>
+			        <java>
+				        <importOrder />
+				        <googleJavaFormat>
+					        <version>1.17.0</version>
+					        <style>GOOGLE</style>
+					        <reflowLongStrings>true</reflowLongStrings>
+				        </googleJavaFormat>
+				        <endWithNewline/>
+			        </java>
+		        </configuration>
+	        </plugin>
         </plugins>
     </build>
 
