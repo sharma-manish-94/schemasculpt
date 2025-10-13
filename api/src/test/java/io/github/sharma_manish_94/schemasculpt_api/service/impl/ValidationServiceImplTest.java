@@ -17,22 +17,22 @@ class ValidationServiceImplTest {
   void whenSpecHasUnusedComponent_thenSuggestionIsFound() {
     String specWithUnusedComponent =
         """
-                openapi: 3.0.0
-                info:
-                  title: API with Unused Component
-                  version: 1.0.0
-                paths:
-                  /test:
-                    get:
-                      summary: An endpoint
-                      responses:
-                        '200':
-                          description: OK
-                components:
-                  schemas:
-                    UnusedSchema:
-                      type: object
-                """;
+        openapi: 3.0.0
+        info:
+          title: API with Unused Component
+          version: 1.0.0
+        paths:
+          /test:
+            get:
+              summary: An endpoint
+              responses:
+                '200':
+                  description: OK
+        components:
+          schemas:
+            UnusedSchema:
+              type: object
+        """;
 
     ValidationResult validationResult = validationService.analyze(specWithUnusedComponent);
     assertThat(validationResult).isNotNull();
@@ -44,18 +44,18 @@ class ValidationServiceImplTest {
   void whenSpecIsInvalid_thenErrorIsFound() {
     String invalidSpec =
         """
-                openapi: 3.0.0
-                info:
-                  title: Invalid API
-                  version 1.0.0
-                paths:
-                  /test:
-                    get:
-                      summary: An endpoint
-                      responses:
-                        '200':
-                          description: OK
-                """;
+        openapi: 3.0.0
+        info:
+          title: Invalid API
+          version 1.0.0
+        paths:
+          /test:
+            get:
+              summary: An endpoint
+              responses:
+                '200':
+                  description: OK
+        """;
 
     ValidationResult validationResult = validationService.analyze(invalidSpec);
     assertThat(validationResult).isNotNull();
