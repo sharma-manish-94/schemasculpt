@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Primary;
 public class JacksonConfig {
 
   /** Mixin to ignore internal Swagger fields */
-  public abstract class SchemaMixin {
+  public abstract static class SchemaMixin {
     @JsonIgnore
     abstract boolean getExampleSetFlag();
 

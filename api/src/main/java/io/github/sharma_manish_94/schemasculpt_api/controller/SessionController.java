@@ -79,7 +79,6 @@ public class SessionController {
 
     String specText = Yaml.pretty(openAPI);
 
-    // CRITICAL: Fix uppercase enums before returning to UI
     specText = OpenAPIEnumFixer.fixEnums(specText);
 
     return ResponseEntity.ok(specText);

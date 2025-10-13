@@ -8,14 +8,19 @@ import io.github.sharma_manish_94.schemasculpt_api.security.CustomOAuth2User;
 import io.github.sharma_manish_94.schemasculpt_api.service.ProjectService;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-/** REST controller for project management */
 @RestController
 @RequestMapping("/api/v1/projects")
 @Slf4j
@@ -52,7 +57,7 @@ public class ProjectController {
     List<ProjectDTO> projects =
         projectService.getUserProjects(principal.getUserId()).stream()
             .map(ProjectDTO::new)
-            .collect(Collectors.toList());
+            .toList();
 
     return ResponseEntity.ok(projects);
   }

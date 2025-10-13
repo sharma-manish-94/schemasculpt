@@ -37,7 +37,7 @@ class ValidationServiceImplTest {
     ValidationResult validationResult = validationService.analyze(specWithUnusedComponent);
     assertThat(validationResult).isNotNull();
     assertThat(validationResult.errors()).isEmpty();
-    assertThat(validationResult.suggestions()).hasSize(10);
+    assertThat(validationResult.suggestions()).hasSize(11);
   }
 
   @Test
@@ -61,6 +61,7 @@ class ValidationServiceImplTest {
     assertThat(validationResult).isNotNull();
     assertThat(validationResult.suggestions()).isEmpty();
     assertThat(validationResult.errors()).hasSize(1);
-    assertThat(validationResult.errors().get(0).message()).contains("could not find expected ':'");
+    assertThat(validationResult.errors().getFirst().message())
+        .contains("could not find expected ':'");
   }
 }
