@@ -146,14 +146,7 @@
             <artifactId>json-patch</artifactId>
             <version>1.13</version>
         </dependency>
-
-        <!-- amf support for deep analysis -->
-        <dependency>
-            <groupId>com.github.amlorg</groupId>
-            <artifactId>amf-api-contract_2.12</artifactId>
-            <version>5.9.1</version>
-        </dependency>
-
+	    		<!-- Testcontainers for Integration Testing -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
@@ -236,6 +229,216 @@
 			        </java>
 		        </configuration>
 	        </plugin>
+
+	        <!-- Checkstyle Plugin -->
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-checkstyle-plugin</artifactId>
+		        <version>3.5.0</version>
+		        <configuration>
+			        <configLocation>checkstyle.xml</configLocation>
+			        <consoleOutput>true</consoleOutput>
+			        <failsOnError>true</failsOnError>
+			        <violationSeverity>warning</violationSeverity>
+			        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+		        </configuration>
+		        <executions>
+			        <execution>
+				        <id>validate</id>
+				        <phase>validate</phase>
+				        <goals>
+					        <goal>check</goal>
+				        </goals>
+			        </execution>
+		        </executions>
+		        <dependencies>
+			        <dependency>
+				        <groupId>com.puppycrawl.tools</groupId>
+				        <artifactId>checkstyle</artifactId>
+				        <version>10.21.0</version>
+			        </dependency>
+		        </dependencies>
+	        </plugin>
+
+	        <!-- SpotBugs Plugin for bug detection and security vulnerabilities -->
+	        <plugin>
+		        <groupId>com.github.spotbugs</groupId>
+		        <artifactId>spotbugs-maven-plugin</artifactId>
+		        <version>4.9.7.0</version>
+		        <configuration>
+			        <effort>Max</effort>
+			        <threshold>Low</threshold>
+			        <xmlOutput>true</xmlOutput>
+			        <failOnError>true</failOnError>
+			        <includeFilterFile/>
+			        <excludeFilterFile/>
+			        <plugins>
+				        <plugin>
+					        <groupId>com.h3xstream.findsecbugs</groupId>
+					        <artifactId>findsecbugs-plugin</artifactId>
+					        <version>1.14.0</version>
+				        </plugin>
+			        </plugins>
+		        </configuration>
+		        <executions>
+			        <execution>
+				        <id>spotbugs-check</id>
+				        <phase>verify</phase>
+				        <goals>
+					        <goal>check</goal>
+				        </goals>
+			        </execution>
+		        </executions>
+	        </plugin>
+
+	        <!-- PMD Plugin for code quality analysis -->
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-pmd-plugin</artifactId>
+		        <version>3.26.0</version>
+		        <configuration>
+			        <targetJdk>21</targetJdk>
+			        <failOnViolation>true</failOnViolation>
+			        <verbose>true</verbose>
+			        <rulesets>
+				        <ruleset>/rulesets/java/quickstart.xml</ruleset>
+				        <ruleset>/category/java/bestpractices.xml</ruleset>
+				        <ruleset>/category/java/codestyle.xml</ruleset>
+				        <ruleset>/category/java/design.xml</ruleset>
+				        <ruleset>/category/java/errorprone.xml</ruleset>
+				        <ruleset>/category/java/multithreading.xml</ruleset>
+				        <ruleset>/category/java/performance.xml</ruleset>
+				        <ruleset>/category/java/security.xml</ruleset>
+			        </rulesets>
+			        <printFailingErrors>true</printFailingErrors>
+		        </configuration>
+		        <executions>
+			        <execution>
+				        <id>pmd-check</id>
+				        <phase>verify</phase>
+				        <goals>
+					        <goal>check</goal>
+					        <goal>cpd-check</goal>
+				        </goals>
+			        </execution>
+		        </executions>
+		        <dependencies>
+			        <dependency>
+				        <groupId>net.sourceforge.pmd</groupId>
+				        <artifactId>pmd-java</artifactId>
+				        <version>7.10.0</version>
+			        </dependency>
+		        </dependencies>
+	        </plugin>
+
+	        <!-- OWASP Dependency Check for security vulnerabilities -->
+	        <plugin>
+		        <groupId>org.owasp</groupId>
+		        <artifactId>dependency-check-maven</artifactId>
+		        <version>12.1.8</version>
+		        <configuration>
+			        <failBuildOnCVSS>7</failBuildOnCVSS>
+			        <skipProvidedScope>false</skipProvidedScope>
+			        <skipRuntimeScope>false</skipRuntimeScope>
+			        <format>ALL</format>
+			        <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+		        </configuration>
+		        <executions>
+			        <execution>
+				        <id>dependency-check</id>
+				        <phase>verify</phase>
+				        <goals>
+					        <goal>check</goal>
+				        </goals>
+			        </execution>
+		        </executions>
+	        </plugin>
+
+	        <!-- JaCoCo for code coverage -->
+	        <plugin>
+		        <groupId>org.jacoco</groupId>
+		        <artifactId>jacoco-maven-plugin</artifactId>
+		        <version>0.8.13</version>
+		        <executions>
+			        <execution>
+				        <id>prepare-agent</id>
+				        <goals>
+					        <goal>prepare-agent</goal>
+				        </goals>
+			        </execution>
+			        <execution>
+				        <id>report</id>
+				        <phase>test</phase>
+				        <goals>
+					        <goal>report</goal>
+				        </goals>
+			        </execution>
+			        <execution>
+				        <id>jacoco-check</id>
+				        <phase>verify</phase>
+				        <goals>
+					        <goal>check</goal>
+				        </goals>
+				        <configuration>
+					        <rules>
+						        <rule>
+							        <element>PACKAGE</element>
+							        <limits>
+								        <limit>
+									        <counter>LINE</counter>
+									        <value>COVEREDRATIO</value>
+									        <minimum>0.50</minimum>
+								        </limit>
+							        </limits>
+						        </rule>
+					        </rules>
+				        </configuration>
+			        </execution>
+		        </executions>
+	        </plugin>
+
+	        <!-- Maven Site Plugin -->
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-site-plugin</artifactId>
+		        <version>3.12.1</version>
+	        </plugin>
+
+	        <!-- Maven Enforcer Plugin for dependency management and rules -->
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-enforcer-plugin</artifactId>
+		        <version>3.5.0</version>
+		        <executions>
+			        <execution>
+				        <id>enforce</id>
+				        <goals>
+					        <goal>enforce</goal>
+				        </goals>
+				        <configuration>
+					        <rules>
+						        <requireMavenVersion>
+							        <version>[3.6.3,)</version>
+						        </requireMavenVersion>
+						        <requireJavaVersion>
+							        <version>[21,)</version>
+						        </requireJavaVersion>
+						        <banDuplicatePomDependencyVersions/>
+						        <!-- Strict rules disabled for development - enable in CI -->
+						        <!-- <dependencyConvergence/> -->
+						        <requirePluginVersions>
+							        <message>All plugin versions must be defined!</message>
+							        <banLatest>true</banLatest>
+							        <banRelease>true</banRelease>
+							        <banSnapshots>true</banSnapshots>
+						        </requirePluginVersions>
+						        <!-- <requireUpperBoundDeps/> -->
+					        </rules>
+				        </configuration>
+			        </execution>
+		        </executions>
+	        </plugin>
+
         </plugins>
     </build>
 
