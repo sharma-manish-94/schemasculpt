@@ -4,17 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +19,8 @@ import org.springframework.stereotype.Service;
 public class AnalysisService {
 
   private static final String COMPONENTS_SCHEMAS_PREFIX = "#/components/schemas/";
+  private static final String OPERATION_PREFIX = "Operations: ";
+  private static final String SCHEMA_PREFIX = "Schema: ";
   private final ObjectMapper objectMapper;
 
   public AnalysisService(ObjectMapper objectMapper) {
@@ -35,84 +33,174 @@ public class AnalysisService {
    */
   public Map<String, Set<String>> buildReverseDependencyGraph(OpenAPI openApi) {
     Map<String, Set<String>> reverseGraph = new HashMap<>();
-    if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
-      openApi
-          .getComponents()
-          .getSchemas()
-          .keySet()
-          .forEach(schemaName -> reverseGraph.put(schemaName, new HashSet<>()));
+
+    Map<String, Schema> allSchemas =
+        Optional.ofNullable(openApi.getComponents())
+            .map(Components::getSchemas)
+            .orElse(Collections.emptyMap());
+    if (allSchemas.isEmpty()) {
+      return reverseGraph;
     }
 
-    JsonNode specNode = objectMapper.valueToTree(openApi);
+    allSchemas.keySet().forEach(schemaName -> reverseGraph.put(schemaName, new HashSet<>()));
 
-    // Scan all paths to find dependencies
-    if (specNode.has("paths")) {
-      specNode
-          .get("paths")
-          .properties()
+    if (Objects.nonNull(openApi.getPaths())) {
+      openApi
+          .getPaths()
           .forEach(
-              pathEntry -> {
-                String pathName = pathEntry.getKey();
-                JsonNode pathItemNode = pathEntry.getValue();
-
-                // Iterate over the methods (get, post, etc.)
-                pathItemNode
-                    .properties()
+              (pathName, pathItem) -> {
+                pathItem
+                    .readOperationsMap()
                     .forEach(
-                        methodEntry -> {
-                          String methodName = methodEntry.getKey().toUpperCase();
-                          String dependentName = "Operation: " + methodName + " " + pathName;
-                          findRefsInNode(methodEntry.getValue(), dependentName, reverseGraph);
+                        (httpMethod, operation) -> {
+                          String dependantName = OPERATION_PREFIX + httpMethod + " " + pathName;
+                          findRefsInOperation(operation, dependantName, reverseGraph);
                         });
               });
     }
-    if (specNode.has("components") && specNode.get("components").has("schemas")) {
-      specNode
-          .get("components")
-          .get("schemas")
-          .fields()
-          .forEachRemaining(
-              componentEntry -> {
-                String dependentName = "Schema: " + componentEntry.getKey();
-                findRefsInNode(componentEntry.getValue(), dependentName, reverseGraph);
-              });
-    }
+
+    allSchemas.forEach(
+        (schemaName, schema) -> {
+          String dependantName = SCHEMA_PREFIX + schemaName;
+          findRefsInSchema(schema, dependantName, reverseGraph, new HashSet<>());
+        });
+
     return reverseGraph;
   }
 
-  private void findRefsInNode(
-      JsonNode node, String dependentName, Map<String, Set<String>> reverseGraph) {
-    if (node == null) return;
+  /**
+   * Scans an operation's request bodies and responses for schema references
+   *
+   * @param operation operation for which request and response schema is being scanned
+   * @param dependentName The name of the item that contains this schema (e.g., "Operation: GET
+   *     /users").
+   * @param reverseGraph The graph to populate.
+   */
+  private void findRefsInOperation(
+      Operation operation, String dependentName, Map<String, Set<String>> reverseGraph) {
+    Optional.ofNullable(operation.getRequestBody())
+        .map(RequestBody::getContent)
+        .ifPresent(
+            content ->
+                content
+                    .values()
+                    .forEach(
+                        mediaType ->
+                            findRefsInSchema(
+                                mediaType.getSchema(),
+                                dependentName,
+                                reverseGraph,
+                                new HashSet<>())));
+    Optional.ofNullable(operation.getResponses())
+        .ifPresent(
+            apiResponses ->
+                apiResponses
+                    .values()
+                    .forEach(
+                        apiResponse -> {
+                          Optional.ofNullable(apiResponse.getContent())
+                              .ifPresent(
+                                  content ->
+                                      content
+                                          .values()
+                                          .forEach(
+                                              mediaType ->
+                                                  findRefsInSchema(
+                                                      mediaType.getSchema(),
+                                                      dependentName,
+                                                      reverseGraph,
+                                                      new HashSet<>())));
+                        }));
+  }
 
-    if (node.isObject()) {
-      node.properties()
+  /**
+   * Recursively finds all $ref links within a given Schema object and adds them to the graph.
+   *
+   * @param schema The schema object to scan.
+   * @param dependentName The name of the item that contains this schema (e.g., "Operation: GET
+   *     /users").
+   * @param reverseGraph The graph to populate.
+   * @param visited A set to track visited schemas and prevent infinite recursion in circular
+   *     models.
+   */
+  private void findRefsInSchema(
+      Schema<?> schema,
+      String dependentName,
+      Map<String, Set<String>> reverseGraph,
+      Set<Schema<?>> visited) {
+    if (schema == null || visited.contains(schema)) {
+      return;
+    }
+    visited.add(schema);
+    processDirectReferences(schema, dependentName, reverseGraph);
+    processObjectProperties(schema, dependentName, reverseGraph, visited);
+    processArrayItems(schema, dependentName, reverseGraph, visited);
+    processCompositeSchemas(schema, dependentName, reverseGraph, visited);
+    visited.remove(schema);
+  }
+
+  private void processCompositeSchemas(
+      Schema<?> schema,
+      String dependentName,
+      Map<String, Set<String>> reverseGraph,
+      Set<Schema<?>> visited) {
+    if (schema.getAllOf() != null) {
+      schema.getAllOf().forEach(s -> findRefsInSchema(s, dependentName, reverseGraph, visited));
+    }
+    if (schema.getAnyOf() != null) {
+      schema.getAnyOf().forEach(s -> findRefsInSchema(s, dependentName, reverseGraph, visited));
+    }
+    if (schema.getOneOf() != null) {
+      schema.getOneOf().forEach(s -> findRefsInSchema(s, dependentName, reverseGraph, visited));
+    }
+  }
+
+  private void processArrayItems(
+      Schema<?> schema,
+      String dependentName,
+      Map<String, Set<String>> reverseGraph,
+      Set<Schema<?>> visited) {
+    if (schema.getItems() != null) {
+      findRefsInSchema(schema.getItems(), dependentName, reverseGraph, visited);
+    }
+  }
+
+  private void processObjectProperties(
+      Schema<?> schema,
+      String dependentName,
+      Map<String, Set<String>> reverseGraph,
+      Set<Schema<?>> visited) {
+    if (schema.getProperties() != null) {
+      schema
+          .getProperties()
+          .values()
           .forEach(
-              entry -> {
-                if (entry.getKey().equals("$ref") && entry.getValue().isTextual()) {
-                  String refPath = entry.getValue().asText();
-                  if (refPath.startsWith("#/components/schemas/")) {
-                    String schemaName = refPath.substring("#/components/schemas/".length());
-                    reverseGraph
-                        .computeIfAbsent(schemaName, k -> new HashSet<>())
-                        .add(dependentName);
-                  }
-                } else {
-                  findRefsInNode(entry.getValue(), dependentName, reverseGraph);
-                }
-              });
-    } else if (node.isArray()) {
-      node.forEach(element -> findRefsInNode(element, dependentName, reverseGraph));
+              propertySchema ->
+                  findRefsInSchema(propertySchema, dependentName, reverseGraph, visited));
+    }
+  }
+
+  private void processDirectReferences(
+      Schema<?> schema, String dependentName, Map<String, Set<String>> reverseGraph) {
+    if (schema.get$ref() != null) {
+      String refPath = schema.get$ref();
+      if (refPath.startsWith(COMPONENTS_SCHEMAS_PREFIX)) {
+        String schemaName = refPath.substring(COMPONENTS_SCHEMAS_PREFIX.length());
+        reverseGraph.computeIfAbsent(schemaName, k -> new HashSet<>()).add(dependentName);
+      }
     }
   }
 
   public Map<String, Integer> calculateAllDepths(String specText) {
     if (specText == null || specText.isEmpty()) {
-
       return Collections.emptyMap();
     }
-
     OpenAPI openApi = parseOpenApiSpec(specText);
-    if (openApi == null || openApi.getPaths() == null || openApi.getPaths().isEmpty()) {
+    return calculateAllDepths(openApi);
+  }
+
+  public Map<String, Integer> calculateAllDepths(final OpenAPI openApi) {
+    if (isOpenAPIInvalid(openApi)) {
       log.error("Parsed OpenAPI spec is null or has no paths");
       return Collections.emptyMap();
     }
@@ -122,6 +210,10 @@ public class AnalysisService {
             .map(Components::getSchemas)
             .orElse(Collections.emptyMap());
     return processAllOperations(openApi, allSchemas);
+  }
+
+  private boolean isOpenAPIInvalid(OpenAPI openApi) {
+    return (openApi == null || openApi.getPaths() == null || openApi.getPaths().isEmpty());
   }
 
   private OpenAPI parseOpenApiSpec(String specText) {
@@ -203,5 +295,11 @@ public class AnalysisService {
       maxDepth = Math.max(maxDepth, childDepth);
     }
     return maxDepth;
+  }
+
+  public int calculateNestingDepthForOperation(Operation operation, OpenAPI openApi) {
+    if (operation == null || openApi == null || openApi.getComponents() == null) {
+      return 0;
+    }
   }
 }

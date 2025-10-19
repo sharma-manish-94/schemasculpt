@@ -34,7 +34,7 @@ public class AnalysisController {
   }
 
   @GetMapping("/nesting-depth")
-  public ResponseEntity<Integer> getNestingDepth(
+  public ResponseEntity<Map<String, Integer>> getNestingDepth(
       @PathVariable String sessionId, @RequestParam String path, @RequestParam String method) {
 
     OpenAPI openApi = sessionService.getSpecForSession(sessionId);
@@ -53,7 +53,7 @@ public class AnalysisController {
       return ResponseEntity.notFound().build();
     }
 
-    int depth = analysisService.calculateMaxDepth(openApi, operation);
-    return ResponseEntity.ok(depth);
+    int depth = analysisService.calculateNestingDepthForOperation(operation, openApi);
+    return ResponseEntity.ok(Map.of("depth", depth));
   }
 }

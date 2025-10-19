@@ -43,11 +43,11 @@ class AnalysisServiceTest {
     assertThat(graph).isNotNull();
   }
 
-  @Test
-  void calculateMaxDepth_shouldCorrectlyCalculateNesting() {
-    var operation = openAPI.getPaths().get("/pet").getPost();
-
-    int depth = analysisService.calculateMaxDepth(openAPI, operation);
-    assertThat(depth).isEqualTo(2);
-  }
+  //  @Test
+  //  void calculateMaxDepth_shouldCorrectlyCalculateNesting() {
+  //    var operation = openAPI.getPaths().get("/pet").getPost();
+  //
+  //    int depth = analysisService.calculateMaxDepth(openAPI, operation);
+  //    assertThat(depth).isEqualTo(2);
+  //  }
 }

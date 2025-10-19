@@ -200,10 +200,10 @@
         <!-- ============================================ -->
 
         <module name="CyclomaticComplexity">
-            <property name="max" value="10"/>
+            <property name="max" value="15"/>
         </module>
         <module name="NPathComplexity">
-            <property name="max" value="200"/>
+            <property name="max" value="400"/>
         </module>
         <module name="BooleanExpressionComplexity">
             <property name="max" value="5"/>

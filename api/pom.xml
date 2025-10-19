@@ -219,7 +219,7 @@
 		        <version>2.45.0</version>
 		        <configuration>
 			        <java>
-				        <importOrder />
+                        <importOrder />
 				        <googleJavaFormat>
 					        <version>1.25.2</version>
 					        <style>GOOGLE</style>
@@ -301,14 +301,7 @@
 			        <failOnViolation>true</failOnViolation>
 			        <verbose>true</verbose>
 			        <rulesets>
-				        <ruleset>/rulesets/java/quickstart.xml</ruleset>
-				        <ruleset>/category/java/bestpractices.xml</ruleset>
-				        <ruleset>/category/java/codestyle.xml</ruleset>
-				        <ruleset>/category/java/design.xml</ruleset>
-				        <ruleset>/category/java/errorprone.xml</ruleset>
-				        <ruleset>/category/java/multithreading.xml</ruleset>
-				        <ruleset>/category/java/performance.xml</ruleset>
-				        <ruleset>/category/java/security.xml</ruleset>
+				        <ruleset>pmd-ruleset.xml</ruleset>
 			        </rulesets>
 			        <printFailingErrors>true</printFailingErrors>
 		        </configuration>
@@ -326,7 +319,7 @@
 			        <dependency>
 				        <groupId>net.sourceforge.pmd</groupId>
 				        <artifactId>pmd-java</artifactId>
-				        <version>7.10.0</version>
+				        <version>7.7.0</version>
 			        </dependency>
 		        </dependencies>
 	        </plugin>
