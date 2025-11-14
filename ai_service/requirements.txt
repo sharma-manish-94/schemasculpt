@@ -68,3 +68,9 @@ transformers>=4.35.0  # HuggingFace transformers
 # System Monitoring (Optional)
 # ---------------------------------------------------------------------
 psutil>=5.9.0
+
+# ---------------------------------------------------------------------
+# MCP (Model Context Protocol) Integration
+# ---------------------------------------------------------------------
+mcp>=0.9.0  # MCP SDK for Python
+aiofiles>=23.2.1  # Async file operations for MCP

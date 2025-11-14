@@ -129,7 +129,7 @@ async def process_specification(request: AIRequest, _: None = Depends(handle_exc
         if request.streaming != StreamingMode.DISABLED:
             async def stream_generator():
                 async for chunk in result:
-                    yield f"data: {json.dumps(chunk.dict())}\n\n"
+                    yield f"data: {json.dumps(chunk.model_dump())}\n\n"
                 yield "data: [DONE]\n\n"
 
             return StreamingResponse(
@@ -380,7 +380,7 @@ async def start_mock_server(request: MockStartRequest, _: None = Depends(handle_
         parser = ResolvingParser(spec_string=request.spec_text, backend='openapi-spec-validator')
         MOCKED_APIS[mock_id] = {
             "specification": parser.specification,
-            "config": request.dict(),
+            "config": request.model_dump(),
             "created_at": datetime.utcnow()
         }
 
@@ -419,7 +419,7 @@ async def update_mock_server(mock_id: str, request: MockStartRequest, _: None = 
     try:
         parser = ResolvingParser(spec_string=request.spec_text, backend='openapi-spec-validator')
         MOCKED_APIS[mock_id]["specification"] = parser.specification
-        MOCKED_APIS[mock_id]["config"] = request.dict()
+        MOCKED_APIS[mock_id]["config"] = request.model_dump()
 
         return {
             "message": f"Mock server {mock_id} updated successfully",
@@ -1465,7 +1465,7 @@ async def analyze_security(request: SecurityAnalysisRequest, _: None = Depends(h
         )
 
         # Convert to dict for response
-        report_dict = report.dict()
+        report_dict = report.model_dump()
 
         # Cache the report
         _cache_security_report(cache_key, report_dict)
@@ -1523,7 +1523,7 @@ async def analyze_authentication(request: SecurityAnalysisRequest, _: None = Dep
         result = await analyzer.analyze(spec)
 
         return {
-            "analysis": result.dict(),
+            "analysis": result.model_dump(),
             "correlation_id": correlation_id
         }
 
@@ -1558,7 +1558,7 @@ async def analyze_authorization(request: SecurityAnalysisRequest, _: None = Depe
         result = await analyzer.analyze(spec)
 
         return {
-            "analysis": result.dict(),
+            "analysis": result.model_dump(),
             "correlation_id": correlation_id
         }
 
@@ -1594,7 +1594,7 @@ async def analyze_data_exposure(request: SecurityAnalysisRequest, _: None = Depe
         result = await analyzer.analyze(spec)
 
         return {
-            "analysis": result.dict(),
+            "analysis": result.model_dump(),
             "correlation_id": correlation_id
         }
 
@@ -1834,6 +1834,125 @@ async def clear_security_cache():
         "cleared": cache_size,
         "message": f"Cleared {cache_size} cached security report(s)"
     }
+
+
+# ============================================================================
+# Advanced Security: Attack Path Simulation
+# ============================================================================
+
+@router.post("/ai/security/attack-path-simulation")
+async def run_attack_path_simulation(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    **The "Wow" Feature: AI Attack Path Simulation**
+
+    Think like a hacker. This endpoint uses an agentic AI system to discover
+    multi-step attack chains that real attackers could exploit. Unlike simple
+    linting that finds isolated vulnerabilities, this feature:
+
+    1. Finds individual vulnerabilities (Scanner Agent)
+    2. Analyzes how they can be CHAINED together (Threat Modeling Agent)
+    3. Generates executive-level security reports (Reporter Agent)
+
+    **Example Attack Chain:**
+    - Step 1: GET /users/{id} exposes sensitive 'role' field (Information Disclosure)
+    - Step 2: PUT /users/{id} accepts 'role' in request body (Mass Assignment)
+    - Result: Any user can escalate to admin privileges!
+
+    **Request Body:**
+    {
+        "spec_text": "OpenAPI spec (JSON or YAML string)",
+        "analysis_depth": "quick | standard | comprehensive | exhaustive",
+        "max_chain_length": 5,  // Maximum steps in an attack chain
+        "exclude_low_severity": false  // Skip low-severity chains
+    }
+
+    **Response:**
+    {
+        "report_id": "uuid",
+        "risk_level": "CRITICAL | HIGH | MEDIUM | LOW",
+        "overall_security_score": 0-100,
+        "executive_summary": "Business-focused summary",
+        "critical_chains": [...],  // CRITICAL attack chains
+        "high_priority_chains": [...],  // HIGH severity chains
+        "all_chains": [...],  // All discovered attack chains
+        "top_3_risks": [...],  // Simplified explanations
+        "immediate_actions": [...],  // Fix right now
+        "short_term_actions": [...],  // Fix within 1-2 weeks
+        "long_term_actions": [...]  // Architectural improvements
+    }
+
+    **Attack Chain Structure:**
+    Each chain contains:
+    - name: Descriptive attack name
+    - attack_goal: What attacker achieves
+    - severity: CRITICAL | HIGH | MEDIUM | LOW
+    - complexity: How hard to execute
+    - steps: Ordered list of exploitation steps
+    - business_impact: Impact in business terms
+    - remediation_steps: How to fix
+    """
+    from ..schemas.attack_path_schemas import AttackPathAnalysisRequest
+    from ..services.agents.attack_path_orchestrator import AttackPathOrchestrator
+
+    correlation_id = set_correlation_id()
+    logger.info("Starting attack path simulation", extra={"correlation_id": correlation_id})
+
+    try:
+        # Parse and validate request
+        spec_text = request.get("spec_text")
+        if not spec_text:
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_SPEC",
+                "message": "spec_text is required"
+            })
+
+        # Build analysis request
+        analysis_request = AttackPathAnalysisRequest(
+            spec_text=spec_text,
+            analysis_depth=request.get("analysis_depth", "standard"),
+            max_chain_length=request.get("max_chain_length", 5),
+            exclude_low_severity=request.get("exclude_low_severity", False),
+            focus_areas=request.get("focus_areas", [])
+        )
+
+        # Check cache first
+        spec_hash = hashlib.sha256(spec_text.encode()).hexdigest()
+        cache_key = f"attack_path_{spec_hash}_{analysis_request.analysis_depth}"
+
+        if cache_key in SECURITY_ANALYSIS_CACHE:
+            cached_data = SECURITY_ANALYSIS_CACHE[cache_key]
+            if datetime.utcnow() < cached_data["expires_at"]:
+                logger.info(f"Returning cached attack path report: {cache_key}")
+                return cached_data["report"]
+
+        # Run attack path simulation
+        orchestrator = AttackPathOrchestrator(llm_service)
+        report = await orchestrator.run_attack_path_analysis(analysis_request)
+
+        # Convert to dict for response
+        report_dict = report.model_dump()
+
+        # Cache the report
+        SECURITY_ANALYSIS_CACHE[cache_key] = {
+            "report": report_dict,
+            "created_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + SECURITY_CACHE_TTL
+        }
+        logger.info(f"Cached attack path report: {cache_key}")
+
+        return report_dict
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Attack path simulation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "ATTACK_PATH_SIMULATION_FAILED",
+            "message": f"Failed to run attack path simulation: {str(e)}"
+        })
 
 
 # ============================================================================
