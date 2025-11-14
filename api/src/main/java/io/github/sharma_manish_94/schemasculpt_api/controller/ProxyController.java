@@ -15,15 +15,15 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/proxy")
 public class ProxyController {
 
-    private final ProxyService proxyService;
+  private final ProxyService proxyService;
 
-    public ProxyController(ProxyService proxyService) {
-        this.proxyService = proxyService;
-    }
+  public ProxyController(ProxyService proxyService) {
+    this.proxyService = proxyService;
+  }
 
-    @PostMapping("/request")
-    public Mono<ResponseEntity<ProxyResponse>> forwardRequest(@Valid @RequestBody ProxyRequest request) {
-        return proxyService.forwardRequest(request)
-                .map(ResponseEntity::ok);
-    }
+  @PostMapping("/request")
+  public Mono<ResponseEntity<ProxyResponse>> forwardRequest(
+      @Valid @RequestBody ProxyRequest request) {
+    return proxyService.forwardRequest(request).map(ResponseEntity::ok);
+  }
 }

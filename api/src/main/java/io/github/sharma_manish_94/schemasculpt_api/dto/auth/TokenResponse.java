@@ -7,9 +7,8 @@ public record TokenResponse(
     Long userId,
     String username,
     String email,
-    String avatarUrl
-) {
-    public TokenResponse(String token, Long userId, String username, String email, String avatarUrl) {
-        this(token, "Bearer", 86400L, userId, username, email, avatarUrl);
-    }
+    String avatarUrl) {
+  public TokenResponse(String token, Long userId, String username, String email, String avatarUrl) {
+    this(token, "Bearer", 86400L, userId, username, email, avatarUrl);
+  }
 }

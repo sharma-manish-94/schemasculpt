@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<ruleset name="Custom PMD Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>
+    Custom PMD ruleset for SchemaSculpt API - High quality but pragmatic rules
+  </description>
+
+  <!-- ============================================ -->
+  <!-- Best Practices                               -->
+  <!-- ============================================ -->
+  <rule ref="category/java/bestpractices.xml">
+    <!-- Exclude rules incompatible with Spring Boot -->
+    <exclude name="GuardLogStatement"/><!-- Spring Boot logging is optimized -->
+    <exclude name="AvoidReassigningParameters"/><!-- Common in builders/validators -->
+    <exclude name="AvoidUncheckedExceptionsInSignatures"/><!-- Spring uses unchecked exceptions -->
+  </rule>
+
+  <!-- ============================================ -->
+  <!-- Code Style                                   -->
+  <!-- ============================================ -->
+  <rule ref="category/java/codestyle.xml">
+    <!-- Exclude overly pedantic rules -->
+    <exclude name="LocalVariableCouldBeFinal"/>
+    <exclude name="MethodArgumentCouldBeFinal"/>
+    <exclude name="OnlyOneReturn"/><!-- Multiple returns improve readability -->
+    <exclude name="AtLeastOneConstructor"/><!-- Lombok and Spring handle this -->
+    <exclude name="CommentDefaultAccessModifier"/>
+    <exclude name="CallSuperInConstructor"/>
+    <exclude name="UseExplicitTypes"/><!-- var is acceptable in modern Java -->
+    <exclude name="LiteralsFirstInComparisons"/><!-- Modern style uses natural order -->
+    <exclude name="FieldNamingConventions"/><!-- Lombok generates fields -->
+    <exclude name="UselessParentheses"/><!-- Sometimes improves readability -->
+    <!-- Keep important naming/style checks but allow flexibility -->
+    <exclude name="ShortVariable"/><!-- Single-letter variables OK in lambdas/loops -->
+    <exclude name="LongVariable"/><!-- Descriptive names are valuable -->
+    <exclude name="ShortClassName"/>
+  </rule>
+
+  <!-- Enforce consistent brace style to align with checkstyle -->
+  <rule ref="category/java/codestyle.xml/ControlStatementBraces"/>
+
+  <!-- ============================================ -->
+  <!-- Design                                       -->
+  <!-- ============================================ -->
+  <rule ref="category/java/design.xml">
+    <!-- Exclude rules that conflict with modern frameworks -->
+    <exclude name="LawOfDemeter"/><!-- Too strict for Spring/Lombok -->
+    <exclude name="LoosePackageCoupling"/>
+    <exclude name="UseUtilityClass"/><!-- Spring components aren't utility classes -->
+    <exclude name="DataClass"/><!-- DTOs are intentionally data classes -->
+    <exclude name="AvoidThrowingRawExceptionTypes"/><!-- RuntimeException is standard in Spring -->
+    <exclude name="ExceptionAsFlowControl"/><!-- Valid for validation logic -->
+    <exclude name="GodClass"/><!-- Some service classes are naturally large -->
+    <exclude name="TooManyMethods"/>
+    <exclude name="AvoidCatchingGenericException"/><!-- Common in controllers/global handlers -->
+    <exclude name="SignatureDeclareThrowsException"/><!-- Spring uses runtime exceptions -->
+  </rule>
+
+  <!-- Align complexity thresholds with checkstyle (balanced approach) -->
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="methodReportLevel" value="15"/><!-- Aligned with checkstyle -->
+      <property name="classReportLevel" value="50"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="25"/><!-- Reasonable threshold -->
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NPathComplexity">
+    <properties>
+      <property name="reportLevel" value="400"/><!-- Aligned with checkstyle -->
+    </properties>
+  </rule>
+
+  <!-- ============================================ -->
+  <!-- Error Prone                                  -->
+  <!-- ============================================ -->
+  <rule ref="category/java/errorprone.xml">
+    <!-- Keep most error-prone checks, exclude only specific cases -->
+    <exclude name="AvoidDuplicateLiterals"/><!-- Constants/config may duplicate strings -->
+    <exclude name="NullAssignment"/><!-- Sometimes needed for explicit cleanup -->
+    <exclude name="TestClassWithoutTestCases"/><!-- Base test classes are valid -->
+    <exclude name="UseLocaleWithCaseConversions"/><!-- Default locale often acceptable -->
+    <exclude name="AvoidUsingHardCodedIP"/><!-- localhost/test IPs are acceptable -->
+    <exclude name="MissingSerialVersionUID"/><!-- Not critical for DTOs -->
+    <exclude name="NonExhaustiveSwitch"/><!-- Default case handles this -->
+  </rule>
+
+  <!-- ============================================ -->
+  <!-- Multithreading                               -->
+  <!-- ============================================ -->
+  <rule ref="category/java/multithreading.xml">
+    <exclude name="UseConcurrentHashMap"/><!-- Not needed in single-threaded contexts -->
+  </rule>
+
+  <!-- ============================================ -->
+  <!-- Performance                                  -->
+  <!-- ============================================ -->
+  <rule ref="category/java/performance.xml">
+    <exclude name="AvoidInstantiatingObjectsInLoops"/><!-- Modern JVM optimizes this -->
+  </rule>
+
+  <!-- ============================================ -->
+  <!-- Security - Keep All (Critical)               -->
+  <!-- ============================================ -->
+  <rule ref="category/java/security.xml"/>
+
+  <!-- ============================================ -->
+  <!-- Documentation                                -->
+  <!-- ============================================ -->
+  <rule ref="category/java/documentation.xml">
+    <exclude name="CommentRequired"/><!-- Checkstyle handles Javadoc requirements -->
+    <exclude name="CommentSize"/><!-- Checkstyle handles line length -->
+  </rule>
+
+</ruleset>
