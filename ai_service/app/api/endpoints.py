@@ -47,6 +47,9 @@ from ..services.smart_fix_service import SmartFixService
 from ..services.meta_analysis_service import MetaAnalysisService
 from ..services.description_analysis_service import DescriptionAnalysisService
 from ..services.llm_adapter import LLMAdapter
+from ..services.mock_data_service import MockDataService
+from ..services.test_case_generator import TestCaseGeneratorService
+from ..services.cache_service import cache_service
 
 # Initialize services
 router = APIRouter()
@@ -64,6 +67,8 @@ patch_generator = PatchGenerator(llm_service)
 smart_fix_service = SmartFixService(llm_service)
 meta_analysis_service = MetaAnalysisService(llm_service)
 description_analysis_service = DescriptionAnalysisService(llm_adapter)
+mock_data_service = MockDataService(llm_service)
+test_case_generator = TestCaseGeneratorService(llm_service)
 
 # Mock server storage
 MOCKED_APIS: Dict[str, Dict[str, Any]] = {}
@@ -124,7 +129,7 @@ async def process_specification(request: AIRequest, _: None = Depends(handle_exc
         if request.streaming != StreamingMode.DISABLED:
             async def stream_generator():
                 async for chunk in result:
-                    yield f"data: {json.dumps(chunk.dict())}\n\n"
+                    yield f"data: {json.dumps(chunk.model_dump())}\n\n"
                 yield "data: [DONE]\n\n"
 
             return StreamingResponse(
@@ -375,7 +380,7 @@ async def start_mock_server(request: MockStartRequest, _: None = Depends(handle_
         parser = ResolvingParser(spec_string=request.spec_text, backend='openapi-spec-validator')
         MOCKED_APIS[mock_id] = {
             "specification": parser.specification,
-            "config": request.dict(),
+            "config": request.model_dump(),
             "created_at": datetime.utcnow()
         }
 
@@ -414,7 +419,7 @@ async def update_mock_server(mock_id: str, request: MockStartRequest, _: None = 
     try:
         parser = ResolvingParser(spec_string=request.spec_text, backend='openapi-spec-validator')
         MOCKED_APIS[mock_id]["specification"] = parser.specification
-        MOCKED_APIS[mock_id]["config"] = request.dict()
+        MOCKED_APIS[mock_id]["config"] = request.model_dump()
 
         return {
             "message": f"Mock server {mock_id} updated successfully",
@@ -503,39 +508,15 @@ async def handle_mock_request(mock_id: str, full_path: str, request: Request):
     # Generate AI-powered response if enabled
     if config.get("use_ai_responses", True):
         try:
-            # Create enhanced prompt for realistic data generation
-            prompt = f"""Generate realistic JSON data that conforms to this OpenAPI schema.
-
-Operation: {operation_spec.get('summary', 'API operation')}
-Description: {operation_spec.get('description', 'No description')}
-
-Schema:
-{json.dumps(response_schema, indent=2)}
-
-Requirements:
-- Generate realistic, diverse data
-- Follow the schema constraints exactly
-- Use appropriate data types and formats
-- Make the data contextually relevant to the operation
-- Return only the JSON object, no explanations
-
-Variation #{random.randint(1, config.get('response_variety', 3))}"""
-
-            # Use the enhanced LLM service for better responses
-            ai_request = AIRequest(
-                spec_text=json.dumps(spec, indent=2),
-                prompt=prompt,
-                operation_type=OperationType.GENERATE
+            # Use MockDataService for proper mock data generation
+            mock_response = await mock_data_service.generate_mock_response(
+                operation_spec=operation_spec,
+                response_schema=response_schema,
+                spec_context=spec,
+                variation=random.randint(1, config.get('response_variety', 3)),
+                use_ai=True
             )
-
-            ai_result = await llm_service.process_ai_request(ai_request)
-
-            try:
-                generated_data = json.loads(ai_result.updated_spec_text)
-                return JSONResponse(content=generated_data)
-            except json.JSONDecodeError:
-                # Fallback to simple response
-                return JSONResponse(content={"message": "Generated response", "data": {}})
+            return JSONResponse(content=mock_response)
 
         except Exception as e:
             logger.warning(f"AI response generation failed: {str(e)}, falling back to simple response")
@@ -1484,7 +1465,7 @@ async def analyze_security(request: SecurityAnalysisRequest, _: None = Depends(h
         )
 
         # Convert to dict for response
-        report_dict = report.dict()
+        report_dict = report.model_dump()
 
         # Cache the report
         _cache_security_report(cache_key, report_dict)
@@ -1542,7 +1523,7 @@ async def analyze_authentication(request: SecurityAnalysisRequest, _: None = Dep
         result = await analyzer.analyze(spec)
 
         return {
-            "analysis": result.dict(),
+            "analysis": result.model_dump(),
             "correlation_id": correlation_id
         }
 
@@ -1577,7 +1558,7 @@ async def analyze_authorization(request: SecurityAnalysisRequest, _: None = Depe
         result = await analyzer.analyze(spec)
 
         return {
-            "analysis": result.dict(),
+            "analysis": result.model_dump(),
             "correlation_id": correlation_id
         }
 
@@ -1613,7 +1594,7 @@ async def analyze_data_exposure(request: SecurityAnalysisRequest, _: None = Depe
         result = await analyzer.analyze(spec)
 
         return {
-            "analysis": result.dict(),
+            "analysis": result.model_dump(),
             "correlation_id": correlation_id
         }
 
@@ -1852,4 +1833,573 @@ async def clear_security_cache():
     return {
         "cleared": cache_size,
         "message": f"Cleared {cache_size} cached security report(s)"
+    }
+
+
+# ============================================================================
+# Advanced Security: Attack Path Simulation
+# ============================================================================
+
+@router.post("/ai/security/attack-path-simulation")
+async def run_attack_path_simulation(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    **The "Wow" Feature: AI Attack Path Simulation**
+
+    Think like a hacker. This endpoint uses an agentic AI system to discover
+    multi-step attack chains that real attackers could exploit. Unlike simple
+    linting that finds isolated vulnerabilities, this feature:
+
+    1. Finds individual vulnerabilities (Scanner Agent)
+    2. Analyzes how they can be CHAINED together (Threat Modeling Agent)
+    3. Generates executive-level security reports (Reporter Agent)
+
+    **Example Attack Chain:**
+    - Step 1: GET /users/{id} exposes sensitive 'role' field (Information Disclosure)
+    - Step 2: PUT /users/{id} accepts 'role' in request body (Mass Assignment)
+    - Result: Any user can escalate to admin privileges!
+
+    **Request Body:**
+    {
+        "spec_text": "OpenAPI spec (JSON or YAML string)",
+        "analysis_depth": "quick | standard | comprehensive | exhaustive",
+        "max_chain_length": 5,  // Maximum steps in an attack chain
+        "exclude_low_severity": false  // Skip low-severity chains
+    }
+
+    **Response:**
+    {
+        "report_id": "uuid",
+        "risk_level": "CRITICAL | HIGH | MEDIUM | LOW",
+        "overall_security_score": 0-100,
+        "executive_summary": "Business-focused summary",
+        "critical_chains": [...],  // CRITICAL attack chains
+        "high_priority_chains": [...],  // HIGH severity chains
+        "all_chains": [...],  // All discovered attack chains
+        "top_3_risks": [...],  // Simplified explanations
+        "immediate_actions": [...],  // Fix right now
+        "short_term_actions": [...],  // Fix within 1-2 weeks
+        "long_term_actions": [...]  // Architectural improvements
+    }
+
+    **Attack Chain Structure:**
+    Each chain contains:
+    - name: Descriptive attack name
+    - attack_goal: What attacker achieves
+    - severity: CRITICAL | HIGH | MEDIUM | LOW
+    - complexity: How hard to execute
+    - steps: Ordered list of exploitation steps
+    - business_impact: Impact in business terms
+    - remediation_steps: How to fix
+    """
+    from ..schemas.attack_path_schemas import AttackPathAnalysisRequest
+    from ..services.agents.attack_path_orchestrator import AttackPathOrchestrator
+
+    correlation_id = set_correlation_id()
+    logger.info("Starting attack path simulation", extra={"correlation_id": correlation_id})
+
+    try:
+        # Parse and validate request
+        spec_text = request.get("spec_text")
+        if not spec_text:
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_SPEC",
+                "message": "spec_text is required"
+            })
+
+        # Build analysis request
+        analysis_request = AttackPathAnalysisRequest(
+            spec_text=spec_text,
+            analysis_depth=request.get("analysis_depth", "standard"),
+            max_chain_length=request.get("max_chain_length", 5),
+            exclude_low_severity=request.get("exclude_low_severity", False),
+            focus_areas=request.get("focus_areas", [])
+        )
+
+        # Check cache first
+        spec_hash = hashlib.sha256(spec_text.encode()).hexdigest()
+        cache_key = f"attack_path_{spec_hash}_{analysis_request.analysis_depth}"
+
+        if cache_key in SECURITY_ANALYSIS_CACHE:
+            cached_data = SECURITY_ANALYSIS_CACHE[cache_key]
+            if datetime.utcnow() < cached_data["expires_at"]:
+                logger.info(f"Returning cached attack path report: {cache_key}")
+                return cached_data["report"]
+
+        # Run attack path simulation
+        orchestrator = AttackPathOrchestrator(llm_service)
+        report = await orchestrator.run_attack_path_analysis(analysis_request)
+
+        # Convert to dict for response
+        report_dict = report.model_dump()
+
+        # Cache the report
+        SECURITY_ANALYSIS_CACHE[cache_key] = {
+            "report": report_dict,
+            "created_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + SECURITY_CACHE_TTL
+        }
+        logger.info(f"Cached attack path report: {cache_key}")
+
+        return report_dict
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Attack path simulation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "ATTACK_PATH_SIMULATION_FAILED",
+            "message": f"Failed to run attack path simulation: {str(e)}"
+        })
+
+
+# ============================================================================
+# Test Case Generation Endpoints
+# ============================================================================
+
+@router.post("/tests/generate")
+async def generate_test_cases(request: Dict[str, Any], _: None = Depends(handle_exceptions)):
+    """
+    Generate comprehensive test cases for an OpenAPI endpoint.
+
+    Creates happy path, sad path, edge cases, and AI-generated advanced tests.
+
+    Request body:
+    - spec_text: OpenAPI specification (JSON/YAML string)
+    - path: API path to generate tests for (e.g., "/users/{id}")
+    - method: HTTP method (GET, POST, PUT, DELETE, etc.)
+    - include_ai_tests: Whether to include AI-generated tests (default: true)
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info("Generating test cases", extra={"correlation_id": correlation_id})
+
+    try:
+        # Extract and validate request parameters
+        spec_text = request.get('spec_text')
+        path = request.get('path')
+        method = request.get('method', 'GET').upper()
+        include_ai_tests = request.get('include_ai_tests', True)
+
+        if not spec_text:
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_SPEC",
+                "message": "spec_text is required"
+            })
+
+        if not path:
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_PATH",
+                "message": "path is required"
+            })
+
+        # Check cache first
+        cached_tests = cache_service.get_test_cases(spec_text, path, method, include_ai_tests)
+        if cached_tests:
+            logger.info(f"Returning cached test cases for {method} {path}")
+            return {
+                **cached_tests,
+                "cached": True,
+                "correlation_id": correlation_id,
+                "generated_at": datetime.utcnow().isoformat()
+            }
+
+        # Parse specification (with caching)
+        spec = cache_service.get_parsed_spec(spec_text)
+        if not spec:
+            try:
+                parser = ResolvingParser(spec_string=spec_text, backend='openapi-spec-validator')
+                spec = parser.specification
+                cache_service.cache_parsed_spec(spec_text, spec)
+            except Exception as e:
+                logger.error(f"Invalid OpenAPI specification: {str(e)}")
+                raise HTTPException(status_code=400, detail={
+                    "error": "INVALID_SPEC",
+                    "message": f"Failed to parse OpenAPI specification: {str(e)}"
+                })
+
+        # Validate path exists
+        if path not in spec.get('paths', {}):
+            raise HTTPException(status_code=404, detail={
+                "error": "PATH_NOT_FOUND",
+                "message": f"Path '{path}' not found in specification",
+                "available_paths": list(spec.get('paths', {}).keys())
+            })
+
+        # Validate method exists
+        method_lower = method.lower()
+        if method_lower not in spec['paths'][path]:
+            raise HTTPException(status_code=404, detail={
+                "error": "METHOD_NOT_FOUND",
+                "message": f"Method '{method}' not found for path '{path}'",
+                "available_methods": list(spec['paths'][path].keys())
+            })
+
+        # Generate test cases
+        result = await test_case_generator.generate_test_cases(
+            spec=spec,
+            path=path,
+            method=method_lower,
+            include_ai_tests=include_ai_tests
+        )
+
+        # Cache the results
+        cache_service.cache_test_cases(spec_text, path, method_lower, include_ai_tests, result)
+
+        logger.info(
+            f"Generated {result['total_tests']} test cases for {method} {path}",
+            extra={"correlation_id": correlation_id}
+        )
+
+        return {
+            **result,
+            "cached": False,
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Test case generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "TEST_GENERATION_FAILED",
+            "message": str(e),
+            "correlation_id": correlation_id
+        })
+
+
+@router.post("/tests/generate/all")
+async def generate_all_test_cases(request: Dict[str, Any], _: None = Depends(handle_exceptions)):
+    """
+    Generate test cases for all endpoints in an OpenAPI specification.
+
+    Request body:
+    - spec_text: OpenAPI specification (JSON/YAML string)
+    - include_ai_tests: Whether to include AI-generated tests (default: false for performance)
+    - max_endpoints: Maximum number of endpoints to process (default: 50)
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info("Generating test cases for all endpoints", extra={"correlation_id": correlation_id})
+
+    try:
+        spec_text = request.get('spec_text')
+        include_ai_tests = request.get('include_ai_tests', False)
+        max_endpoints = request.get('max_endpoints', 50)
+
+        if not spec_text:
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_SPEC",
+                "message": "spec_text is required"
+            })
+
+        # Parse specification
+        try:
+            parser = ResolvingParser(spec_string=spec_text, backend='openapi-spec-validator')
+            spec = parser.specification
+        except Exception as e:
+            raise HTTPException(status_code=400, detail={
+                "error": "INVALID_SPEC",
+                "message": f"Failed to parse OpenAPI specification: {str(e)}"
+            })
+
+        # Generate tests for all endpoints
+        all_tests = {}
+        total_test_count = 0
+        endpoint_count = 0
+
+        for path, path_item in spec.get('paths', {}).items():
+            for method in ['get', 'post', 'put', 'patch', 'delete']:
+                if method in path_item:
+                    endpoint_count += 1
+
+                    if endpoint_count > max_endpoints:
+                        logger.warning(f"Reached max_endpoints limit ({max_endpoints})")
+                        break
+
+                    try:
+                        result = await test_case_generator.generate_test_cases(
+                            spec=spec,
+                            path=path,
+                            method=method,
+                            include_ai_tests=include_ai_tests
+                        )
+
+                        endpoint_key = f"{method.upper()} {path}"
+                        all_tests[endpoint_key] = result
+                        total_test_count += result['total_tests']
+
+                    except Exception as e:
+                        logger.error(f"Failed to generate tests for {method.upper()} {path}: {e}")
+                        all_tests[f"{method.upper()} {path}"] = {
+                            "error": str(e),
+                            "endpoint": f"{method.upper()} {path}"
+                        }
+
+            if endpoint_count > max_endpoints:
+                break
+
+        logger.info(
+            f"Generated {total_test_count} tests across {endpoint_count} endpoints",
+            extra={"correlation_id": correlation_id}
+        )
+
+        return {
+            "endpoints": all_tests,
+            "summary": {
+                "total_endpoints": endpoint_count,
+                "total_tests": total_test_count,
+                "include_ai_tests": include_ai_tests
+            },
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Bulk test generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "BULK_TEST_GENERATION_FAILED",
+            "message": str(e),
+            "correlation_id": correlation_id
+        })
+
+
+@router.post("/mock/generate-data")
+async def generate_mock_data(request: Dict[str, Any], _: None = Depends(handle_exceptions)):
+    """
+    Generate realistic mock data for a specific response schema.
+
+    Request body:
+    - spec_text: OpenAPI specification
+    - path: API path
+    - method: HTTP method
+    - response_code: Response code to generate data for (default: "200")
+    - variation: Variation number for diversity (default: 1)
+    - use_ai: Whether to use AI for generation (default: true)
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info("Generating mock data", extra={"correlation_id": correlation_id})
+
+    try:
+        spec_text = request.get('spec_text')
+        path = request.get('path')
+        method = request.get('method', 'GET').lower()
+        response_code = request.get('response_code', '200')
+        variation = request.get('variation', 1)
+        use_ai = request.get('use_ai', True)
+
+        if not spec_text or not path:
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_PARAMETERS",
+                "message": "spec_text and path are required"
+            })
+
+        # Parse specification
+        parser = ResolvingParser(spec_string=spec_text, backend='openapi-spec-validator')
+        spec = parser.specification
+
+        # Get operation and response schema
+        operation = spec['paths'][path][method]
+        response_spec = operation.get('responses', {}).get(response_code)
+
+        if not response_spec:
+            raise HTTPException(status_code=404, detail={
+                "error": "RESPONSE_NOT_FOUND",
+                "message": f"Response {response_code} not found for {method.upper()} {path}"
+            })
+
+        # Extract schema
+        response_schema = response_spec.get('content', {}).get('application/json', {}).get('schema')
+
+        if not response_schema:
+            raise HTTPException(status_code=400, detail={
+                "error": "NO_SCHEMA",
+                "message": "No JSON schema found for response"
+            })
+
+        # Generate mock data
+        mock_data = await mock_data_service.generate_mock_response(
+            operation_spec=operation,
+            response_schema=response_schema,
+            spec_context=spec,
+            variation=variation,
+            use_ai=use_ai
+        )
+
+        logger.info("Mock data generated successfully", extra={"correlation_id": correlation_id})
+
+        return {
+            "mock_data": mock_data,
+            "endpoint": f"{method.upper()} {path}",
+            "response_code": response_code,
+            "variation": variation,
+            "used_ai": use_ai,
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Mock data generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "MOCK_DATA_GENERATION_FAILED",
+            "message": str(e),
+            "correlation_id": correlation_id
+        })
+
+
+@router.post("/mock/generate-variations")
+async def generate_mock_variations(request: Dict[str, Any], _: None = Depends(handle_exceptions)):
+    """
+    Generate multiple variations of mock data for testing diversity.
+
+    Request body:
+    - spec_text: OpenAPI specification
+    - path: API path
+    - method: HTTP method
+    - response_code: Response code (default: "200")
+    - count: Number of variations (default: 3, max: 10)
+    """
+    correlation_id = str(uuid.uuid4())
+    set_correlation_id(correlation_id)
+
+    logger.info("Generating mock data variations", extra={"correlation_id": correlation_id})
+
+    try:
+        spec_text = request.get('spec_text')
+        path = request.get('path')
+        method = request.get('method', 'GET').lower()
+        response_code = request.get('response_code', '200')
+        count = min(request.get('count', 3), 10)  # Cap at 10
+
+        # Check cache first
+        cached_mock_data = cache_service.get_mock_data(spec_text, path, method, response_code, count)
+        if cached_mock_data:
+            logger.info(f"Returning cached mock data for {method} {path}")
+            return {
+                "variations": cached_mock_data,
+                "count": len(cached_mock_data),
+                "endpoint": f"{method.upper()} {path}",
+                "response_code": response_code,
+                "cached": True,
+                "correlation_id": correlation_id,
+                "generated_at": datetime.utcnow().isoformat()
+            }
+
+        # Parse specification (with caching)
+        spec = cache_service.get_parsed_spec(spec_text)
+        if not spec:
+            parser = ResolvingParser(spec_string=spec_text, backend='openapi-spec-validator')
+            spec = parser.specification
+            cache_service.cache_parsed_spec(spec_text, spec)
+
+        # Get operation and response schema
+        operation = spec['paths'][path][method]
+        response_spec = operation.get('responses', {}).get(response_code)
+        response_schema = response_spec.get('content', {}).get('application/json', {}).get('schema')
+
+        # Generate variations
+        variations = await mock_data_service.generate_test_variations(
+            operation_spec=operation,
+            response_schema=response_schema,
+            spec_context=spec,
+            count=count
+        )
+
+        # Cache the results
+        cache_service.cache_mock_data(spec_text, path, method, response_code, count, variations)
+
+        logger.info(f"Generated {len(variations)} mock data variations", extra={"correlation_id": correlation_id})
+
+        return {
+            "variations": variations,
+            "count": len(variations),
+            "endpoint": f"{method.upper()} {path}",
+            "response_code": response_code,
+            "cached": False,
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Mock variations generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "MOCK_VARIATIONS_FAILED",
+            "message": str(e),
+            "correlation_id": correlation_id
+        })
+
+
+# ==================== Cache Management Endpoints ====================
+
+
+@router.get("/cache/stats")
+async def get_cache_stats(_: None = Depends(handle_exceptions)):
+    """
+    Get cache statistics and performance metrics.
+
+    Returns hit rates, cache sizes, and overall performance data.
+    """
+    logger.info("Retrieving cache statistics")
+    stats = cache_service.get_cache_stats()
+    return {
+        **stats,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@router.delete("/cache/clear")
+async def clear_cache(
+    cache_type: Optional[str] = None,
+    _: None = Depends(handle_exceptions)
+):
+    """
+    Clear specified cache or all caches.
+
+    Query Parameters:
+    - cache_type: Type of cache to clear (spec, test, mock). If not specified, clears all.
+    """
+    logger.info(f"Clearing {cache_type or 'all'} cache(s)")
+    cache_service.clear_cache(cache_type)
+    return {
+        "success": True,
+        "message": f"Cleared {cache_type or 'all'} cache(s)",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@router.post("/cache/invalidate")
+async def invalidate_spec_cache(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    Invalidate all cache entries related to a specific specification.
+
+    Request body:
+    - spec_text: The OpenAPI specification to invalidate
+    """
+    spec_text = request.get('spec_text')
+    if not spec_text:
+        raise HTTPException(status_code=400, detail={
+            "error": "MISSING_SPEC",
+            "message": "spec_text is required"
+        })
+
+    logger.info("Invalidating cache for specification")
+    cache_service.invalidate_spec_cache(spec_text)
+    return {
+        "success": True,
+        "message": "Cache invalidated for specification",
+        "timestamp": datetime.utcnow().isoformat()
     }

@@ -992,6 +992,71 @@ You are a JSON Patch specialist for OpenAPI specifications.
     async def __aenter__(self):
         return self
 
+    async def generate(
+        self,
+        prompt: str,
+        model: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048
+    ) -> Dict[str, Any]:
+        """
+        Simple method to generate text from the LLM.
+        Used by agents for general text generation.
+
+        Args:
+            prompt: The prompt to send to the LLM
+            model: Model to use (default: settings.default_model)
+            temperature: Temperature for generation
+            max_tokens: Maximum tokens to generate
+
+        Returns:
+            Dict with 'response' and 'tokens_used'
+        """
+        try:
+            messages = [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+
+            payload = {
+                "model": model or settings.default_model,
+                "messages": messages,
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                    "num_ctx": 8192  # Large context window for agent reasoning
+                }
+            }
+
+            self.logger.debug(f"Sending generation request to Ollama: model={model or settings.default_model}, temp={temperature}")
+
+            response = await self.client.post(self.chat_endpoint, json=payload)
+
+            if response.status_code != 200:
+                error_msg = f"LLM request failed: {response.status_code} - {response.text}"
+                self.logger.error(error_msg)
+                raise LLMError(error_msg)
+
+            response_data = response.json()
+            generated_text = self._extract_and_clean_response(response_data)
+
+            # Extract token usage if available
+            eval_count = response_data.get("eval_count", 0)
+            prompt_eval_count = response_data.get("prompt_eval_count", 0)
+            tokens_used = eval_count + prompt_eval_count
+
+            return {
+                "response": generated_text,
+                "tokens_used": tokens_used
+            }
+
+        except Exception as e:
+            self.logger.error(f"Generation failed: {str(e)}")
+            raise LLMError(f"Failed to generate response: {str(e)}")
+
     async def generate_json_response(
         self,
         prompt: str,

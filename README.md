@@ -462,6 +462,17 @@ Explanations are **cached** for performance.
 
 ## 📚 Documentation
 
+### 🎯 Feature Guides
+
+Comprehensive guides for each major feature:
+
+- **[🛡️ API Hardening](./docs/features/API_HARDENING.md)** - One-click security and performance patterns (OAuth2, rate limiting, caching, idempotency, validation, error handling)
+- **[🔍 Intelligent Linter](./docs/features/LINTER.md)** - 11+ built-in rules with auto-fix capabilities for OpenAPI best practices
+- **[✅ Real-time Validator](./docs/features/VALIDATOR.md)** - Instant validation feedback as you type with detailed error reporting
+- **[🔐 Security Analysis](./docs/features/SECURITY_ANALYSIS.md)** - AI-powered security auditing for authentication, authorization, and data exposure
+- **[⚔️ Attack Path Simulation](./docs/features/ATTACK_SIMULATION.md)** - Discover multi-step vulnerability chains and attack vectors
+- **[🤖 AI Assistant](./docs/features/AI_ASSISTANT.md)** - Natural language API editing and intelligent spec generation
+
 ### User Guides
 
 - [Getting Started Guide](./DEVELOPER_ONBOARDING_GUIDE.md) - Comprehensive setup and usage

@@ -9,30 +9,32 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class SpecUpdateService {
-    private final SessionService sessionService;
+  private final SessionService sessionService;
 
-    public SpecUpdateService(SessionService sessionService) {
-        this.sessionService = sessionService;
+  public SpecUpdateService(SessionService sessionService) {
+    this.sessionService = sessionService;
+  }
+
+  public void updateOperation(String sessionId, UpdateOperationRequest request) {
+    OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
+    if (null == openAPI) {
+      throw new IllegalArgumentException("Invalid session ID: " + sessionId);
     }
+    Operation operation =
+        openAPI
+            .getPaths()
+            .get(request.path())
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(request.method().toUpperCase()));
 
-    public void updateOperation(String sessionId,
-                                UpdateOperationRequest request) {
-        OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
-        if (null == openAPI) {
-            throw new IllegalArgumentException("Invalid session ID: " + sessionId);
-        }
-        Operation operation = openAPI.getPaths().get(request.path())
-                .readOperationsMap()
-                .get(PathItem.HttpMethod.valueOf(request.method().toUpperCase()));
-
-        if (null != operation) {
-            if (StringUtils.isNotBlank(request.summary())) {
-                operation.setSummary(request.summary());
-            }
-            if (StringUtils.isNotBlank(request.description())) {
-                operation.setDescription(request.description());
-            }
-        }
-        sessionService.updateSessionSpec(sessionId, openAPI);
+    if (null != operation) {
+      if (StringUtils.isNotBlank(request.summary())) {
+        operation.setSummary(request.summary());
+      }
+      if (StringUtils.isNotBlank(request.description())) {
+        operation.setDescription(request.description());
+      }
     }
+    sessionService.updateSessionSpec(sessionId, openAPI);
+  }
 }

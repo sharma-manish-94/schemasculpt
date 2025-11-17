@@ -13,17 +13,16 @@ public record MockStartResponse(
     @JsonProperty("total_endpoints") Integer totalEndpoints,
     @JsonProperty("created_at") Instant createdAt,
     String message,
-    @JsonProperty("docs_url") String docsUrl
-) {
-    public MockStartResponse {
-        if (message == null) {
-            message = "Mock server started successfully";
-        }
-        if (createdAt == null) {
-            createdAt = Instant.now();
-        }
-        if (docsUrl == null && baseUrl != null) {
-            docsUrl = baseUrl + "/docs";
-        }
+    @JsonProperty("docs_url") String docsUrl) {
+  public MockStartResponse {
+    if (message == null) {
+      message = "Mock server started successfully";
     }
+    if (createdAt == null) {
+      createdAt = Instant.now();
+    }
+    if (docsUrl == null && baseUrl != null) {
+      docsUrl = baseUrl + "/docs";
+    }
+  }
 }

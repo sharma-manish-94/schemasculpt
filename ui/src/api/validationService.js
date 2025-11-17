@@ -213,9 +213,9 @@ export const startMockServer = async (specText) => {
     try {
         const response = await axios.post(
             `${API_CONFIG.BASE_URL}/sessions/mock`,
-            specText,
+            { specText: specText },
             {
-                headers: { "Content-Type": "text/plain" },
+                headers: { "Content-Type": "application/json" },
             }
         );
         return { success: true, data: response.data };

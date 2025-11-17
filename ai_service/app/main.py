@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.api import endpoints
+from app.api import repository_endpoints
 from app.core.config import settings
 from app.providers.provider_factory import initialize_provider
 from app.core.logging import get_logger
@@ -49,6 +50,7 @@ app.add_middleware(
 )
 
 app.include_router(endpoints.router)
+app.include_router(repository_endpoints.router)
 
 
 @app.get("/")
