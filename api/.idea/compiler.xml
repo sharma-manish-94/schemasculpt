@@ -16,7 +16,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="schemasculpt-api" options="-parameters --enable-preview -Xlint:unchecked" />
+      <module name="schemasculpt-api" options="-parameters -Xlint:unchecked" />
     </option>
   </component>
 </project>
