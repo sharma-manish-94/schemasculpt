@@ -6,6 +6,7 @@ This module provides GitHub repository operations using the MCP GitHub server.
 
 import logging
 import base64
+import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -184,19 +185,63 @@ class GitHubProvider(RepositoryProvider):
             if branch:
                 args["ref"] = branch
 
+            logger.info(f"Calling get_file_contents with args: {args}")
             result = await self._client.call_tool("get_file_contents", args)
+            logger.info(f"MCP result type: {type(result)}, hasattr content: {hasattr(result, 'content')}")
 
             files = []
-            file_data = result.content[0].text if hasattr(result, 'content') else result
 
-            if isinstance(file_data, list):
-                for item in file_data:
+            # Extract the text content from MCP result
+            file_data = None
+            if hasattr(result, 'content') and result.content:
+                content_item = result.content[0]
+                if hasattr(content_item, 'text'):
+                    file_data = content_item.text
+                else:
+                    file_data = content_item
+            else:
+                file_data = result
+
+            logger.info(f"file_data type: {type(file_data)}, first 500 chars: {str(file_data)[:500]}")
+
+            # Parse the data - MCP returns JSON string
+            if isinstance(file_data, str):
+                try:
+                    # Try to parse as JSON
+                    parsed_data = json.loads(file_data)
+                    logger.info(f"Parsed JSON, type: {type(parsed_data)}")
+
+                    # Handle both list and dict responses
+                    if isinstance(parsed_data, list):
+                        file_list = parsed_data
+                    elif isinstance(parsed_data, dict):
+                        # Might be wrapped in a response object
+                        file_list = parsed_data.get('files', parsed_data.get('tree', [parsed_data]))
+                    else:
+                        logger.warning(f"Unexpected parsed data type: {type(parsed_data)}")
+                        file_list = []
+
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse JSON: {e}, data: {file_data[:200]}")
+                    file_list = []
+            elif isinstance(file_data, list):
+                file_list = file_data
+            else:
+                logger.warning(f"Unexpected file_data type: {type(file_data)}")
+                file_list = []
+
+            # Parse each file info
+            for item in file_list:
+                try:
                     files.append(self._parse_file_info(item))
+                except Exception as e:
+                    logger.warning(f"Failed to parse file info: {e}, item: {item}")
 
+            logger.info(f"Returning {len(files)} files")
             return files
 
         except Exception as e:
-            logger.error(f"Error browsing tree {owner}/{repo}/{path}: {e}")
+            logger.error(f"Error browsing tree {owner}/{repo}/{path}: {e}", exc_info=True)
             raise MCPOperationError(f"Error browsing tree: {e}") from e
 
     async def read_file(

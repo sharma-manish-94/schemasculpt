@@ -6,13 +6,15 @@ These schemas define the request/response models for repository endpoints.
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class RepositoryConnectionRequest(BaseModel):
     """Request to connect to a repository provider."""
+    model_config = ConfigDict(populate_by_name=True)  # Accept both access_token and accessToken
+
     provider: str = Field(..., description="Repository provider (github, gitlab)")
-    access_token: str = Field(..., description="OAuth access token")
+    access_token: str = Field(..., description="OAuth access token", alias="accessToken")
 
 
 class RepositoryConnectionResponse(BaseModel):

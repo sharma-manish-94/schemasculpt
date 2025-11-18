@@ -1,19 +1,23 @@
 """
-RAG Service for SchemaSculpt AI - Security Analysis Context Retrieval.
-Provides intelligent context retrieval for security analysis using vector embeddings.
+RAG Service for SchemaSculpt AI - Dual Expert Knowledge Bases
+
+This is THE game-changer that transforms SchemaSculpt from an AI tool to an AI security expert.
+
+Two Specialized Knowledge Bases:
+1. Attacker Knowledge Base: Offensive security (OWASP, MITRE ATT&CK, exploit patterns)
+2. Governance Knowledge Base: Risk frameworks (CVSS, DREAD), compliance (GDPR, HIPAA)
+
+Each agent consults its specialized KB, becoming a domain expert.
 """
 
 import os
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+import hashlib
 
 try:
     import chromadb
-    # Try new package first, fall back to old one
-    try:
-        from langchain_huggingface import HuggingFaceEmbeddings
-    except ImportError:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
+    from sentence_transformers import SentenceTransformer
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
@@ -25,67 +29,44 @@ from ..core.exceptions import SchemaSculptException
 
 class RAGService:
     """
-    RAG service for retrieving security-related context from knowledge base.
-    Integrates with ChromaDB for vector search and HuggingFace embeddings.
+    Enhanced RAG service with dual specialized knowledge bases
+
+    Architecture:
+    - Attacker KB: For ThreatModelingAgent (think like a hacker)
+    - Governance KB: For SecurityReporterAgent (think like a CISO)
+    - Local embeddings: sentence-transformers (no API calls, free)
+    - Vector store: ChromaDB (persistent, local)
     """
 
     def __init__(self):
         self.logger = get_logger("rag_service")
         self.vector_store_dir = Path(settings.ai_service_data_dir) / "vector_store"
+
+        # Dual knowledge bases
+        self.attacker_kb = None
+        self.governance_kb = None
         self.embedding_model = None
-        self.vector_store = None
-        self.collection_name = "security_knowledge_base"
 
         if not CHROMADB_AVAILABLE:
             self.logger.warning("ChromaDB dependencies not available. RAG service disabled.")
+            self.logger.warning("Install with: pip install chromadb sentence-transformers")
             return
 
         self._initialize_embeddings()
-        self._initialize_vector_store()
+        self._initialize_vector_stores()
 
     def _initialize_embeddings(self) -> None:
-        """Initialize embedding model with GPU/CPU optimization."""
+        """Initialize sentence-transformers embedding model with GPU/CPU optimization."""
         try:
-            # Check for GPU availability
-            device = "cpu"
-            batch_size = 32
-            model_kwargs = {
-                'device': 'cpu',
-                'trust_remote_code': False
-            }
+            # Use direct sentence-transformers for better control
+            model_name = "sentence-transformers/all-MiniLM-L6-v2"
 
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    device = "cuda"
-                    batch_size = 64  # Larger batch for GPU
-                    model_kwargs = {
-                        'device': 'cuda',
-                        'trust_remote_code': False
-                    }
-                    self.logger.info(f"GPU detected: {torch.cuda.get_device_name(0)}, using CUDA acceleration")
-                else:
-                    self.logger.info("CUDA not available, using CPU")
-            except ImportError:
-                self.logger.info("PyTorch not available, using CPU")
+            self.embedding_model = SentenceTransformer(model_name)
 
-            encode_kwargs = {
-                'normalize_embeddings': True,
-                'batch_size': batch_size,
-                'convert_to_tensor': True
-            }
+            # Check device
+            device = str(self.embedding_model.device)
+            self.logger.info(f"Embedding model '{model_name}' initialized on {device}")
 
-            # Add device to encode_kwargs if supported
-            if device == "cuda":
-                encode_kwargs['device'] = device
-
-            # Use smaller, faster embedding model for better performance
-            self.embedding_model = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L12-v2",  # Smaller, faster model
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
-            )
-            self.logger.info(f"Embedding model initialized successfully on {device.upper()}")
         except Exception as e:
             self.logger.error(f"Failed to initialize embedding model: {e}")
             raise SchemaSculptException(
@@ -93,131 +74,337 @@ class RAGService:
                 f"Failed to initialize RAG embedding model: {e}"
             )
 
-    def _initialize_vector_store(self) -> None:
-        """Initialize ChromaDB vector store."""
+    def _initialize_vector_stores(self) -> None:
+        """Initialize ChromaDB vector stores for dual knowledge bases."""
         try:
-            if not self.vector_store_dir.exists():
-                self.logger.warning(f"Vector store directory not found: {self.vector_store_dir}")
-                return
+            self.vector_store_dir.mkdir(parents=True, exist_ok=True)
 
             client = chromadb.PersistentClient(path=str(self.vector_store_dir))
 
-            # Try to get existing collection, create if doesn't exist
+            # Initialize Attacker Knowledge Base (for ThreatModelingAgent)
             try:
-                self.vector_store = client.get_collection(name=self.collection_name)
-                self.logger.info(f"Loaded existing vector store collection: {self.collection_name}")
-            except ValueError:
-                # Collection doesn't exist - try legacy name for backward compatibility
-                try:
-                    self.vector_store = client.get_collection(name="langchain")
-                    self.logger.info("Loaded legacy 'langchain' collection")
-                except ValueError:
-                    self.logger.warning("No vector store collection found. Run ingest_data.py first.")
+                self.attacker_kb = client.get_collection(name="attacker_knowledge")
+                self.logger.info("Loaded existing Attacker Knowledge Base")
+            except Exception:
+                self.logger.warning("Attacker KB not found. Will be created during ingestion.")
+                self.attacker_kb = None
+
+            # Initialize Governance Knowledge Base (for SecurityReporterAgent)
+            try:
+                self.governance_kb = client.get_collection(name="governance_knowledge")
+                self.logger.info("Loaded existing Governance Knowledge Base")
+            except Exception:
+                self.logger.warning("Governance KB not found. Will be created during ingestion.")
+                self.governance_kb = None
 
         except Exception as e:
-            self.logger.error(f"Failed to initialize vector store: {e}")
+            self.logger.error(f"Failed to initialize vector stores: {e}")
             raise SchemaSculptException(
                 "RAG_INIT_ERROR",
-                f"Failed to initialize vector store: {e}"
+                f"Failed to initialize vector stores: {e}"
             )
 
-    async def retrieve_security_context(self, query: str, n_results: int = 5) -> Dict[str, Any]:
+    async def retrieve_security_context(
+        self,
+        query: str,
+        n_results: int = 5
+    ) -> Dict[str, Any]:
         """
-        Retrieve security-related context for the given query.
+        Retrieve security context from knowledge bases (backward compatibility wrapper).
+
+        Queries the Attacker Knowledge Base for security analysis.
+        This is a compatibility method for existing endpoints.
 
         Args:
             query: Security analysis query
             n_results: Number of relevant documents to retrieve
 
         Returns:
-            Dictionary containing retrieved context and metadata
+            Dictionary with security context
         """
-        if not self.is_available():
+        return await self.query_attacker_knowledge(query, n_results)
+
+    async def query_attacker_knowledge(
+        self,
+        query: str,
+        n_results: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Query the Attacker Knowledge Base (offensive security expertise).
+
+        This KB contains:
+        - OWASP API Security Top 10
+        - MITRE ATT&CK patterns
+        - Real-world exploit techniques
+        - Attack methodology documentation
+
+        Used by: ThreatModelingAgent to think like a penetration tester
+
+        Args:
+            query: Threat modeling query
+            n_results: Number of relevant attack patterns to retrieve
+
+        Returns:
+            Dictionary with offensive security context
+        """
+        if not CHROMADB_AVAILABLE or self.attacker_kb is None:
             return {
-                "context": "RAG service not available. Performing analysis without additional context.",
+                "context": "Attacker KB not available. Analysis based on LLM knowledge only.",
                 "sources": [],
                 "relevance_scores": []
             }
 
         try:
-            # Generate embedding for the query
-            results = self.vector_store.query(
-                query_texts=[query],
+            # Generate embedding for query
+            query_embedding = self.embedding_model.encode([query])[0].tolist()
+
+            # Query ChromaDB
+            results = self.attacker_kb.query(
+                query_embeddings=[query_embedding],
                 n_results=n_results,
                 include=["documents", "metadatas", "distances"]
             )
 
-            if not results['documents'] or not results['documents'][0]:
-                return {
-                    "context": "No relevant security context found in knowledge base.",
-                    "sources": [],
-                    "relevance_scores": []
-                }
-
-            # Combine retrieved documents with source information
-            documents = results['documents'][0]
-            metadatas = results.get('metadatas', [[{}] * len(documents)])[0]
-            distances = results.get('distances', [[1.0] * len(documents)])[0]
-
-            # Format context with source attribution
-            context_parts = []
-            sources = []
-
-            for i, (doc, metadata, distance) in enumerate(zip(documents, metadatas, distances)):
-                source = metadata.get('source', f'Document {i+1}')
-                sources.append(source)
-
-                context_parts.append(f"[Source: {source}]\n{doc}")
-
-            combined_context = "\n\n---\n\n".join(context_parts)
-
-            # Convert distances to relevance scores (lower distance = higher relevance)
-            relevance_scores = [max(0, 1 - d) for d in distances]
-
-            self.logger.info(f"Retrieved {len(documents)} relevant documents for security analysis")
-
-            return {
-                "context": combined_context,
-                "sources": sources,
-                "relevance_scores": relevance_scores,
-                "total_documents": len(documents)
-            }
+            return self._format_rag_results(results, "Attacker KB")
 
         except Exception as e:
-            self.logger.error(f"Error retrieving security context: {e}")
+            self.logger.error(f"Error querying Attacker KB: {e}")
             return {
-                "context": f"Error retrieving context: {e}",
+                "context": f"Error retrieving attack patterns: {e}",
                 "sources": [],
                 "relevance_scores": []
             }
+
+    async def query_governance_knowledge(
+        self,
+        query: str,
+        n_results: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Query the Governance Knowledge Base (defensive security & compliance).
+
+        This KB contains:
+        - CVSS scoring methodology
+        - DREAD risk framework
+        - GDPR, HIPAA, PCI-DSS compliance requirements
+        - Security best practices & standards
+
+        Used by: SecurityReporterAgent to assess business impact like a CISO
+
+        Args:
+            query: Risk assessment or compliance query
+            n_results: Number of relevant governance docs to retrieve
+
+        Returns:
+            Dictionary with governance/compliance context
+        """
+        if not CHROMADB_AVAILABLE or self.governance_kb is None:
+            return {
+                "context": "Governance KB not available. Analysis based on LLM knowledge only.",
+                "sources": [],
+                "relevance_scores": []
+            }
+
+        try:
+            # Generate embedding for query
+            query_embedding = self.embedding_model.encode([query])[0].tolist()
+
+            # Query ChromaDB
+            results = self.governance_kb.query(
+                query_embeddings=[query_embedding],
+                n_results=n_results,
+                include=["documents", "metadatas", "distances"]
+            )
+
+            return self._format_rag_results(results, "Governance KB")
+
+        except Exception as e:
+            self.logger.error(f"Error querying Governance KB: {e}")
+            return {
+                "context": f"Error retrieving governance context: {e}",
+                "sources": [],
+                "relevance_scores": []
+            }
+
+    def _format_rag_results(
+        self,
+        results: Dict[str, Any],
+        kb_name: str
+    ) -> Dict[str, Any]:
+        """Format RAG query results into standardized response."""
+        if not results['documents'] or not results['documents'][0]:
+            return {
+                "context": f"No relevant context found in {kb_name}.",
+                "sources": [],
+                "relevance_scores": []
+            }
+
+        documents = results['documents'][0]
+        metadatas = results.get('metadatas', [[{}] * len(documents)])[0]
+        distances = results.get('distances', [[1.0] * len(documents)])[0]
+
+        # Format context with source attribution
+        context_parts = []
+        sources = []
+
+        for i, (doc, metadata, distance) in enumerate(zip(documents, metadatas, distances)):
+            source = metadata.get('source', f'{kb_name} Document {i+1}')
+            sources.append(source)
+            context_parts.append(f"[Source: {source}]\n{doc}")
+
+        combined_context = "\n\n---\n\n".join(context_parts)
+
+        # Convert distances to relevance scores (lower distance = higher relevance)
+        relevance_scores = [max(0, 1 - d) for d in distances]
+
+        self.logger.info(
+            f"Retrieved {len(documents)} documents from {kb_name} "
+            f"(avg relevance: {sum(relevance_scores)/len(relevance_scores):.2f})"
+        )
+
+        return {
+            "context": combined_context,
+            "sources": sources,
+            "relevance_scores": relevance_scores,
+            "total_documents": len(documents),
+            "knowledge_base": kb_name
+        }
 
     def is_available(self) -> bool:
         """Check if RAG service is available and properly initialized."""
         return (
             CHROMADB_AVAILABLE and
             self.embedding_model is not None and
-            self.vector_store is not None
+            (self.attacker_kb is not None or self.governance_kb is not None)
         )
 
+    def attacker_kb_available(self) -> bool:
+        """Check if Attacker Knowledge Base is available."""
+        return CHROMADB_AVAILABLE and self.attacker_kb is not None
+
+    def governance_kb_available(self) -> bool:
+        """Check if Governance Knowledge Base is available."""
+        return CHROMADB_AVAILABLE and self.governance_kb is not None
+
     async def get_knowledge_base_stats(self) -> Dict[str, Any]:
-        """Get statistics about the knowledge base."""
-        if not self.is_available():
+        """Get statistics about both knowledge bases."""
+        if not CHROMADB_AVAILABLE:
             return {
                 "available": False,
-                "error": "RAG service not initialized"
+                "error": "ChromaDB not installed"
             }
 
         try:
-            count = self.vector_store.count()
-            return {
+            stats = {
                 "available": True,
-                "document_count": count,
-                "collection_name": self.collection_name,
-                "vector_store_path": str(self.vector_store_dir)
+                "vector_store_path": str(self.vector_store_dir),
+                "attacker_kb": {
+                    "available": self.attacker_kb is not None,
+                    "document_count": self.attacker_kb.count() if self.attacker_kb else 0,
+                    "description": "Offensive security expertise (OWASP, MITRE ATT&CK)"
+                },
+                "governance_kb": {
+                    "available": self.governance_kb is not None,
+                    "document_count": self.governance_kb.count() if self.governance_kb else 0,
+                    "description": "Risk frameworks and compliance (CVSS, DREAD, GDPR)"
+                },
+                "total_documents": 0
             }
+
+            stats["total_documents"] = (
+                stats["attacker_kb"]["document_count"] +
+                stats["governance_kb"]["document_count"]
+            )
+
+            return stats
+
         except Exception as e:
             self.logger.error(f"Error getting knowledge base stats: {e}")
             return {
                 "available": False,
+                "error": str(e)
+            }
+
+    def ingest_documents(
+        self,
+        documents: List[str],
+        metadatas: List[Dict[str, Any]],
+        knowledge_base: str = "attacker"
+    ) -> Dict[str, Any]:
+        """
+        Ingest documents into specified knowledge base.
+
+        Args:
+            documents: List of document texts
+            metadatas: List of metadata dicts (must match documents length)
+            knowledge_base: "attacker" or "governance"
+
+        Returns:
+            Ingestion result statistics
+        """
+        if not CHROMADB_AVAILABLE or self.embedding_model is None:
+            return {
+                "success": False,
+                "error": "RAG service not available"
+            }
+
+        try:
+            # Generate embeddings
+            self.logger.info(f"Generating embeddings for {len(documents)} documents...")
+            embeddings = self.embedding_model.encode(documents).tolist()
+
+            # Generate unique IDs
+            doc_ids = [
+                hashlib.md5(doc.encode()).hexdigest()
+                for doc in documents
+            ]
+
+            # Get or create target collection
+            client = chromadb.PersistentClient(path=str(self.vector_store_dir))
+
+            collection_name = (
+                "attacker_knowledge" if knowledge_base == "attacker"
+                else "governance_knowledge"
+            )
+
+            try:
+                collection = client.get_collection(name=collection_name)
+                self.logger.info(f"Using existing collection: {collection_name}")
+            except Exception:
+                collection = client.create_collection(
+                    name=collection_name,
+                    metadata={"description": f"{knowledge_base.title()} Knowledge Base"}
+                )
+                self.logger.info(f"Created new collection: {collection_name}")
+
+            # Add documents
+            collection.add(
+                documents=documents,
+                embeddings=embeddings,
+                metadatas=metadatas,
+                ids=doc_ids
+            )
+
+            # Update instance reference
+            if knowledge_base == "attacker":
+                self.attacker_kb = collection
+            else:
+                self.governance_kb = collection
+
+            self.logger.info(
+                f"Successfully ingested {len(documents)} documents into {collection_name}"
+            )
+
+            return {
+                "success": True,
+                "knowledge_base": knowledge_base,
+                "documents_added": len(documents),
+                "collection_name": collection_name
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error ingesting documents: {e}")
+            return {
+                "success": False,
                 "error": str(e)
             }

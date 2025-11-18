@@ -1,11 +1,14 @@
 """
-Threat Modeling Agent
+Threat Modeling Agent - RAG-Enhanced Offensive Security Expert
 
-This agent thinks like a real attacker. It analyzes individual vulnerabilities
-and identifies how they can be chained together into multi-step attack paths.
+This agent thinks like a real attacker, augmented with specialized knowledge from:
+- OWASP API Security Top 10
+- MITRE ATT&CK patterns
+- Real-world exploit techniques
 
-This is the "Hacker" agent that provides the core intelligence of the attack
-path simulation system.
+RAG Enhancement: Before analyzing vulnerabilities, this agent queries the Attacker
+Knowledge Base to retrieve relevant attack patterns and exploitation techniques,
+transforming it from an AI tool into an AI security expert.
 """
 
 import logging
@@ -22,27 +25,31 @@ from ...schemas.attack_path_schemas import (
     AttackComplexity
 )
 from ...schemas.security_schemas import SecurityIssue, SecuritySeverity
+from ..rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 
 
 class ThreatModelingAgent(LLMAgent):
     """
-    Threat Modeling Agent - Discovers attack chains by thinking like an attacker
+    RAG-Enhanced Threat Modeling Agent - Thinks like a penetration tester
 
-    This agent uses LLM reasoning to:
-    1. Analyze individual vulnerabilities for exploitation potential
-    2. Identify vulnerabilities that can be chained together
-    3. Model realistic attack sequences
-    4. Assess complexity, likelihood, and impact
+    This agent uses LLM reasoning PLUS specialized security knowledge from RAG to:
+    1. Query Attacker Knowledge Base for relevant exploitation techniques
+    2. Analyze individual vulnerabilities for exploitation potential
+    3. Identify vulnerabilities that can be chained together
+    4. Model realistic attack sequences using OWASP/MITRE patterns
+    5. Assess complexity, likelihood, and impact
     """
 
-    def __init__(self, llm_service):
+    def __init__(self, llm_service, rag_service: Optional[RAGService] = None):
         super().__init__(
             name="ThreatModeling",
-            description="Discovers multi-step attack chains by analyzing vulnerability relationships",
+            description="RAG-enhanced agent that discovers multi-step attack chains using offensive security expertise",
             llm_service=llm_service
         )
+        # Initialize or receive RAG service
+        self.rag_service = rag_service or RAGService()
 
     def _define_capabilities(self) -> List[str]:
         """Define the capabilities of this agent"""
@@ -94,12 +101,16 @@ class ThreatModelingAgent(LLMAgent):
                 f"for attack chains (max length: {max_chain_length})"
             )
 
-            # Build the analysis prompt
+            # RAG ENHANCEMENT: Query Attacker Knowledge Base for relevant expertise
+            rag_context = await self._query_attacker_knowledge(vulnerabilities)
+
+            # Build the analysis prompt with RAG-enhanced context
             prompt = self._build_threat_modeling_prompt(
                 vulnerabilities,
                 context.spec,
                 max_chain_length,
-                analysis_depth
+                analysis_depth,
+                rag_context
             )
 
             # Call LLM to find attack chains with retry logic
@@ -203,46 +214,134 @@ class ThreatModelingAgent(LLMAgent):
             "vulnerability_correlation"
         ]
 
+    async def _query_attacker_knowledge(
+        self,
+        vulnerabilities: List[SecurityIssue]
+    ) -> Dict[str, Any]:
+        """
+        Query the Attacker Knowledge Base for relevant exploitation techniques.
+
+        This is the KEY to transforming from an AI tool to an AI security expert.
+        The agent retrieves OWASP patterns and MITRE ATT&CK techniques relevant
+        to the discovered vulnerabilities.
+        """
+        if not self.rag_service.attacker_kb_available():
+            logger.warning(f"[{self.name}] Attacker KB not available. Operating without RAG enhancement.")
+            return {
+                "context": "",
+                "sources": [],
+                "available": False
+            }
+
+        try:
+            # Build RAG query based on vulnerability types and OWASP categories
+            vuln_types = []
+            owasp_categories = []
+
+            for vuln in vulnerabilities:
+                vuln_types.append(vuln.title)
+                if vuln.owasp_category:
+                    owasp_categories.append(vuln.owasp_category.value)
+
+            # Create focused query for RAG
+            query_parts = []
+            if owasp_categories:
+                unique_owasp = list(set(owasp_categories))
+                query_parts.append(f"OWASP API Security: {', '.join(unique_owasp)}")
+
+            query_parts.append("exploitation techniques attack patterns vulnerability chaining")
+            query = " ".join(query_parts)
+
+            logger.info(f"[{self.name}] Querying Attacker KB with: '{query[:100]}...'")
+
+            # Query the Attacker Knowledge Base
+            rag_result = await self.rag_service.query_attacker_knowledge(
+                query=query,
+                n_results=5  # Get top 5 most relevant attack patterns
+            )
+
+            if rag_result.get("context"):
+                logger.info(
+                    f"[{self.name}] Retrieved {rag_result.get('total_documents', 0)} "
+                    f"relevant attack patterns from Attacker KB"
+                )
+            else:
+                logger.warning(f"[{self.name}] No relevant attack patterns found in KB")
+
+            return {
+                "context": rag_result.get("context", ""),
+                "sources": rag_result.get("sources", []),
+                "available": True
+            }
+
+        except Exception as e:
+            logger.error(f"[{self.name}] Error querying Attacker KB: {e}")
+            return {
+                "context": "",
+                "sources": [],
+                "available": False
+            }
+
     def _build_threat_modeling_prompt(
         self,
         vulnerabilities: List[SecurityIssue],
-        spec: Dict[str, Any],
+        spec: Dict[str, Any],  # Not used anymore - kept for backward compatibility
         max_chain_length: int,
-        analysis_depth: str
+        analysis_depth: str,
+        rag_context: Dict[str, Any]
     ) -> str:
-        """Build the prompt for threat modeling analysis"""
+        """
+        Build the RAG-enhanced prompt for threat modeling analysis.
 
-        # Prepare vulnerability summary
+        ARCHITECTURE: "Linter-Augmented AI Analyst" Pattern
+        - Java backend finds FACTS (vulnerabilities, dependencies) - deterministic, fast
+        - AI reasons about those FACTS to find attack chains - probabilistic, creative
+        - We do NOT send the spec to AI - that would be slow, expensive, unreliable
+        """
+
+        # Prepare vulnerability summary - these are FACTS from Java linter
         vuln_summary = []
         for idx, vuln in enumerate(vulnerabilities, 1):
             vuln_summary.append(
-                f"{idx}. [{vuln.severity.value.upper()}] {vuln.title}\n"
+                f"Finding {idx}: [{vuln.severity.value.upper()}] {vuln.title}\n"
                 f"   Location: {vuln.location}\n"
-                f"   OWASP: {vuln.owasp_category.value if vuln.owasp_category else 'N/A'}\n"
+                f"   OWASP Category: {vuln.owasp_category.value if vuln.owasp_category else 'N/A'}\n"
                 f"   Description: {vuln.description}\n"
+                f"   Recommendation: {vuln.recommendation or 'N/A'}\n"
             )
 
         vulnerabilities_text = "\n".join(vuln_summary)
 
-        # Extract endpoint information for context
-        endpoints = []
-        for path, path_item in spec.get("paths", {}).items():
-            for method in ["get", "post", "put", "patch", "delete"]:
-                if method in path_item:
-                    operation = path_item[method]
-                    endpoints.append(f"{method.upper()} {path}: {operation.get('summary', 'No description')}")
+        # NO spec parsing here! Vulnerabilities already contain all location info
+        # This is the "Linter-Augmented AI Analyst" pattern:
+        # - Java found the facts (vulnerabilities with locations)
+        # - AI connects the facts into attack chains
 
-        endpoints_text = "\n".join(endpoints[:20])  # Limit to first 20 for context
+        # Build RAG-enhanced knowledge section
+        rag_knowledge_section = ""
+        if rag_context.get("available") and rag_context.get("context"):
+            rag_knowledge_section = f"""
+**EXPERT KNOWLEDGE FROM SECURITY KNOWLEDGE BASE**:
+This specialized knowledge from OWASP, MITRE ATT&CK, and exploitation databases is provided to enhance your analysis:
 
-        prompt = f"""You are an expert security researcher and penetration tester. Your task is to analyze an OpenAPI specification and identify realistic multi-step attack chains.
+{rag_context['context']}
 
-**Your Mission**: Think like a real attacker. Find vulnerabilities that can be CHAINED TOGETHER to achieve high-impact outcomes like privilege escalation, data exfiltration, or account takeover.
+Use this expert knowledge to inform your attack chain analysis. Look for patterns that match the provided OWASP categories and MITRE ATT&CK techniques.
+---
+"""
+        else:
+            logger.info(f"[{self.name}] Building prompt without RAG enhancement")
 
-**Individual Vulnerabilities Found** ({len(vulnerabilities)} total):
+        prompt = f"""You are an expert security researcher and penetration tester with access to specialized offensive security knowledge.
+
+{rag_knowledge_section}
+
+**Your Mission**: Analyze the security findings below (discovered by our deterministic security linter) and identify realistic multi-step ATTACK CHAINS where these vulnerabilities can be combined.
+
+**IMPORTANT**: You are NOT analyzing an OpenAPI spec directly. You are analyzing FACTS that have already been discovered. Think like a penetration tester connecting the dots between known vulnerabilities.
+
+**Security Findings Discovered by Linter** ({len(vulnerabilities)} total):
 {vulnerabilities_text}
-
-**API Endpoints** (sample):
-{endpoints_text}
 
 **Analysis Guidelines**:
 1. Look for vulnerabilities that can be used SEQUENTIALLY
