@@ -124,16 +124,40 @@ const GitHubConnect = ({ onConnected }) => {
         return (
             <div className="github-connect connected">
                 <div className="connection-status">
-                    <span className="status-icon">✓</span>
-                    <span className="status-text">Connected to GitHub</span>
+                    <div>
+                        <span className="status-icon">✓</span>
+                        <span className="status-text">Connected to GitHub</span>
+                    </div>
+                    <button
+                        onClick={handleDisconnect}
+                        className="btn btn-secondary btn-sm"
+                        disabled={isConnecting}
+                    >
+                        Disconnect
+                    </button>
                 </div>
-                <button
-                    onClick={handleDisconnect}
-                    className="btn btn-secondary"
-                    disabled={isConnecting}
-                >
-                    Disconnect
-                </button>
+
+                <div className="quick-load-section">
+                    <h4>📦 Load Repository</h4>
+                    <p>Enter a GitHub repository URL to browse and import specifications:</p>
+                    <div className="form-group">
+                        <input
+                            type="text"
+                            value={repoUrl}
+                            onChange={(e) => setRepoUrl(e.target.value)}
+                            placeholder="https://github.com/owner/repo"
+                            className="form-control"
+                            autoFocus
+                        />
+                    </div>
+                    <button
+                        onClick={handleQuickLoad}
+                        className="btn btn-primary"
+                        disabled={isConnecting || !repoUrl.trim()}
+                    >
+                        {isConnecting ? 'Loading...' : 'Browse Repository'}
+                    </button>
+                </div>
             </div>
         );
     }
@@ -141,27 +165,34 @@ const GitHubConnect = ({ onConnected }) => {
     return (
         <div className="github-connect">
             <h3>Connect to GitHub</h3>
+            <p style={{ marginTop: 0, marginBottom: '20px', fontSize: '14px', color: '#586069' }}>
+                Import OpenAPI specifications directly from your GitHub repositories
+            </p>
 
             {connectionError && (
                 <div className="error-message">
-                    <strong>Error:</strong> {connectionError}
+                    <strong>⚠️ Error:</strong> {connectionError}
                 </div>
             )}
 
             <div className="connect-options">
                 <div className="manual-auth-section">
                     <p>
-                        Enter your GitHub Personal Access Token.{' '}
+                        <strong>Step 1:</strong> Enter your GitHub Personal Access Token
+                    </p>
+                    <p>
+                        Don't have a token?{' '}
                         <a
                             href="https://github.com/settings/tokens/new?scopes=repo&description=SchemaSculpt"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            Create one here
+                            Create one here →
                         </a>
+                        {' '}(requires 'repo' scope)
                     </p>
                     <div className="form-group">
-                        <label htmlFor="github-token">Personal Access Token:</label>
+                        <label htmlFor="github-token">🔑 Personal Access Token:</label>
                         <input
                             id="github-token"
                             type="password"
@@ -176,31 +207,11 @@ const GitHubConnect = ({ onConnected }) => {
                         onClick={handleManualConnect}
                         className="btn btn-primary"
                         disabled={isConnecting || !manualToken.trim()}
+                        style={{ width: '100%' }}
                     >
-                        {isConnecting ? 'Connecting...' : 'Connect'}
+                        {isConnecting ? '⏳ Connecting...' : '✓ Connect to GitHub'}
                     </button>
                 </div>
-            </div>
-
-            <div className="quick-load-section">
-                <h4>Quick Load from URL</h4>
-                <p>Or paste a repository URL to quickly load a spec:</p>
-                <div className="form-group">
-                    <input
-                        type="text"
-                        value={repoUrl}
-                        onChange={(e) => setRepoUrl(e.target.value)}
-                        placeholder="https://github.com/owner/repo"
-                        className="form-control"
-                    />
-                </div>
-                <button
-                    onClick={handleQuickLoad}
-                    className="btn btn-secondary"
-                    disabled={isConnecting || !repoUrl.trim()}
-                >
-                    Load Repository
-                </button>
             </div>
         </div>
     );

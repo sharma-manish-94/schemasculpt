@@ -50,5 +50,10 @@ export const VALIDATION_CONFIG = {
 
 export const AI_CONFIG = {
     MAX_CONTEXT_LENGTH: 4000,
-    SUGGESTION_TIMEOUT: 10000
+    SUGGESTION_TIMEOUT: 10000,
+    // Timeouts for long-running AI operations (in milliseconds)
+    SECURITY_ANALYSIS_TIMEOUT: 120000,  // 2 minutes
+    TEST_GENERATION_TIMEOUT: 120000,    // 2 minutes
+    MOCK_DATA_TIMEOUT: 120000,          // 2 minutes
+    ATTACK_PATH_TIMEOUT: 300000         // 5 minutes
 };

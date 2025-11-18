@@ -32,7 +32,8 @@ export const runAttackPathSimulation = async (sessionId, options = {}) => {
         params: {
           analysisDepth,
           maxChainLength
-        }
+        },
+        timeout: 300000  // 5 minute timeout (same as backend)
       }
     );
 

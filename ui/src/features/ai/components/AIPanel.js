@@ -9,7 +9,8 @@ import {
     addOAuth2Security,
     addRateLimiting,
     addCaching,
-    hardenOperationComplete
+    hardenOperationComplete,
+    getSessionSpec
 } from '../../../api/validationService';
 import '../ai-features.css';
 
@@ -200,7 +201,7 @@ function AIAssistantTab() {
 }
 
 function AIHardeningTab() {
-    const { sessionId, specText } = useSpecStore();
+    const { sessionId, specText, setSpecText } = useSpecStore();
     const [selectedPath, setSelectedPath] = useState('/users');
     const [selectedMethod, setSelectedMethod] = useState('GET');
     const [rateLimit, setRateLimit] = useState('100/hour');
@@ -216,6 +217,14 @@ function AIHardeningTab() {
         try {
             const result = await apiCall();
             setResults(prev => ({ ...prev, [type]: result }));
+
+            // ✅ FIX: Update editor with hardened spec
+            if (result.success && sessionId) {
+                const specResult = await getSessionSpec(sessionId);
+                if (specResult.success) {
+                    setSpecText(specResult.data);
+                }
+            }
         } catch (error) {
             setErrors(prev => ({ ...prev, [type]: error.message || 'Operation failed' }));
         } finally {

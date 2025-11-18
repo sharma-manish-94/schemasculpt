@@ -185,6 +185,10 @@ function APILab() {
         setLoading(true);
         setError(null);
 
+        // Create AbortController for 120 second timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
+
         try {
             const response = await fetch('http://localhost:8000/ai/mock/generate-variations', {
                 method: 'POST',
@@ -195,8 +199,11 @@ function APILab() {
                     method: mockDataConfig.method.toLowerCase(),
                     response_code: mockDataConfig.responseCode,
                     count: mockDataConfig.variationCount
-                })
+                }),
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Failed to generate mock data: ${response.statusText}`);
@@ -205,8 +212,13 @@ function APILab() {
             const data = await response.json();
             setMockData(data.variations);
         } catch (err) {
-            setError(err.message);
+            if (err.name === 'AbortError') {
+                setError('Request timed out after 120 seconds. Please try again.');
+            } else {
+                setError(err.message);
+            }
         } finally {
+            clearTimeout(timeoutId);
             setLoading(false);
         }
     };

@@ -221,15 +221,18 @@ export const verifyGitHubOAuthState = (state) => {
  * Parse repository URL to extract owner and repo name
  *
  * @param {string} url - Repository URL (e.g., https://github.com/owner/repo)
- * @returns {{owner: string, repo: string} | null}
+ * @returns {{owner: string, name: string} | null}
  */
 export const parseRepositoryUrl = (url) => {
     try {
         const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
         if (match) {
+            const owner = match[1];
+            const name = match[2].replace(/\.git$/, ''); // Remove .git suffix if present
             return {
-                owner: match[1],
-                repo: match[2].replace(/\.git$/, '') // Remove .git suffix if present
+                owner: owner,
+                name: name,
+                fullName: `${owner}/${name}`
             };
         }
         return null;
