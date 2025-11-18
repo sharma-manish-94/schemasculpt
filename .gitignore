@@ -13,5 +13,4 @@ Desktop.ini
 .vscode/
 
 # Documentation - exclude all markdown files except README.md
-*.md
 !README.md
