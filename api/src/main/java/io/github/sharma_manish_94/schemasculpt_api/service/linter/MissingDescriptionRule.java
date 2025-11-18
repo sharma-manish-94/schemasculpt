@@ -96,6 +96,28 @@ public class MissingDescriptionRule implements LinterRule {
             }
           }
         }
+
+        // Check response descriptions
+        if (operation.getResponses() != null) {
+          for (Map.Entry<String, io.swagger.v3.oas.models.responses.ApiResponse> responseEntry :
+              operation.getResponses().entrySet()) {
+            String responseCode = responseEntry.getKey();
+            io.swagger.v3.oas.models.responses.ApiResponse response = responseEntry.getValue();
+
+            if (response.getDescription() == null || response.getDescription().trim().isEmpty()) {
+              suggestions.add(
+                  new ValidationSuggestion(
+                      String.format(
+                          "Response '%s' for '%s %s' is missing a description.",
+                          responseCode, method, path),
+                      "add-missing-description",
+                      "error",
+                      "documentation",
+                      Map.of("path", path, "method", method.toString(), "responseCode", responseCode),
+                      true));
+            }
+          }
+        }
       }
     }
 

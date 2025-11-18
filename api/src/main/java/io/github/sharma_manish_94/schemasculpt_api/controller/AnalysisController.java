@@ -7,8 +7,11 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/analysis")
@@ -16,10 +19,16 @@ public class AnalysisController {
 
   private final SessionService sessionService;
   private final AnalysisService analysisService;
+  private final WebClient webClient;
 
-  public AnalysisController(SessionService sessionService, AnalysisService analysisService) {
+  public AnalysisController(
+      SessionService sessionService,
+      AnalysisService analysisService,
+      WebClient.Builder webClientBuilder,
+      @Value("${ai.service.url}") String aiServiceUrl) {
     this.sessionService = sessionService;
     this.analysisService = analysisService;
+    this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
   }
 
   @GetMapping("/dependencies")
@@ -55,5 +64,39 @@ public class AnalysisController {
 
     int depth = analysisService.calculateNestingDepthForOperation(operation, openApi);
     return ResponseEntity.ok(Map.of("depth", depth));
+  }
+
+  @PostMapping("/attack-path-simulation")
+  public Mono<ResponseEntity<Map<String, Object>>> runAttackPathSimulation(
+      @PathVariable String sessionId,
+      @RequestParam(defaultValue = "standard") String analysisDepth,
+      @RequestParam(defaultValue = "5") int maxChainLength,
+      @RequestParam(defaultValue = "false") boolean excludeLowSeverity) {
+
+    String specText = sessionService.getSpecTextForSession(sessionId);
+    if (specText == null) {
+      return Mono.just(ResponseEntity.notFound().build());
+    }
+
+    Map<String, Object> requestBody =
+        Map.of(
+            "spec_text", specText,
+            "analysis_depth", analysisDepth,
+            "max_chain_length", maxChainLength,
+            "exclude_low_severity", excludeLowSeverity);
+
+    return webClient
+        .post()
+        .uri("/ai/security/attack-path-simulation")
+        .bodyValue(requestBody)
+        .retrieve()
+        .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+        .timeout(java.time.Duration.ofMinutes(5))  // 5 minute timeout for complex analysis
+        .map(ResponseEntity::ok)
+        .onErrorResume(
+            error ->
+                Mono.just(
+                    ResponseEntity.status(500)
+                        .body(Map.of("error", "Attack path simulation failed", "message", error.getMessage()))));
   }
 }

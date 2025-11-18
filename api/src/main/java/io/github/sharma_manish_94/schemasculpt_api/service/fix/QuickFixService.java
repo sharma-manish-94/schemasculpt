@@ -12,8 +12,12 @@ import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.Components;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -41,7 +45,9 @@ public class QuickFixService {
               "use-kebab-case",
               "replace-underscores-with-hyphens",
               "convert-camelcase-to-kebab",
-              "add-success-response"));
+              "add-success-response",
+              "create-missing-schema",
+              "add-missing-description"));
 
   private final SessionService sessionService;
   private final JsonPatchService jsonPatchService;
@@ -189,6 +195,20 @@ public class QuickFixService {
           addSuccessResponse(openApi, opPath, opMethod);
         }
         break;
+      case "create-missing-schema":
+        String schemaName = (String) request.context().get("schemaName");
+        if (schemaName != null) {
+          createMissingSchema(openApi, schemaName);
+        }
+        break;
+      case "add-missing-description":
+        String descPath = (String) request.context().get("path");
+        String descMethod = (String) request.context().get("method");
+        String responseCode = (String) request.context().get("responseCode");
+        if (descPath != null && descMethod != null && responseCode != null) {
+          addMissingDescription(openApi, descPath, descMethod, responseCode);
+        }
+        break;
     }
   }
 
@@ -289,6 +309,119 @@ public class QuickFixService {
           new io.swagger.v3.oas.models.responses.ApiResponse();
       successResponse.setDescription("Successful operation");
       operation.getResponses().put("200", successResponse);
+    }
+  }
+
+  /**
+   * Create a missing schema component with basic properties.
+   * Generates a stub schema that can be filled in later.
+   */
+  private void createMissingSchema(OpenAPI openApi, String schemaName) {
+    // Ensure components section exists
+    if (openApi.getComponents() == null) {
+      openApi.setComponents(new Components());
+    }
+
+    // Ensure schemas map exists
+    if (openApi.getComponents().getSchemas() == null) {
+      openApi.getComponents().setSchemas(new HashMap<>());
+    }
+
+    // Don't overwrite existing schemas
+    if (openApi.getComponents().getSchemas().containsKey(schemaName)) {
+      log.info("Schema {} already exists, skipping creation", schemaName);
+      return;
+    }
+
+    // Create a basic object schema with placeholder properties
+    Schema<?> newSchema = new Schema<>();
+    newSchema.setType("object");
+    newSchema.setDescription("Auto-generated schema for " + schemaName + ". Please update with actual properties.");
+
+    // Add a sample id property as a hint
+    Map<String, Schema> properties = new HashMap<>();
+    Schema<?> idProperty = new Schema<>();
+    idProperty.setType("string");
+    idProperty.setDescription("Unique identifier");
+    properties.put("id", idProperty);
+
+    newSchema.setProperties(properties);
+
+    // Add the schema to components
+    openApi.getComponents().getSchemas().put(schemaName, newSchema);
+
+    log.info("Created stub schema for: {}", schemaName);
+  }
+
+  /**
+   * Add a missing description to a response.
+   * Provides sensible defaults based on HTTP status code.
+   */
+  private void addMissingDescription(OpenAPI openApi, String path, String method, String responseCode) {
+    PathItem pathItem = openApi.getPaths().get(path);
+    if (pathItem == null) return;
+
+    Operation operation =
+        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
+    if (operation == null || operation.getResponses() == null) return;
+
+    io.swagger.v3.oas.models.responses.ApiResponse response =
+        operation.getResponses().get(responseCode);
+    if (response == null) return;
+
+    // Only add description if missing
+    if (response.getDescription() == null || response.getDescription().trim().isEmpty()) {
+      String description = getDefaultDescription(responseCode, method);
+      response.setDescription(description);
+      log.info("Added description for {} {} response {}: {}", method.toUpperCase(), path, responseCode, description);
+    }
+  }
+
+  /**
+   * Get a sensible default description based on HTTP status code and method.
+   */
+  private String getDefaultDescription(String responseCode, String method) {
+    try {
+      int code = Integer.parseInt(responseCode);
+      String methodUpper = method.toUpperCase();
+
+      // Standard HTTP status code descriptions
+      switch (code) {
+        case 200:
+          return "Successful operation";
+        case 201:
+          return "Resource created successfully";
+        case 204:
+          return "Operation completed successfully with no content";
+        case 400:
+          return "Bad request - Invalid input";
+        case 401:
+          return "Unauthorized - Authentication required";
+        case 403:
+          return "Forbidden - Insufficient permissions";
+        case 404:
+          return "Resource not found";
+        case 409:
+          return "Conflict - Resource already exists";
+        case 422:
+          return "Unprocessable entity - Validation failed";
+        case 500:
+          return "Internal server error";
+        case 503:
+          return "Service unavailable";
+        default:
+          // Fallback based on code range
+          if (code >= 200 && code < 300) {
+            return "Successful operation";
+          } else if (code >= 400 && code < 500) {
+            return "Client error";
+          } else if (code >= 500) {
+            return "Server error";
+          }
+          return "Response";
+      }
+    } catch (NumberFormatException e) {
+      return "Response";
     }
   }
 }

@@ -11,5 +11,7 @@ public interface SessionService {
 
   OpenAPI getSpecForSession(String sessionId);
 
+  String getSpecTextForSession(String sessionId);
+
   void closeSession(String sessionId);
 }

@@ -40,9 +40,13 @@ public class SecurityConfig {
                     // Public endpoints
                     .requestMatchers("/", "/error", "/favicon.ico")
                     .permitAll()
-                    .requestMatchers("/login/**", "/oauth2/**")
+                    .requestMatchers("/login/**")
+                    .permitAll()
+                    .requestMatchers("/oauth2/**")
                     .permitAll()
                     .requestMatchers("/api/v1/auth/**")
+                    .permitAll()
+                    .requestMatchers("/actuator/**")
                     .permitAll()
 
                     // Protected endpoints
@@ -55,6 +59,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/sessions/**")
                     .permitAll()
                     .requestMatchers("/api/v1/explanations/**")
+                    .permitAll()
+                    .requestMatchers("/api/v1/repository/**")
                     .permitAll()
                     .requestMatchers("/proxy/**")
                     .permitAll()

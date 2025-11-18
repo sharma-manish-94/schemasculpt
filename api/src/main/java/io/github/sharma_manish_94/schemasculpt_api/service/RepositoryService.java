@@ -36,6 +36,8 @@ public class RepositoryService {
      */
     public Mono<RepositoryConnectionResponse> connect(String sessionId, RepositoryConnectionRequest request) {
         log.info("Connecting to repository provider: {} for session: {}", request.getProvider(), sessionId);
+        log.debug("Request payload - provider: {}, accessToken: {}", request.getProvider(),
+                  request.getAccessToken() != null ? "***" : "null");
 
         return webClient.post()
                 .uri("/api/repository/connect")
@@ -43,6 +45,12 @@ public class RepositoryService {
                 .header("X-Session-ID", sessionId)
                 .bodyValue(request)
                 .retrieve()
+                .onStatus(status -> status.value() == 422, response -> {
+                    return response.bodyToMono(String.class).flatMap(body -> {
+                        log.error("422 Validation error from AI service: {}", body);
+                        return Mono.error(new RuntimeException("Validation failed: " + body));
+                    });
+                })
                 .bodyToMono(RepositoryConnectionResponse.class)
                 .doOnSuccess(response ->
                         log.info("Successfully connected to {} for session: {}", request.getProvider(), sessionId))
@@ -78,6 +86,8 @@ public class RepositoryService {
     public Mono<BrowseTreeResponse> browseTree(String sessionId, BrowseTreeRequest request) {
         log.debug("Browsing tree: {}/{}/{} for session: {}",
                 request.getOwner(), request.getRepo(), request.getPath(), sessionId);
+        log.debug("Browse request payload - owner: {}, repo: {}, path: {}, branch: {}",
+                request.getOwner(), request.getRepo(), request.getPath(), request.getBranch());
 
         return webClient.post()
                 .uri("/api/repository/browse")
@@ -85,6 +95,12 @@ public class RepositoryService {
                 .header("X-Session-ID", sessionId)
                 .bodyValue(request)
                 .retrieve()
+                .onStatus(status -> status.value() == 422, response -> {
+                    return response.bodyToMono(String.class).flatMap(body -> {
+                        log.error("422 Validation error from AI service: {}", body);
+                        return Mono.error(new RuntimeException("Validation failed: " + body));
+                    });
+                })
                 .bodyToMono(BrowseTreeResponse.class)
                 .doOnSuccess(response ->
                         log.debug("Retrieved {} files from {}/{}/{}",

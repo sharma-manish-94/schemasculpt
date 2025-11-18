@@ -301,5 +301,15 @@ public class AnalysisService {
     if (operation == null || openApi == null || openApi.getComponents() == null) {
       return 0;
     }
+
+    Map<String, Schema> allSchemas =
+        Optional.ofNullable(openApi.getComponents())
+            .map(Components::getSchemas)
+            .orElse(Collections.emptyMap());
+
+    JsonNode operationNode = objectMapper.valueToTree(operation);
+    Map<String, Integer> memo = new HashMap<>();
+
+    return calculateMaxDepth(operationNode, new HashSet<>(), allSchemas, memo);
   }
 }
