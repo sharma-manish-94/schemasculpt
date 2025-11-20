@@ -4,8 +4,11 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.analysis.AuthzMatrixRespo
 import io.github.sharma_manish_94.schemasculpt_api.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.analysis.TaintAnalysisResponse;
 import io.github.sharma_manish_94.schemasculpt_api.dto.analysis.ZombieApiResponse;
+import io.github.sharma_manish_94.schemasculpt_api.dto.analysis.SecurityFinding;
+import io.github.sharma_manish_94.schemasculpt_api.dto.analysis.SecurityFindingsRequest;
 import io.github.sharma_manish_94.schemasculpt_api.service.AnalysisService;
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
+import io.github.sharma_manish_94.schemasculpt_api.service.SecurityFindingsExtractor;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -24,15 +27,18 @@ public class AnalysisController {
 
     private final SessionService sessionService;
     private final AnalysisService analysisService;
+    private final SecurityFindingsExtractor securityFindingsExtractor;
     private final WebClient webClient;
 
     public AnalysisController(
             SessionService sessionService,
             AnalysisService analysisService,
+            SecurityFindingsExtractor securityFindingsExtractor,
             WebClient.Builder webClientBuilder,
             @Value("${ai.service.url}") String aiServiceUrl) {
         this.sessionService = sessionService;
         this.analysisService = analysisService;
+        this.securityFindingsExtractor = securityFindingsExtractor;
         this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
     }
 
@@ -100,10 +106,60 @@ public class AnalysisController {
                 .timeout(java.time.Duration.ofMinutes(5))  // 5 minute timeout for complex analysis
                 .map(ResponseEntity::ok)
                 .onErrorResume(
-                        error ->
-                                Mono.just(
-                                        ResponseEntity.status(500)
-                                                .body(Map.of("error", "Attack path simulation failed", "message", error.getMessage()))));
+                        error -> {
+                            String errorMessage = error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName();
+                            return Mono.just(
+                                    ResponseEntity.status(500)
+                                            .body(Map.of("error", "Attack path simulation failed", "message", errorMessage)));
+                        });
+    }
+
+    @PostMapping("/attack-path-findings")
+    public Mono<ResponseEntity<Map<String, Object>>> runAttackPathAnalysisFromFindings(
+            @PathVariable String sessionId,
+            @RequestParam(defaultValue = "standard") String analysisDepth,
+            @RequestParam(defaultValue = "5") int maxChainLength,
+            @RequestParam(defaultValue = "false") boolean excludeLowSeverity) {
+
+        OpenAPI openApi = sessionService.getSpecForSession(sessionId);
+        if (openApi == null) {
+            return Mono.just(ResponseEntity.notFound().build());
+        }
+
+        // Step 1: Extract FACTUAL security findings using deterministic Java analysis
+        // This is FAST and 100% ACCURATE - no AI guessing
+        java.util.List<SecurityFinding> findings = securityFindingsExtractor.extractFindings(openApi);
+
+        // Step 2: Build request with findings (NOT the full spec)
+        // This payload is tiny compared to sending the entire 5MB spec!
+        SecurityFindingsRequest request = new SecurityFindingsRequest(
+                findings,
+                analysisDepth,
+                maxChainLength,
+                excludeLowSeverity
+        );
+
+        // Step 3: Send findings to AI for REASONING about attack chains
+        // AI does what it's best at: Finding patterns and reasoning about security implications
+        return webClient
+                .post()
+                .uri("/ai/security/attack-path-findings")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                })
+                .timeout(java.time.Duration.ofMinutes(2))  // Much faster than spec-based approach!
+                .map(ResponseEntity::ok)
+                .onErrorResume(
+                        error -> {
+                            String errorMessage = error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName();
+                            return Mono.just(
+                                    ResponseEntity.status(500)
+                                            .body(Map.of(
+                                                    "error", "Attack path analysis from findings failed",
+                                                    "message", errorMessage,
+                                                    "findings_count", findings.size())));
+                        });
     }
 
     @GetMapping("/authz-matrix")

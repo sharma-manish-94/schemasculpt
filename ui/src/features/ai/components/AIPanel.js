@@ -5,6 +5,7 @@ import LoadingSpinner from '../../../components/ui/LoadingSpinner';
 import ErrorMessage from '../../../components/ui/ErrorMessage';
 import AISpecGenerator from './AISpecGenerator';
 import SecurityAnalysisTab from './SecurityAnalysisTab';
+import AdvancedAnalysisTab from './AdvancedAnalysisTab';
 import {
     addOAuth2Security,
     addRateLimiting,
@@ -17,6 +18,7 @@ import '../ai-features.css';
 const AI_TABS = {
     ASSISTANT: 'assistant',
     SECURITY: 'security',
+    ADVANCED: 'advanced',
     HARDENING: 'hardening',
     GENERATOR: 'generator'
 };
@@ -36,6 +38,8 @@ function AIPanel() {
                 return <AIAssistantTab />;
             case AI_TABS.SECURITY:
                 return <SecurityAnalysisTab specContent={specText} />;
+            case AI_TABS.ADVANCED:
+                return <AdvancedAnalysisTab specContent={specText} />;
             case AI_TABS.HARDENING:
                 return <AIHardeningTab />;
             case AI_TABS.GENERATOR:

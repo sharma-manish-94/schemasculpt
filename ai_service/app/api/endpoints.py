@@ -1955,6 +1955,393 @@ async def run_attack_path_simulation(
         })
 
 
+@router.post("/ai/security/attack-path-findings")
+async def analyze_attack_chains_from_findings(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    **The "Linter-Augmented AI Analyst" - Attack Path Analysis from Findings**
+
+    This endpoint implements the CORRECT, PROFESSIONAL approach to AI-powered security analysis:
+
+    **The Problem with "On the Go" AI:**
+    - Sending a 5MB spec to the AI on every run is SLOW and EXPENSIVE
+    - LLMs are not 100% accurate at graph traversal
+    - Wastes computational resources re-discovering the same facts
+
+    **Our Solution (The Right Way):**
+    1. Java extracts FACTUAL findings deterministically (100% accurate, blazing fast)
+    2. Only those facts are sent to the AI (tiny payload, not 5MB)
+    3. AI reasons about attack chains based on pre-processed facts
+
+    **Request Body:**
+    {
+        "findings": [
+            {
+                "type": "PUBLIC_ENDPOINT",
+                "endpoint": "GET /users/all",
+                "description": "Endpoint GET /users/all has no security requirements",
+                "metadata": {"method": "GET", "path": "/users/all"}
+            },
+            {
+                "type": "ENDPOINT_RETURNS_SCHEMA",
+                "endpoint": "GET /users/all",
+                "description": "Endpoint GET /users/all returns schema 'User'",
+                "metadata": {"schema": "User", "fields": ["id", "name", "role"]}
+            },
+            {
+                "type": "SENSITIVE_FIELD",
+                "description": "Schema 'User' contains sensitive field 'role'",
+                "metadata": {"schema": "User", "field": "role"}
+            },
+            {
+                "type": "ENDPOINT_ACCEPTS_SCHEMA",
+                "endpoint": "PUT /users/{id}",
+                "description": "Endpoint PUT /users/{id} accepts schema 'User'",
+                "metadata": {"schema": "User", "fields": ["id", "name", "role"]}
+            }
+        ],
+        "analysis_depth": "standard",
+        "max_chain_length": 5,
+        "exclude_low_severity": false
+    }
+
+    **AI's Analysis (What We Want It To Do):**
+    "Critical Vulnerability Found: Privilege Escalation via Mass Assignment.
+
+    Attack Chain:
+    1. Attacker calls public GET /users/all (Finding 1)
+    2. Attacker obtains User schema structure including 'role' field (Findings 2 & 3)
+    3. Attacker modifies their user object, setting role=admin
+    4. Attacker calls PUT /users/{id} with modified User object (Finding 4)
+    5. Result: Privilege escalation to admin"
+
+    **Response:** Same as /attack-path-simulation endpoint
+    """
+    correlation_id = set_correlation_id()
+    logger.info("Starting attack path analysis from findings", extra={"correlation_id": correlation_id})
+
+    try:
+        # Parse and validate request
+        findings = request.get("findings")
+        if not findings or not isinstance(findings, list):
+            raise HTTPException(status_code=400, detail={
+                "error": "MISSING_FINDINGS",
+                "message": "findings list is required"
+            })
+
+        analysis_depth = request.get("analysis_depth", "standard")
+        max_chain_length = request.get("max_chain_length", 5)
+        exclude_low_severity = request.get("exclude_low_severity", False)
+
+        # Build prompt for AI to analyze attack chains
+        findings_text = _format_findings_for_prompt(findings)
+
+        # Check cache
+        findings_hash = hashlib.sha256(json.dumps(findings, sort_keys=True).encode()).hexdigest()
+        cache_key = f"attack_path_findings_{findings_hash}_{analysis_depth}"
+
+        if cache_key in SECURITY_ANALYSIS_CACHE:
+            cached_data = SECURITY_ANALYSIS_CACHE[cache_key]
+            if datetime.utcnow() < cached_data["expires_at"]:
+                logger.info(f"Returning cached findings-based attack path report: {cache_key}")
+                return cached_data["report"]
+
+        # Use AI to reason about attack chains
+        report = await _analyze_attack_chains_with_ai(
+            findings_text,
+            analysis_depth,
+            max_chain_length,
+            exclude_low_severity,
+            findings
+        )
+
+        # Add statistics and metadata
+        report = _enrich_report_with_statistics(report, findings)
+
+        # Cache the report
+        SECURITY_ANALYSIS_CACHE[cache_key] = {
+            "report": report,
+            "created_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + SECURITY_CACHE_TTL
+        }
+        logger.info(f"Cached findings-based attack path report: {cache_key}")
+
+        return report
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Findings-based attack path analysis failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail={
+            "error": "FINDINGS_ANALYSIS_FAILED",
+            "message": f"Failed to analyze attack chains from findings: {str(e)}"
+        })
+
+
+def _enrich_report_with_statistics(report: Dict[str, Any], findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Enrich the attack path report with statistics and structured data for the UI.
+
+    Adds:
+    - total_chains_found: Number of attack chains discovered
+    - total_vulnerabilities: Total number of findings analyzed
+    - vulnerabilities_in_chains: Findings referenced in attack chains
+    - isolated_vulnerabilities: Findings not part of any chain
+    - Structured step data with endpoints parsed
+    """
+
+    # Count chains
+    all_chains = report.get("attack_chains", [])
+    report["total_chains_found"] = len(all_chains)
+
+    # Total findings
+    report["total_vulnerabilities"] = len(findings)
+
+    # Find which findings are used in chains
+    findings_in_chains = set()
+    for chain in all_chains:
+        finding_refs = chain.get("finding_refs", [])
+        findings_in_chains.update(finding_refs)
+
+    report["vulnerabilities_in_chains"] = len(findings_in_chains)
+    report["isolated_vulnerabilities"] = len(findings) - len(findings_in_chains)
+
+    # Parse steps to extract endpoint information for UI
+    for idx, chain in enumerate(all_chains):
+        # Add unique chain ID for UI
+        if "chain_id" not in chain:
+            chain["chain_id"] = f"chain-{idx + 1}"
+
+        # Add defaults for UI
+        if "likelihood" not in chain:
+            chain["likelihood"] = 0.7  # Default moderate likelihood
+        if "attacker_profile" not in chain:
+            chain["attacker_profile"] = "Authenticated User"
+        if "endpoints_involved" not in chain:
+            chain["endpoints_involved"] = []
+        if "impact_score" not in chain:
+            # Calculate impact score based on severity
+            severity = chain.get("severity", "MEDIUM")
+            impact_map = {"CRITICAL": 9.0, "HIGH": 7.5, "MEDIUM": 5.0, "LOW": 3.0}
+            chain["impact_score"] = impact_map.get(severity, 5.0)
+
+        # Parse steps to extract structured endpoint data
+        steps_text = chain.get("steps", [])
+        structured_steps = []
+
+        for step in steps_text:
+            # Try to extract HTTP method and endpoint from step text
+            # Example: "Step 1: Get user data via GET /users/all (Finding 1)"
+            step_data = {
+                "description": step,
+                "http_method": "GET",  # Default
+                "endpoint": "/",       # Default
+            }
+
+            # Parse for HTTP methods
+            for method in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
+                if method in step.upper():
+                    step_data["http_method"] = method
+                    # Try to extract the path after the method
+                    parts = step.split(method)
+                    if len(parts) > 1:
+                        # Extract path (everything between method and next space/parenthesis)
+                        path_part = parts[1].strip()
+                        # Get text until we hit a space or parenthesis
+                        endpoint = ""
+                        for char in path_part:
+                            if char in [' ', '(', '\n']:
+                                break
+                            endpoint += char
+                        if endpoint.startswith('/'):
+                            step_data["endpoint"] = endpoint
+                    break
+
+            structured_steps.append(step_data)
+
+        # Replace steps with structured version (keep text in description)
+        # Save original steps as steps_text for reference
+        chain["steps_text"] = steps_text
+        chain["steps"] = structured_steps
+
+        # Extract unique endpoints from structured steps
+        if not chain["endpoints_involved"]:
+            endpoints = set()
+            for step in structured_steps:
+                if step["endpoint"] != "/":
+                    endpoints.add(f"{step['http_method']} {step['endpoint']}")
+            chain["endpoints_involved"] = list(endpoints)
+
+    # Enhance executive summary if it's too generic
+    if "attack chains" not in report.get("executive_summary", "").lower():
+        critical_count = len(report.get("critical_chains", []))
+        high_count = len(report.get("high_priority_chains", []))
+
+        if critical_count > 0:
+            first_chain = report.get("critical_chains", [{}])[0]
+            chain_name = first_chain.get("name", "Unknown")
+            endpoints = ", ".join(first_chain.get("endpoints_involved", ["multiple endpoints"])[:2])
+            report["executive_summary"] = (
+                f"Found {report['total_chains_found']} attack chain(s): "
+                f"{critical_count} critical, {high_count} high priority. "
+                f"Most critical: {chain_name} affecting {endpoints}. "
+                f"{report['vulnerabilities_in_chains']} of {report['total_vulnerabilities']} "
+                f"vulnerabilities can be chained together. "
+                f"{report.get('executive_summary', '')}"
+            )
+
+    return report
+
+
+def _format_findings_for_prompt(findings: List[Dict[str, Any]]) -> str:
+    """Format findings as a clear, numbered list for the AI prompt"""
+    lines = []
+    for i, finding in enumerate(findings, 1):
+        finding_type = finding.get("type", "UNKNOWN")
+        description = finding.get("description", "")
+        endpoint = finding.get("endpoint", "")
+        metadata = finding.get("metadata", {})
+
+        line = f"{i}. {description}"
+        if endpoint:
+            line += f" [Endpoint: {endpoint}]"
+        if metadata:
+            meta_items = ", ".join([f"{k}={v}" for k, v in metadata.items()])
+            line += f" (Details: {meta_items})"
+
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
+async def _analyze_attack_chains_with_ai(
+    findings_text: str,
+    analysis_depth: str,
+    max_chain_length: int,
+    exclude_low_severity: bool,
+    findings_list: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Use AI to reason about attack chains based on factual findings"""
+
+    prompt = f"""You are a security expert analyzing API vulnerabilities. You have been provided with a list of FACTUAL security findings extracted from an OpenAPI specification by deterministic analysis.
+
+Your task is to identify ATTACK CHAINS where multiple findings can be COMBINED to create high-severity security vulnerabilities.
+
+## Factual Findings:
+{findings_text}
+
+## Your Analysis:
+1. Identify attack chains where these findings can be combined
+2. For each attack chain, provide:
+   - Name: A descriptive attack name (e.g., "Privilege Escalation via Mass Assignment")
+   - Attack Goal: What the attacker achieves
+   - Severity: CRITICAL, HIGH, MEDIUM, or LOW
+   - Complexity: How difficult it is to execute (Easy, Medium, Hard)
+   - Likelihood: Probability of exploitation (0.0-1.0)
+   - Attacker Profile: Who could exploit this (e.g., "Unauthenticated Attacker", "Authenticated User")
+   - Steps: Ordered list of exploitation steps with SPECIFIC API ENDPOINTS
+     - Each step must include the HTTP method and path (e.g., "GET /users", "POST /user/{id}")
+     - Reference finding numbers in each step
+   - Endpoints Involved: List of API paths used in the attack (e.g., ["GET /users/all", "PUT /users/{id}"])
+   - Business Impact: Impact in business terms
+   - Remediation: How to fix it
+
+3. Prioritize:
+   - CRITICAL: Chains leading to privilege escalation, data breach, or complete system compromise
+   - HIGH: Chains exposing sensitive data or allowing unauthorized actions
+   - MEDIUM: Chains requiring additional vulnerabilities or limited impact
+   - LOW: Theoretical chains requiring unlikely conditions
+
+4. Create a detailed executive summary that includes:
+   - Number of attack chains found
+   - Most critical vulnerabilities
+   - Specific API endpoints at risk
+   - Brief description of the worst attack chain
+
+Analysis Depth: {analysis_depth}
+Max Chain Length: {max_chain_length}
+Exclude Low Severity: {exclude_low_severity}
+
+Please provide your analysis in JSON format:
+{{
+    "report_id": "uuid",
+    "risk_level": "CRITICAL|HIGH|MEDIUM|LOW",
+    "overall_security_score": 0-100,
+    "executive_summary": "Detailed summary: Found X attack chains. Most critical: [attack name] affecting [endpoints]. This allows attackers to [impact].",
+    "attack_chains": [
+        {{
+            "name": "Attack name",
+            "attack_goal": "What attacker achieves",
+            "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+            "complexity": "Easy|Medium|Hard",
+            "likelihood": 0.8,
+            "attacker_profile": "Unauthenticated Attacker",
+            "endpoints_involved": ["GET /path1", "POST /path2"],
+            "steps": [
+                "Step 1: [Action] via GET /endpoint (Finding 1)",
+                "Step 2: [Action] via POST /endpoint (Finding 2)"
+            ],
+            "finding_refs": [1, 2, 3],
+            "business_impact": "Business impact description",
+            "remediation_steps": ["Fix 1", "Fix 2", ...]
+        }}
+    ],
+    "immediate_actions": ["Action 1", "Action 2"],
+    "short_term_actions": ["Action 1", "Action 2"],
+    "long_term_actions": ["Action 1", "Action 2"]
+}}"""
+
+    # Call LLM
+    result = await llm_service.generate(
+        prompt=prompt,
+        temperature=0.3,  # Lower temperature for more consistent security analysis
+        max_tokens=4000
+    )
+    response = result["response"]
+
+    # Parse JSON response
+    try:
+        # Extract JSON from response (handle code blocks)
+        response_text = response.strip()
+        if "```json" in response_text:
+            response_text = response_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_text:
+            response_text = response_text.split("```")[1].split("```")[0].strip()
+
+        report = json.loads(response_text)
+
+        # Add report ID if missing
+        if "report_id" not in report:
+            report["report_id"] = str(uuid.uuid4())
+
+        # Organize chains by severity
+        report["critical_chains"] = [c for c in report.get("attack_chains", []) if c.get("severity") == "CRITICAL"]
+        report["high_priority_chains"] = [c for c in report.get("attack_chains", []) if c.get("severity") == "HIGH"]
+        report["all_chains"] = report.get("attack_chains", [])
+
+        return report
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse AI response as JSON: {str(e)}")
+        # Return a fallback response
+        return {
+            "report_id": str(uuid.uuid4()),
+            "risk_level": "UNKNOWN",
+            "overall_security_score": 0,
+            "executive_summary": "Failed to parse AI analysis. Please try again.",
+            "attack_chains": [],
+            "critical_chains": [],
+            "high_priority_chains": [],
+            "all_chains": [],
+            "immediate_actions": ["Review findings manually"],
+            "short_term_actions": [],
+            "long_term_actions": [],
+            "error": str(e)
+        }
+
+
 # ============================================================================
 # Test Case Generation Endpoints
 # ============================================================================
@@ -2403,3 +2790,610 @@ async def invalidate_spec_cache(
         "message": "Cache invalidated for specification",
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ============================================================================
+# Advanced Architectural Analyzer AI Interpretation Endpoints
+# ============================================================================
+
+@router.post("/ai/analyze/taint-analysis")
+async def interpret_taint_analysis(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    AI-powered interpretation of Taint Analysis results.
+
+    Takes the raw taint analysis data from the Java backend and provides:
+    - Executive summary of data leakage risks
+    - Business impact assessment
+    - Prioritized remediation recommendations
+    - Compliance implications (GDPR, PCI-DSS, HIPAA)
+
+    Request body:
+    - vulnerabilities: List of taint vulnerabilities from backend
+    - spec_text: OpenAPI specification for context
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Interpreting taint analysis results", extra={"correlation_id": correlation_id})
+
+    try:
+        vulnerabilities = request.get("vulnerabilities", [])
+        spec_text = request.get("spec_text", "")
+
+        if not vulnerabilities:
+            return {
+                "summary": "No taint vulnerabilities detected. Your API appears to have proper data flow controls.",
+                "risk_level": "LOW",
+                "recommendations": [],
+                "correlation_id": correlation_id
+            }
+
+        # Build AI prompt for taint analysis interpretation
+        critical_vulns = [v for v in vulnerabilities if v.get("severity") == "CRITICAL"]
+        warning_vulns = [v for v in vulnerabilities if v.get("severity") == "WARNING"]
+
+        taint_prompt = f"""You are an API security expert analyzing taint analysis results.
+
+TAINT ANALYSIS FINDINGS:
+Total Vulnerabilities: {len(vulnerabilities)}
+- CRITICAL (Public data leakage): {len(critical_vulns)}
+- WARNING (Secured but needs review): {len(warning_vulns)}
+
+CRITICAL VULNERABILITIES:
+{json.dumps(critical_vulns, indent=2) if critical_vulns else "None"}
+
+WARNING VULNERABILITIES:
+{json.dumps(warning_vulns, indent=2) if warning_vulns else "None"}
+
+Provide a comprehensive security analysis in JSON format:
+{{
+  "executive_summary": "Brief executive summary of the data leakage risks",
+  "risk_level": "CRITICAL|HIGH|MEDIUM|LOW",
+  "business_impact": "Explanation of business/compliance impact",
+  "top_issues": [
+    {{
+      "endpoint": "endpoint path",
+      "issue": "description",
+      "severity": "CRITICAL|WARNING",
+      "leaked_data": "what sensitive data is exposed",
+      "attack_scenario": "how an attacker could exploit this",
+      "compliance_impact": "GDPR/PCI-DSS/HIPAA violations"
+    }}
+  ],
+  "remediation_priorities": [
+    {{
+      "priority": "IMMEDIATE|HIGH|MEDIUM",
+      "action": "specific fix to implement",
+      "endpoints_affected": ["list of endpoints"],
+      "estimated_effort": "hours/days"
+    }}
+  ],
+  "compliance_recommendations": {{
+    "gdpr": "GDPR-specific recommendations",
+    "pci_dss": "PCI-DSS recommendations if credit card data involved",
+    "hipaa": "HIPAA recommendations if health data involved"
+  }}
+}}"""
+
+        # Call LLM for interpretation
+        payload = {
+            "model": settings.default_model,
+            "messages": [{
+                "role": "system",
+                "content": "You are an expert API security analyst specializing in data protection and compliance. Respond only with valid JSON."
+            }, {
+                "role": "user",
+                "content": taint_prompt
+            }],
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 3000
+            }
+        }
+
+        response = await llm_service.client.post(llm_service.chat_endpoint, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail="LLM request failed")
+
+        llm_response = response.json().get('message', {}).get('content', '{}')
+        interpretation = json.loads(llm_response)
+
+        return {
+            **interpretation,
+            "total_vulnerabilities": len(vulnerabilities),
+            "critical_count": len(critical_vulns),
+            "warning_count": len(warning_vulns),
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Taint analysis interpretation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "TAINT_INTERPRETATION_FAILED",
+            "message": f"Failed to interpret taint analysis: {str(e)}"
+        })
+
+
+@router.post("/ai/analyze/authz-matrix")
+async def interpret_authz_matrix(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    AI-powered interpretation of Authorization Matrix results.
+
+    Analyzes RBAC configuration for security anomalies and misconfigurations.
+
+    Request body:
+    - scopes: List of all scopes/roles
+    - matrix: Map of operations to their required scopes
+    - spec_text: OpenAPI specification for context
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Interpreting authz matrix results", extra={"correlation_id": correlation_id})
+
+    try:
+        scopes = request.get("scopes", [])
+        matrix = request.get("matrix", {})
+
+        if not matrix:
+            return {
+                "summary": "No authorization matrix data available.",
+                "anomalies": [],
+                "correlation_id": correlation_id
+            }
+
+        # Analyze matrix for anomalies
+        authz_prompt = f"""You are an API security expert analyzing RBAC authorization matrix.
+
+AUTHORIZATION MATRIX:
+Total Endpoints: {len(matrix)}
+Available Scopes/Roles: {', '.join(scopes)}
+
+MATRIX DATA:
+{json.dumps(matrix, indent=2)[:3000]}
+
+Analyze this authorization matrix for security anomalies. Look for:
+1. Destructive operations (DELETE, PUT) accessible with read-only scopes
+2. Admin operations accessible with regular user scopes
+3. Public endpoints (no security) that should be protected
+4. Overly permissive scopes (one scope grants access to too many operations)
+5. Missing authorization on sensitive operations
+
+Provide analysis in JSON format:
+{{
+  "executive_summary": "Brief summary of authorization security",
+  "risk_level": "CRITICAL|HIGH|MEDIUM|LOW",
+  "anomalies_detected": [
+    {{
+      "type": "PRIVILEGE_ESCALATION|MISSING_AUTH|OVERLY_PERMISSIVE",
+      "severity": "CRITICAL|HIGH|MEDIUM",
+      "endpoint": "operation endpoint",
+      "issue": "description of the issue",
+      "current_scopes": ["list of scopes"],
+      "attack_scenario": "how this could be exploited",
+      "recommended_scopes": ["what scopes should be required"]
+    }}
+  ],
+  "best_practice_violations": [
+    "List of RBAC best practice violations found"
+  ],
+  "recommendations": [
+    {{
+      "priority": "IMMEDIATE|HIGH|MEDIUM",
+      "recommendation": "specific action to take",
+      "affected_endpoints": ["list of endpoints"]
+    }}
+  ]
+}}"""
+
+        # Call LLM
+        payload = {
+            "model": settings.default_model,
+            "messages": [{
+                "role": "system",
+                "content": "You are an expert in RBAC and authorization security. Respond only with valid JSON."
+            }, {
+                "role": "user",
+                "content": authz_prompt
+            }],
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 3000
+            }
+        }
+
+        response = await llm_service.client.post(llm_service.chat_endpoint, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail="LLM request failed")
+
+        llm_response = response.json().get('message', {}).get('content', '{}')
+        interpretation = json.loads(llm_response)
+
+        return {
+            **interpretation,
+            "total_endpoints": len(matrix),
+            "total_scopes": len(scopes),
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Authz matrix interpretation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "AUTHZ_INTERPRETATION_FAILED",
+            "message": f"Failed to interpret authorization matrix: {str(e)}"
+        })
+
+
+@router.post("/ai/analyze/schema-similarity")
+async def interpret_schema_similarity(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    AI-powered interpretation of Schema Similarity Clustering results.
+
+    Provides refactoring recommendations for duplicate/similar schemas.
+
+    Request body:
+    - clusters: List of schema clusters with similarity scores
+    - spec_text: OpenAPI specification for context
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Interpreting schema similarity results", extra={"correlation_id": correlation_id})
+
+    try:
+        clusters = request.get("clusters", [])
+
+        if not clusters:
+            return {
+                "summary": "No duplicate or similar schemas detected. Your schema design is well-organized.",
+                "refactoring_opportunities": [],
+                "correlation_id": correlation_id
+            }
+
+        similarity_prompt = f"""You are an API design expert analyzing schema similarity clustering results.
+
+SCHEMA SIMILARITY CLUSTERS:
+Total Clusters Found: {len(clusters)}
+
+CLUSTER DATA:
+{json.dumps(clusters, indent=2)[:3000]}
+
+Analyze these clusters and provide refactoring recommendations in JSON format:
+{{
+  "executive_summary": "Brief summary of schema duplication issues",
+  "code_health_score": 0-100,
+  "potential_savings": "estimated lines of code reduction",
+  "refactoring_opportunities": [
+    {{
+      "cluster_id": "cluster identifier",
+      "schema_names": ["list of similar schemas"],
+      "similarity_score": 0.0-1.0,
+      "issue": "description of duplication/similarity",
+      "refactoring_strategy": "MERGE|BASE_SCHEMA_WITH_INHERITANCE|COMPOSITION",
+      "implementation_steps": [
+        "Step 1: Create base schema...",
+        "Step 2: Apply allOf/oneOf...",
+        "Step 3: Update references..."
+      ],
+      "estimated_effort": "hours",
+      "benefits": "why this refactoring is valuable",
+      "breaking_change_risk": "HIGH|MEDIUM|LOW"
+    }}
+  ],
+  "quick_wins": [
+    {{
+      "schemas": ["schemas that can be quickly merged"],
+      "effort": "15-30 minutes",
+      "impact": "description of impact"
+    }}
+  ],
+  "architectural_recommendations": [
+    "High-level recommendations for schema organization"
+  ]
+}}"""
+
+        # Call LLM
+        payload = {
+            "model": settings.default_model,
+            "messages": [{
+                "role": "system",
+                "content": "You are an expert in API design and schema architecture. Respond only with valid JSON."
+            }, {
+                "role": "user",
+                "content": similarity_prompt
+            }],
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 3000
+            }
+        }
+
+        response = await llm_service.client.post(llm_service.chat_endpoint, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail="LLM request failed")
+
+        llm_response = response.json().get('message', {}).get('content', '{}')
+        interpretation = json.loads(llm_response)
+
+        return {
+            **interpretation,
+            "total_clusters": len(clusters),
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Schema similarity interpretation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "SIMILARITY_INTERPRETATION_FAILED",
+            "message": f"Failed to interpret schema similarity: {str(e)}"
+        })
+
+
+@router.post("/ai/analyze/zombie-apis")
+async def interpret_zombie_apis(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    AI-powered interpretation of Zombie API Detection results.
+
+    Analyzes unreachable, shadowed, and orphaned endpoints.
+
+    Request body:
+    - shadowed_endpoints: List of shadowed endpoints
+    - orphaned_operations: List of orphaned operations
+    - spec_text: OpenAPI specification for context
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Interpreting zombie API results", extra={"correlation_id": correlation_id})
+
+    try:
+        shadowed = request.get("shadowedEndpoints", [])
+        orphaned = request.get("orphanedOperations", [])
+
+        if not shadowed and not orphaned:
+            return {
+                "summary": "No zombie APIs detected. All endpoints appear reachable and properly defined.",
+                "cleanup_recommendations": [],
+                "correlation_id": correlation_id
+            }
+
+        zombie_prompt = f"""You are an API maintenance expert analyzing zombie API detection results.
+
+ZOMBIE API FINDINGS:
+Shadowed Endpoints: {len(shadowed)}
+Orphaned Operations: {len(orphaned)}
+
+SHADOWED ENDPOINTS (unreachable due to routing conflicts):
+{json.dumps(shadowed, indent=2)[:2000]}
+
+ORPHANED OPERATIONS (no params/body/response):
+{json.dumps(orphaned, indent=2)[:1000]}
+
+Analyze these zombie APIs and provide cleanup recommendations in JSON format:
+{{
+  "executive_summary": "Brief summary of API hygiene issues",
+  "code_health_score": 0-100,
+  "maintenance_burden": "description of technical debt",
+  "shadowed_endpoint_analysis": [
+    {{
+      "shadowed_path": "unreachable endpoint",
+      "shadowing_path": "conflicting endpoint",
+      "reason": "why it's unreachable",
+      "recommendation": "REORDER|RENAME|REMOVE|MERGE",
+      "fix_instructions": "specific steps to fix",
+      "breaking_change": "yes|no|maybe"
+    }}
+  ],
+  "orphaned_operation_analysis": [
+    {{
+      "operation": "operation identifier",
+      "reason": "why it's considered orphaned",
+      "recommendation": "REMOVE|COMPLETE_IMPLEMENTATION|CONVERT_TO_HEALTH_CHECK",
+      "rationale": "why this recommendation makes sense"
+    }}
+  ],
+  "cleanup_priorities": [
+    {{
+      "priority": "HIGH|MEDIUM|LOW",
+      "action": "specific cleanup action",
+      "affected_endpoints": ["list of endpoints"],
+      "estimated_effort": "hours"
+    }}
+  ],
+  "architectural_improvements": [
+    "Suggestions for preventing zombie APIs in the future"
+  ]
+}}"""
+
+        # Call LLM
+        payload = {
+            "model": settings.default_model,
+            "messages": [{
+                "role": "system",
+                "content": "You are an expert in API design and maintenance. Respond only with valid JSON."
+            }, {
+                "role": "user",
+                "content": zombie_prompt
+            }],
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 3000
+            }
+        }
+
+        response = await llm_service.client.post(llm_service.chat_endpoint, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail="LLM request failed")
+
+        llm_response = response.json().get('message', {}).get('content', '{}')
+        interpretation = json.loads(llm_response)
+
+        return {
+            **interpretation,
+            "total_shadowed": len(shadowed),
+            "total_orphaned": len(orphaned),
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Zombie API interpretation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "ZOMBIE_INTERPRETATION_FAILED",
+            "message": f"Failed to interpret zombie API detection: {str(e)}"
+        })
+
+
+@router.post("/ai/analyze/comprehensive-architecture")
+async def comprehensive_architecture_analysis(
+    request: Dict[str, Any],
+    _: None = Depends(handle_exceptions)
+):
+    """
+    Comprehensive architectural analysis combining all 4 advanced analyzers.
+
+    This endpoint provides a holistic view of:
+    - Security (Taint Analysis + Authz Matrix)
+    - Code Quality (Schema Similarity + Zombie APIs)
+    - Overall API health score
+    - Executive summary with prioritized action items
+
+    Request body:
+    - taint_analysis: Results from taint analyzer
+    - authz_matrix: Results from authz matrix analyzer
+    - schema_similarity: Results from similarity analyzer
+    - zombie_apis: Results from zombie API detector
+    - spec_text: OpenAPI specification
+    """
+    correlation_id = set_correlation_id()
+
+    logger.info("Performing comprehensive architecture analysis", extra={"correlation_id": correlation_id})
+
+    try:
+        taint = request.get("taint_analysis", {})
+        authz = request.get("authz_matrix", {})
+        similarity = request.get("schema_similarity", {})
+        zombie = request.get("zombie_apis", {})
+
+        # Build comprehensive prompt
+        comprehensive_prompt = f"""You are a senior API architect performing a comprehensive analysis.
+
+ANALYSIS RESULTS:
+
+1. TAINT ANALYSIS (Data Security):
+Vulnerabilities: {len(taint.get('vulnerabilities', []))}
+{json.dumps(taint, indent=2)[:1500]}
+
+2. AUTHORIZATION MATRIX (Access Control):
+Endpoints: {len(authz.get('matrix', {}))}
+Scopes: {len(authz.get('scopes', []))}
+{json.dumps(authz, indent=2)[:1500]}
+
+3. SCHEMA SIMILARITY (Code Quality):
+Duplicate Clusters: {len(similarity.get('clusters', []))}
+{json.dumps(similarity, indent=2)[:1500]}
+
+4. ZOMBIE API DETECTION (Maintenance):
+Shadowed: {len(zombie.get('shadowedEndpoints', []))}
+Orphaned: {len(zombie.get('orphanedOperations', []))}
+{json.dumps(zombie, indent=2)[:1500]}
+
+Provide a comprehensive executive report in JSON format:
+{{
+  "overall_health_score": 0-100,
+  "health_breakdown": {{
+    "security_score": 0-100,
+    "access_control_score": 0-100,
+    "code_quality_score": 0-100,
+    "maintenance_score": 0-100
+  }},
+  "executive_summary": "High-level summary for business stakeholders",
+  "risk_level": "CRITICAL|HIGH|MEDIUM|LOW",
+  "top_3_critical_issues": [
+    {{
+      "category": "SECURITY|ACCESS_CONTROL|CODE_QUALITY|MAINTENANCE",
+      "issue": "description",
+      "business_impact": "impact on business",
+      "urgency": "IMMEDIATE|URGENT|IMPORTANT"
+    }}
+  ],
+  "immediate_action_items": [
+    "Action items that must be addressed immediately"
+  ],
+  "short_term_roadmap": [
+    "Items to address in next 1-2 weeks"
+  ],
+  "long_term_improvements": [
+    "Architectural improvements for next quarter"
+  ],
+  "estimated_total_effort": "total hours/days to fix all issues",
+  "roi_analysis": "expected benefits vs effort required"
+}}"""
+
+        # Call LLM
+        payload = {
+            "model": settings.default_model,
+            "messages": [{
+                "role": "system",
+                "content": "You are a senior API architect and security expert. Respond only with valid JSON."
+            }, {
+                "role": "user",
+                "content": comprehensive_prompt
+            }],
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.2,
+                "num_predict": 4000
+            }
+        }
+
+        response = await llm_service.client.post(llm_service.chat_endpoint, json=payload)
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=500, detail="LLM request failed")
+
+        llm_response = response.json().get('message', {}).get('content', '{}')
+        interpretation = json.loads(llm_response)
+
+        return {
+            **interpretation,
+            "analyzer_summary": {
+                "taint_vulnerabilities": len(taint.get('vulnerabilities', [])),
+                "authz_endpoints": len(authz.get('matrix', {})),
+                "duplicate_clusters": len(similarity.get('clusters', [])),
+                "zombie_apis": len(zombie.get('shadowedEndpoints', [])) + len(zombie.get('orphanedOperations', []))
+            },
+            "correlation_id": correlation_id,
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Comprehensive analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail={
+            "error": "COMPREHENSIVE_ANALYSIS_FAILED",
+            "message": f"Failed to perform comprehensive analysis: {str(e)}"
+        })

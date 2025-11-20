@@ -1,27 +1,506 @@
-[
-  {
-    "topic": "Authentication",
-    "content": "OpenAPI specifications should include proper authentication schemes. Common issues: missing auth, weak auth methods, exposed credentials in examples.",
-    "category": "security"
-  },
-  {
-    "topic": "Authorization",
-    "content": "APIs must implement proper authorization controls. Common issues: missing role-based access, insufficient endpoint protection, privilege escalation risks.",
-    "category": "security"
-  },
-  {
-    "topic": "Input Validation",
-    "content": "All API inputs must be validated. Common issues: missing validation schemas, inadequate type checking, injection vulnerabilities.",
-    "category": "security"
-  },
-  {
-    "topic": "Data Exposure",
-    "content": "APIs should not expose sensitive data unnecessarily. Common issues: returning sensitive fields, lack of field filtering, verbose error messages.",
-    "category": "security"
-  },
-  {
-    "topic": "HTTPS/TLS",
-    "content": "APIs must use HTTPS for all communications. Common issues: HTTP servers defined, missing security requirements, weak TLS configuration.",
-    "category": "security"
-  }
-]
+{
+  "owasp_vulnerabilities": [
+    {
+      "category": "API1:2023 Broken Object Level Authorization (BOLA)",
+      "risk_level": "CRITICAL",
+      "description": "APIs tend to expose endpoints that handle object identifiers, creating a wide attack surface of Object Level Access Control issues. Object level authorization checks should be considered in every function that accesses a data source using an ID from the user.",
+      "attack_scenarios": [
+        "Attacker discovers GET /api/users/{userId} returns user data. By iterating userId values, attacker accesses other users' data",
+        "API allows users to update their own profile via PUT /api/users/{userId}. Attacker modifies userId parameter to update other users' profiles",
+        "DELETE /api/orders/{orderId} lacks ownership verification. Attacker deletes other users' orders by changing orderId"
+      ],
+      "remediation": [
+        "Implement access control checks for every function using user input to access database records",
+        "Use random, unpredictable resource IDs (UUIDs) instead of sequential integers",
+        "Write tests to evaluate authorization mechanism effectiveness",
+        "Log all failed authorization attempts and alert on suspicious patterns"
+      ],
+      "technical_indicators": [
+        "Endpoints accepting object IDs as path or query parameters",
+        "No validation that requesting user owns the requested resource",
+        "Sequential or predictable resource identifiers",
+        "Different user roles can access same endpoint without restriction"
+      ]
+    },
+    {
+      "category": "API2:2023 Broken Authentication",
+      "risk_level": "CRITICAL",
+      "description": "Authentication mechanisms are often implemented incorrectly, allowing attackers to compromise authentication tokens or exploit implementation flaws to assume other users' identities temporarily or permanently.",
+      "attack_scenarios": [
+        "Unprotected APIs expecting clients to use username/password without rate limiting. Attacker uses brute force to guess credentials",
+        "JWT tokens with weak signing keys or no expiration. Attacker forges tokens or uses stolen tokens indefinitely",
+        "Password reset endpoints without rate limiting or CAPTCHA. Attacker floods system with reset requests",
+        "APIs accepting weak passwords or fail to enforce password complexity. Attacker compromises accounts with common passwords"
+      ],
+      "remediation": [
+        "Implement strong password policies and complexity requirements",
+        "Use OAuth 2.0 or OpenID Connect for authentication where possible",
+        "Implement rate limiting on authentication endpoints",
+        "Use multi-factor authentication for sensitive operations",
+        "Implement JWT best practices: short expiration, secure signing, token rotation",
+        "Never send credentials in URL parameters or logs"
+      ],
+      "technical_indicators": [
+        "Missing or weak rate limiting on login endpoints",
+        "JWT tokens without expiration or with weak signing algorithms",
+        "Password reset flows without verification",
+        "Authentication tokens in URL parameters",
+        "No failed login attempt tracking"
+      ]
+    },
+    {
+      "category": "API3:2023 Broken Object Property Level Authorization",
+      "risk_level": "HIGH",
+      "description": "This category combines API3:2019 Excessive Data Exposure and API6:2019 Mass Assignment. APIs tend to expose all object properties without considering their individual sensitivity, relying on clients to perform data filtering.",
+      "attack_scenarios": [
+        "GET /api/users/me returns full user object including sensitive fields like SSN, salary, internal flags. Attacker harvests sensitive data",
+        "PUT /api/users/profile accepts all user object properties. Attacker sends isAdmin: true to escalate privileges",
+        "API returns more data than necessary. Mobile app needs username/email but gets entire user profile including hashed passwords"
+      ],
+      "remediation": [
+        "Never rely on client to filter sensitive data",
+        "Implement property-level authorization checks",
+        "Use DTOs (Data Transfer Objects) with explicit field allowlists",
+        "Return only necessary fields for each endpoint",
+        "Validate and filter all input properties on write operations",
+        "Document which fields are readable/writable for each role"
+      ],
+      "technical_indicators": [
+        "Response schemas containing fields marked as sensitive or internal",
+        "No field-level access control in code",
+        "Mass assignment accepting all object properties",
+        "Lack of separate read/write DTOs",
+        "Admin fields accessible through regular user endpoints"
+      ]
+    },
+    {
+      "category": "API4:2023 Unrestricted Resource Consumption",
+      "risk_level": "HIGH",
+      "description": "Satisfying API requests requires resources such as network bandwidth, CPU, memory, and storage. Other resources such as emails/SMS/phone calls or biometric validation are made available by service providers via API integrations, and paid for per request.",
+      "attack_scenarios": [
+        "Attacker floods GET /api/search endpoint with expensive queries causing CPU exhaustion",
+        "API allows unlimited file uploads. Attacker fills storage with large files",
+        "No pagination on GET /api/users. Attacker requests millions of records causing memory exhaustion",
+        "POST /api/send-email has no rate limit. Attacker triggers millions of emails"
+      ],
+      "remediation": [
+        "Implement rate limiting on all endpoints",
+        "Add pagination to all collection endpoints",
+        "Set maximum sizes for request bodies and uploaded files",
+        "Implement timeouts for expensive operations",
+        "Use caching to reduce database load",
+        "Monitor resource consumption and alert on anomalies",
+        "Implement CAPTCHA for resource-intensive operations"
+      ],
+      "technical_indicators": [
+        "Endpoints without rate limiting",
+        "Collection endpoints without pagination",
+        "No request size limits",
+        "Expensive database queries without optimization",
+        "Missing resource consumption monitoring"
+      ]
+    },
+    {
+      "category": "API5:2023 Broken Function Level Authorization",
+      "risk_level": "HIGH",
+      "description": "Complex access control policies with different hierarchies, groups, and roles, and unclear separation between administrative and regular functions, tend to lead to authorization flaws. By exploiting these issues, attackers can access other users' resources and/or administrative functions.",
+      "attack_scenarios": [
+        "Regular user discovers POST /api/admin/users endpoint by guessing. No role check allows user to create admin accounts",
+        "DELETE endpoint meant for admins is accessible to regular users who discover the URL",
+        "User modifies request to PUT /api/users/{userId}/role and escalates to admin",
+        "API exposes both v1 (unprotected) and v2 (protected) of same endpoint. Attacker uses v1"
+      ],
+      "remediation": [
+        "Implement role-based access control (RBAC) consistently",
+        "Deny all access by default and explicitly allow based on roles",
+        "Don't rely on client to restrict access to administrative functions",
+        "Use automated testing to discover authorization flaws",
+        "Implement proper API versioning and deprecation of insecure versions"
+      ],
+      "technical_indicators": [
+        "Admin endpoints without role checks",
+        "Inconsistent authorization across similar endpoints",
+        "Authorization logic in client-side code",
+        "Multiple API versions with different security postures",
+        "Lack of automated authorization testing"
+      ]
+    },
+    {
+      "category": "API6:2023 Unrestricted Access to Sensitive Business Flows",
+      "risk_level": "MEDIUM",
+      "description": "APIs vulnerable to this risk expose a business flow - such as buying a ticket, or posting a comment - without compensating for how the functionality could harm the business if used excessively in an automated manner.",
+      "attack_scenarios": [
+        "Attacker uses bots to purchase all concert tickets in seconds and resell at markup",
+        "POST /api/reviews endpoint allows automated fake review posting to manipulate ratings",
+        "Attacker uses scripts to book all appointment slots, preventing legitimate users from booking",
+        "Automated tool scrapes all product data via API for competitor analysis"
+      ],
+      "remediation": [
+        "Implement CAPTCHA for sensitive business operations",
+        "Add device fingerprinting and behavioral analysis",
+        "Implement per-user rate limiting on business-critical flows",
+        "Add manual review for suspicious patterns",
+        "Implement IP-based rate limiting",
+        "Use proof-of-work or similar anti-automation techniques"
+      ],
+      "technical_indicators": [
+        "No bot detection on sensitive business endpoints",
+        "Lack of CAPTCHA on critical user flows",
+        "Missing behavioral analysis",
+        "No fraud detection patterns",
+        "Unlimited automated access to business operations"
+      ]
+    },
+    {
+      "category": "API7:2023 Server Side Request Forgery (SSRF)",
+      "risk_level": "HIGH",
+      "description": "Server-Side Request Forgery (SSRF) flaws can occur when an API is fetching a remote resource without validating the user-supplied URL. This enables an attacker to coerce the application to send a crafted request to an unexpected destination, even when protected by a firewall or VPN.",
+      "attack_scenarios": [
+        "API accepts URL parameter: GET /api/fetch?url=http://internal-service/admin. Attacker accesses internal services",
+        "POST /api/import accepts file URL. Attacker provides file://etc/passwd to read server files",
+        "Webhook registration without URL validation. Attacker registers http://169.254.169.254/latest/meta-data/ to steal cloud credentials"
+      ],
+      "remediation": [
+        "Validate and sanitize all user-supplied URLs",
+        "Enforce URL schema, port, and destination allowlists",
+        "Disable HTTP redirections",
+        "Use dedicated firewall rules for outbound connections",
+        "Don't send raw responses from remote resources to clients",
+        "Implement network segmentation"
+      ],
+      "technical_indicators": [
+        "Endpoints accepting URLs as parameters",
+        "No URL validation or allowlist enforcement",
+        "APIs that fetch remote resources based on user input",
+        "Webhook functionality without URL restrictions",
+        "File import features accepting arbitrary URLs"
+      ]
+    },
+    {
+      "category": "API8:2023 Security Misconfiguration",
+      "risk_level": "HIGH",
+      "description": "APIs and the systems supporting them typically contain complex configurations, meant to make the APIs more customizable. Software and DevOps engineers can miss these configurations, or don't follow security best practices when it comes to configuration.",
+      "attack_scenarios": [
+        "Error messages with stack traces expose internal server structure and library versions",
+        "CORS policy allows requests from any origin, enabling XSS attacks",
+        "Debug endpoints like /api/debug or /api/health expose sensitive information in production",
+        "TLS not enforced or uses weak ciphers, allowing man-in-the-middle attacks"
+      ],
+      "remediation": [
+        "Implement repeatable hardening process for all environments",
+        "Review and harden cloud storage permissions",
+        "Disable unnecessary HTTP methods",
+        "Remove debug endpoints in production",
+        "Implement proper error handling without exposing internals",
+        "Keep all components updated with security patches",
+        "Implement security headers (HSTS, CSP, etc.)"
+      ],
+      "technical_indicators": [
+        "Verbose error messages in production",
+        "Missing security headers",
+        "Overly permissive CORS policies",
+        "Debug endpoints accessible in production",
+        "Outdated dependencies with known vulnerabilities",
+        "Default credentials still in use"
+      ]
+    },
+    {
+      "category": "API9:2023 Improper Inventory Management",
+      "risk_level": "MEDIUM",
+      "description": "APIs tend to expose more endpoints than traditional web applications, making proper and updated documentation important. A proper inventory of hosts and deployed API versions are also important to mitigate issues such as deprecated API versions and exposed debug endpoints.",
+      "attack_scenarios": [
+        "Old API version (v1) still deployed and accessible without authentication while new version (v2) is properly secured",
+        "Beta or staging API endpoints accidentally exposed in production with weaker security",
+        "Documentation doesn't reflect actual API behavior, security team unaware of exposed endpoints",
+        "Third-party API integrations forgotten and unmaintained, creating security holes"
+      ],
+      "remediation": [
+        "Maintain inventory of all API hosts and versions",
+        "Document all API endpoints, parameters, and authentication requirements",
+        "Implement API versioning strategy with deprecation timeline",
+        "Limit access to production data from non-production API versions",
+        "Use automated discovery tools to detect shadow APIs",
+        "Decommission old API versions when no longer needed"
+      ],
+      "technical_indicators": [
+        "Multiple API versions deployed simultaneously",
+        "Undocumented endpoints discovered in testing",
+        "Inconsistent authentication across versions",
+        "Old or beta endpoints still accessible",
+        "Lack of centralized API inventory"
+      ]
+    },
+    {
+      "category": "API10:2023 Unsafe Consumption of APIs",
+      "risk_level": "MEDIUM",
+      "description": "Developers tend to trust data received from third-party APIs more than user input, and so tend to adopt weaker security standards. In order to compromise APIs, attackers go after integrated third-party services instead of trying to compromise the target API directly.",
+      "attack_scenarios": [
+        "API blindly trusts XML from third-party service. Attacker compromises third-party and injects XXE payload",
+        "API redirects users to URLs provided by partner API without validation. Partner compromised, users redirected to phishing site",
+        "API deserializes objects from third-party without validation, enabling remote code execution"
+      ],
+      "remediation": [
+        "Validate and sanitize all data from third-party APIs",
+        "Evaluate security posture of third-party APIs",
+        "Encrypt all communications with third-party APIs",
+        "Maintain allowlist of redirect URLs from third-party APIs",
+        "Implement timeout limits for third-party API calls",
+        "Monitor for anomalous responses from third-party APIs"
+      ],
+      "technical_indicators": [
+        "Direct pass-through of third-party API data to clients",
+        "No validation of data from external APIs",
+        "Deserialization of untrusted data",
+        "Missing timeout configuration for external calls",
+        "No monitoring of third-party API behavior"
+      ]
+    }
+  ],
+  "common_vulnerabilities": [
+    {
+      "name": "SQL Injection via API Parameters",
+      "category": "Injection",
+      "description": "API parameters directly interpolated into SQL queries without sanitization, allowing attackers to execute arbitrary SQL commands.",
+      "indicators": [
+        "Database error messages in API responses",
+        "API accepts complex query parameters",
+        "No parameterized queries or ORM usage",
+        "Unusual characters in parameters cause errors"
+      ],
+      "exploitation": [
+        "Test with single quote in parameter to detect SQL errors",
+        "Use UNION-based injection to extract data",
+        "Use time-based blind injection for boolean queries",
+        "Leverage stacked queries for data modification"
+      ],
+      "mitigation": [
+        "Always use parameterized queries or prepared statements",
+        "Implement input validation with allowlists",
+        "Use ORM frameworks properly",
+        "Apply principle of least privilege to database accounts",
+        "Never return database errors to clients"
+      ]
+    },
+    {
+      "name": "JWT Token Tampering",
+      "category": "Authentication",
+      "description": "JSON Web Tokens with weak signing algorithms or no signature verification allow attackers to forge authentication tokens.",
+      "indicators": [
+        "JWT using 'none' algorithm",
+        "Weak signing key or predictable secret",
+        "No token expiration or excessive expiration time",
+        "Algorithm confusion (RS256 vs HS256)"
+      ],
+      "exploitation": [
+        "Change algorithm to 'none' and remove signature",
+        "Brute force weak signing keys",
+        "Exploit algorithm confusion to use public key as HMAC secret",
+        "Modify claims (user_id, role) without invalidating signature"
+      ],
+      "mitigation": [
+        "Use strong signing algorithms (RS256 or ES256)",
+        "Never accept 'none' algorithm",
+        "Implement short token expiration (15-60 minutes)",
+        "Use refresh tokens for long-term sessions",
+        "Validate algorithm before verification",
+        "Store tokens securely (httpOnly cookies)"
+      ]
+    },
+    {
+      "name": "GraphQL Introspection Exposure",
+      "category": "Information Disclosure",
+      "description": "GraphQL APIs with enabled introspection in production expose entire schema including internal types and mutations.",
+      "indicators": [
+        "Introspection query succeeds in production",
+        "Schema reveals internal business logic",
+        "Deprecated fields still accessible",
+        "No query depth or complexity limits"
+      ],
+      "exploitation": [
+        "Run introspection query to map entire API",
+        "Discover hidden mutations and queries",
+        "Craft deeply nested queries for DoS",
+        "Find deprecated fields with weaker security"
+      ],
+      "mitigation": [
+        "Disable introspection in production",
+        "Implement query depth limiting",
+        "Add query complexity analysis",
+        "Rate limit by query cost rather than requests",
+        "Remove deprecated fields completely"
+      ]
+    },
+    {
+      "name": "API Key Leakage",
+      "category": "Authentication",
+      "description": "API keys hardcoded in client applications, documentation, or version control, allowing unauthorized API access.",
+      "indicators": [
+        "API keys in client-side JavaScript",
+        "Keys in public GitHub repositories",
+        "Same key used across environments",
+        "No key rotation policy",
+        "Keys in error messages or logs"
+      ],
+      "exploitation": [
+        "Extract keys from mobile app binaries",
+        "Search GitHub for leaked keys",
+        "Intercept keys from client requests",
+        "Use leaked keys until rotated"
+      ],
+      "mitigation": [
+        "Never embed keys in client applications",
+        "Use OAuth 2.0 for client apps",
+        "Implement key rotation policies",
+        "Monitor for leaked keys (GitHub scanning)",
+        "Use different keys per environment",
+        "Implement key revocation mechanisms"
+      ]
+    },
+    {
+      "name": "XXE (XML External Entity) Injection",
+      "category": "Injection",
+      "description": "APIs parsing XML input without disabling external entity resolution, allowing attackers to read local files or perform SSRF attacks.",
+      "indicators": [
+        "API accepts XML input",
+        "XML parser not hardened",
+        "Error messages reveal file system structure",
+        "Unexpected delays in XML processing"
+      ],
+      "exploitation": [
+        "Define external entity pointing to file:///etc/passwd",
+        "Use external entity for SSRF to internal services",
+        "Leverage parameter entities for blind XXE",
+        "Cause DoS with billion laughs attack"
+      ],
+      "mitigation": [
+        "Disable XML external entity processing",
+        "Use JSON instead of XML where possible",
+        "Validate XML against strict schemas",
+        "Implement input size limits",
+        "Update XML parsing libraries"
+      ]
+    }
+  ],
+  "attack_patterns": [
+    {
+      "name": "BOLA + Mass Assignment Privilege Escalation",
+      "type": "Multi-Step Attack Chain",
+      "description": "Combining Broken Object Level Authorization with Mass Assignment to escalate from regular user to administrator.",
+      "prerequisites": [
+        "GET endpoint returns user objects including role field",
+        "PUT endpoint accepts user object without field filtering",
+        "No server-side role validation on updates"
+      ],
+      "steps": [
+        "Attacker calls GET /api/users/{own_id} and observes response includes 'role' field",
+        "Attacker crafts PUT request to /api/users/{own_id} with body including 'role': 'admin'",
+        "Server accepts request and updates role without validation",
+        "Attacker now has admin privileges for subsequent requests"
+      ],
+      "indicators": [
+        "User object updates without field-level validation",
+        "Role or privilege fields in response schemas",
+        "PUT/PATCH endpoints accepting entire object",
+        "No audit logging of privilege changes"
+      ],
+      "defenses": [
+        "Implement field-level authorization",
+        "Use separate DTOs for read vs write",
+        "Never accept role/privilege changes from users",
+        "Log and alert on privilege changes",
+        "Require admin authentication for role modifications"
+      ]
+    },
+    {
+      "name": "Resource Exhaustion via Nested Pagination",
+      "type": "Denial of Service",
+      "description": "Exploiting APIs with relationships to cause exponential resource consumption through deep nesting.",
+      "prerequisites": [
+        "API supports nested resource expansion",
+        "No depth limit on expansions",
+        "No complexity analysis",
+        "Relationships allow circular references"
+      ],
+      "steps": [
+        "Identify endpoint with relationships: GET /api/users?expand=posts.comments.author.posts",
+        "Craft request with deep nesting to cause N+1 queries",
+        "API loads all nested relationships recursively",
+        "Database and memory exhausted, API becomes unresponsive"
+      ],
+      "indicators": [
+        "Support for query parameter-based expansion",
+        "No limits on expansion depth",
+        "Slow response times with complex queries",
+        "Spike in database connections"
+      ],
+      "defenses": [
+        "Implement maximum expansion depth (e.g., 3 levels)",
+        "Add query complexity scoring",
+        "Use DataLoader pattern to prevent N+1",
+        "Rate limit by computational cost",
+        "Monitor query execution time"
+      ]
+    },
+    {
+      "name": "JWT None Algorithm Bypass",
+      "type": "Authentication Bypass",
+      "description": "Exploiting JWT implementations that don't verify algorithm, allowing unsigned tokens.",
+      "prerequisites": [
+        "API uses JWT for authentication",
+        "JWT library doesn't enforce algorithm verification",
+        "Server accepts 'none' algorithm"
+      ],
+      "steps": [
+        "Obtain valid JWT from normal authentication",
+        "Decode JWT to examine claims",
+        "Change header algorithm to 'none'",
+        "Modify claims (e.g., user_id, role)",
+        "Remove signature portion",
+        "Send modified token - API accepts it without verification"
+      ],
+      "indicators": [
+        "JWT in Authorization header",
+        "No algorithm allowlist enforcement",
+        "Older JWT libraries in use",
+        "Different user context with tampered token"
+      ],
+      "defenses": [
+        "Explicitly specify allowed algorithms",
+        "Never allow 'none' algorithm",
+        "Update JWT libraries to latest versions",
+        "Validate algorithm before processing claims",
+        "Implement signature verification"
+      ]
+    },
+    {
+      "name": "Parameter Pollution for Business Logic Bypass",
+      "type": "Business Logic Abuse",
+      "description": "Sending duplicate parameters to confuse API logic and bypass security controls.",
+      "prerequisites": [
+        "API accepts duplicate parameters",
+        "Different components handle duplicates differently",
+        "Security checks use first occurrence, business logic uses last"
+      ],
+      "steps": [
+        "Identify parameter-based access control: GET /api/data?userId=123",
+        "Send request with duplicate parameter: ?userId=123&userId=456",
+        "Security middleware validates userId=123 (authorized)",
+        "Business logic uses userId=456 (unauthorized but bypass)",
+        "Attacker accesses other users' data"
+      ],
+      "indicators": [
+        "Inconsistent parameter handling across middleware",
+        "Authorization checks on different parameters than business logic",
+        "URL parsing inconsistencies",
+        "Unexpected behavior with duplicate parameters"
+      ],
+      "defenses": [
+        "Reject requests with duplicate parameters",
+        "Normalize parameters before validation",
+        "Use consistent parameter parsing across stack",
+        "Validate parameters at application layer",
+        "Test with parameter pollution payloads"
+      ]
+    }
+  ]
+}

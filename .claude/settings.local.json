@@ -9,7 +9,9 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(cat:*)",
-      "Bash(./mvnw:*)"
+      "Bash(./mvnw:*)",
+      "Bash(source:*)",
+      "Bash(sudo tee:*)"
     ],
     "deny": [],
     "ask": []
