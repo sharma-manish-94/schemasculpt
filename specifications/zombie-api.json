@@ -1,0 +1,97 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Zombie API Test Spec",
+    "version": "1.0.0",
+    "description": "A specification designed to test Zombie API detection logic."
+  },
+  "paths": {
+    "/users/{userId}": {
+      "get": {
+        "summary": "Get user by ID",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/current": {
+      "get": {
+        "summary": "Get current logged in user",
+        "operationId": "getCurrentUser",
+        "description": "This path is shadowed by /users/{userId} and may be unreachable.",
+        "responses": {
+          "200": {
+            "description": "Current user details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/legacy/data": {
+      "get": {
+        "summary": "Legacy data endpoint",
+        "operationId": "getLegacyData",
+        "description": "This endpoint accepts no parameters and returns no content. Is it dead?",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/v1/users": {
+      "get": {
+        "summary": "List users (Deprecated)",
+        "operationId": "listUsersV1",
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "List of users"
+          }
+        }
+      }
+    }
+  }
+}

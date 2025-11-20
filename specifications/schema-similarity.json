@@ -1,0 +1,213 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Simple Employee API",
+    "description": "A basic API for managing employee records using CRUD operations.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com/v1",
+      "description": "Production Server"
+    }
+  ],
+  "paths": {
+    "/employees": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "List all employees",
+        "description": "Retrieves a list of all employee records.",
+        "operationId": "listEmployees",
+        "responses": {
+          "200": {
+            "description": "A JSON array of employee objects.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Employee"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Create a new employee",
+        "description": "Adds a new employee to the database.",
+        "operationId": "createEmployee",
+        "requestBody": {
+          "description": "The employee object to be created.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewEmployee"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Employee created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input provided."
+          }
+        }
+      }
+    },
+    "/employees/{employeeId}": {
+      "get": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Get an employee by ID",
+        "description": "Retrieves a single employee record by its ID.",
+        "operationId": "getEmployeeById",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "The unique identifier of the employee.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested employee record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Employee not found."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Update an existing employee",
+        "description": "Updates the details of an existing employee by their ID.",
+        "operationId": "updateEmployee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "The unique identifier of the employee.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The updated employee object.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewEmployee"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Employee updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Employee"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Employee not found."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Employees"
+        ],
+        "summary": "Delete an employee",
+        "description": "Deletes an employee record by its ID.",
+        "operationId": "deleteEmployee",
+        "parameters": [
+          {
+            "name": "employeeId",
+            "in": "path",
+            "description": "The unique identifier of the employee.",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Operation completed successfully with no content"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Employee": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier"
+          }
+        },
+        "description": "Auto-generated schema for Employee. Please update with actual properties."
+      },
+      "NewEmployee": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier"
+          }
+        },
+        "description": "Auto-generated schema for NewEmployee. Please update with actual properties."
+      }
+    }
+  }
+}
