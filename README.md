@@ -191,12 +191,15 @@ Each linter suggestion includes an **⚡ Auto-Fix** or **✨ AI-Fix** button:
 
 ## 🏗️ Architecture
 
-SchemaSculpt uses a **three-tier microservices architecture** optimized for AI workloads:
+SchemaSculpt uses a **three-tier microservices architecture** optimized for AI workloads with RAG-enhanced security analysis:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Browser (UI)                            │
 │  React 19 • Monaco Editor • Zustand • WebSockets               │
+│  ├─ Advanced Analysis UI (Taint, AuthZ, Schema, Zombie APIs)   │
+│  ├─ Attack Path Visualization (Multi-step chain explorer)      │
+│  └─ Repository Browser (GitHub/GitLab integration via MCP)     │
 └────────────────┬────────────────────────────────────────────────┘
                  │ REST API + WebSocket
                  ▼
@@ -207,40 +210,76 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 │  ├─ Linter Engine (11+ rules)                                  │
 │  ├─ Session Manager (Redis)                                    │
 │  ├─ WebSocket Handler (real-time validation)                   │
-│  └─ AI Service Proxy                                           │
+│  ├─ Security Findings Extractor (deterministic analysis)       │
+│  ├─ Analysis Controller (advanced features orchestration)      │
+│  └─ Repository Controller (spec discovery)                     │
 └────────────────┬────────────────────────────────────────────────┘
                  │ HTTP (AI requests)
                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    AI Service (Python)                          │
-│  Python 3.10+ • FastAPI • Ollama Integration                   │
+│  Python 3.10+ • FastAPI • Ollama • LangChain • ChromaDB        │
+│                                                                 │
+│  📊 Core Services:                                              │
 │  ├─ LLM Service (mistral, llama3, etc.)                        │
 │  ├─ Prompt Engineering (optimized for OpenAPI)                 │
 │  ├─ JSON Patch Generator (precise edits)                       │
 │  ├─ Smart Fix Service (AI + deterministic)                     │
 │  ├─ Meta-Analysis Engine (linter augmentation)                 │
-│  ├─ RAG Service (OpenAPI best practices knowledge base)        │
 │  └─ Mock Data Generator (context-aware)                        │
-└─────────────────────────────────────────────────────────────────┘
+│                                                                 │
+│  🧠 RAG-Enhanced Intelligence:                                  │
+│  ├─ RAG Service (dual knowledge base architecture)             │
+│  │   ├─ Attacker KB: OWASP API Top 10, MITRE ATT&CK           │
+│  │   └─ Governance KB: CVSS, DREAD, GDPR/HIPAA/PCI-DSS        │
+│  ├─ Multi-Agent System (coordinated security analysis)         │
+│  │   ├─ Vulnerability Scanner Agent                            │
+│  │   ├─ Threat Modeling Agent (RAG-augmented)                  │
+│  │   ├─ Security Reporter Agent (RAG-augmented)                │
+│  │   └─ Attack Path Orchestrator (manages agent coordination)  │
+│  └─ Attack Chain Cache (80-90% AI call reduction)              │
+│                                                                 │
+│  🔍 Advanced Analyzers:                                         │
+│  ├─ Taint Analysis (data flow security vulnerabilities)        │
+│  ├─ Authorization Matrix (access control patterns)             │
+│  ├─ Schema Similarity (code quality & duplication)             │
+│  ├─ Zombie API Detection (shadowed/orphaned endpoints)         │
+│  └─ Comprehensive Architecture Analysis (holistic health)      │
+│                                                                 │
+│  🌐 Repository Integration:                                     │
+│  ├─ MCP Client (Model Context Protocol for repo browsing)      │
+│  └─ Repository Service (GitHub/GitLab spec discovery)          │
+└────────────────┬────────────────────────────────────────────────┘
                  │
                  ▼
-         ┌───────────────┐         ┌──────────────┐
-         │ Ollama (LLM)  │         │ Redis Cache  │
-         │ mistral/llama │         │ Sessions     │
-         └───────────────┘         └──────────────┘
+    ┌────────────────┬───────────────┬──────────────────┐
+    │                │               │                  │
+    ▼                ▼               ▼                  ▼
+┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌──────────────┐
+│ Ollama   │  │ ChromaDB │  │ Redis Cache  │  │ GitHub/      │
+│ (LLM)    │  │ (Vector  │  │ Sessions +   │  │ GitLab       │
+│ mistral/ │  │ Store)   │  │ Attack Chain │  │ Repositories │
+│ llama3   │  │          │  │ Cache        │  │ (via MCP)    │
+└──────────┘  └──────────┘  └──────────────┘  └──────────────┘
 ```
 
 ### Service Communication
 
-| From                             | To        | Protocol                     | Purpose                         |
-| -------------------------------- | --------- | ---------------------------- | ------------------------------- |
-| **UI** → **API Gateway**         | REST      | `axios`                      | CRUD operations on specs        |
-| **UI** → **API Gateway**         | WebSocket | `SockJS`/`STOMP`             | Real-time validation updates    |
-| **API Gateway** → **AI Service** | HTTP      | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis |
-| **API Gateway** → **Redis**      | TCP       | Spring Data Redis            | Session storage                 |
-| **AI Service** → **Ollama**      | HTTP      | `httpx`                      | LLM inference                   |
+| From                             | To                 | Protocol                     | Purpose                                   |
+| -------------------------------- | ------------------ | ---------------------------- | ----------------------------------------- |
+| **UI** → **API Gateway**         | REST               | `axios`                      | CRUD operations on specs                  |
+| **UI** → **API Gateway**         | WebSocket          | `SockJS`/`STOMP`             | Real-time validation updates              |
+| **API Gateway** → **AI Service** | HTTP               | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis           |
+| **API Gateway** → **Redis**      | TCP                | Spring Data Redis            | Session storage, attack chain caching     |
+| **AI Service** → **Ollama**      | HTTP               | `httpx`                      | LLM inference for all AI features         |
+| **AI Service** → **ChromaDB**    | Local/HTTP         | LangChain + ChromaDB client  | RAG knowledge base queries (vector store) |
+| **AI Service** → **GitHub/GitLab** | HTTP             | MCP client + REST APIs       | Repository browsing & spec discovery      |
+| **RAG Service** → **Agents**     | Python in-process  | Direct function calls        | Knowledge augmentation for security agents|
+| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls | Multi-agent coordination for attack analysis |
 
-### Data Flow Example: AI Meta-Analysis
+### Data Flow Examples
+
+#### Example 1: AI Meta-Analysis (Linter-Augmented)
 
 ```
 1. User clicks "Run AI Analysis" in UI
@@ -253,6 +292,59 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 8. AI Service structures response → Returns JSON
 9. API Gateway → UI: AI insights with severity, category, affected paths
 10. UI displays insights in dedicated "AI Insights" panel with blue theme
+```
+
+#### Example 2: RAG-Enhanced Attack Path Simulation
+
+```
+1. User clicks "Attack Path Simulation" in Advanced Analysis tab
+2. UI → API Gateway: POST /sessions/{id}/analysis/attack-path-findings
+3. API Gateway extracts security findings deterministically (Java-based)
+   ├─ Public endpoints without authentication
+   ├─ Sensitive schema fields (PII, credentials)
+   ├─ Authorization patterns per endpoint
+   └─ Data flow relationships
+4. API Gateway → AI Service: POST /ai/security/attack-path-findings
+   (Sends findings payload instead of full spec - reduces size 90%)
+5. AI Service receives findings → Initializes Attack Path Orchestrator
+6. Orchestrator spawns 3 agents in parallel:
+   ├─ Vulnerability Scanner Agent (identifies attack surface)
+   ├─ Threat Modeling Agent → RAG Service (Attacker KB query)
+   │   └─ ChromaDB: Retrieves OWASP API Top 10 & MITRE ATT&CK patterns
+   └─ Security Reporter Agent → RAG Service (Governance KB query)
+       └─ ChromaDB: Retrieves CVSS, DREAD, compliance frameworks
+7. Orchestrator checks Attack Chain Cache (Redis)
+   ├─ Cache hit (80% of cases) → Returns cached chains
+   └─ Cache miss → Proceeds to LLM generation
+8. AI Service → Ollama: Multi-step attack chain generation
+   (Augmented with RAG knowledge: exploitation techniques, risk scoring)
+9. Orchestrator coordinates agent outputs:
+   ├─ Vulnerability findings + Attack chains + Risk assessment
+   └─ Compliance implications (GDPR/HIPAA/PCI-DSS)
+10. AI Service caches results → Returns AttackPathReport JSON
+11. API Gateway → UI: Attack chains with steps, severity, complexity
+12. UI renders interactive attack path visualization with expandable steps
+```
+
+#### Example 3: Comprehensive Architecture Analysis
+
+```
+1. User clicks "Run Comprehensive Analysis" in Advanced Analysis tab
+2. UI → API Gateway: POST /sessions/{id}/analysis/comprehensive-architecture
+3. API Gateway → AI Service: POST /ai/analyze/comprehensive-architecture
+4. AI Service runs 4 analyzers in parallel:
+   ├─ Taint Analysis: Tracks sensitive data flow (PII exposure risks)
+   ├─ Authorization Matrix: Maps scopes/roles to endpoints (access control gaps)
+   ├─ Schema Similarity: Detects duplicate/near-duplicate schemas (code quality)
+   └─ Zombie API Detection: Finds shadowed/orphaned endpoints (technical debt)
+5. Each analyzer → Ollama: Specialized prompts for domain-specific analysis
+6. AI Service aggregates results:
+   ├─ Calculates overall health score (0-100)
+   ├─ Generates executive summary
+   └─ Prioritizes action items by severity & business impact
+7. AI Service → API Gateway: ArchitectureAnalysisReport JSON
+8. API Gateway → UI: Comprehensive report with 4 sub-analyses + health score
+9. UI displays tabbed interface with detailed findings per analyzer
 ```
 
 ---
@@ -286,23 +378,27 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 
 ### AI Service (Python)
 
-| Technology                 | Version | Purpose               |
-| -------------------------- | ------- | --------------------- |
-| **Python**                 | 3.10+   | Programming language  |
-| **FastAPI**                | Latest  | Web framework         |
-| **Ollama**                 | Latest  | Local LLM inference   |
-| **prance**                 | Latest  | OpenAPI spec parsing  |
-| **openapi-spec-validator** | Latest  | OpenAPI validation    |
-| **httpx**                  | Latest  | Async HTTP client     |
-| **ChromaDB**               | Latest  | Vector database (RAG) |
+| Technology                   | Version | Purpose                                      |
+| ---------------------------- | ------- | -------------------------------------------- |
+| **Python**                   | 3.10+   | Programming language                         |
+| **FastAPI**                  | Latest  | Web framework                                |
+| **Ollama**                   | Latest  | Local LLM inference                          |
+| **LangChain**                | 0.1.0+  | RAG orchestration & agent coordination       |
+| **LangChain Community**      | 0.0.20+ | Additional integrations (ChromaDB, HuggingFace) |
+| **ChromaDB**                 | 0.4.0+  | Vector database for RAG knowledge bases      |
+| **Sentence Transformers**    | 2.2.0+  | Text embeddings for semantic search          |
+| **prance**                   | Latest  | OpenAPI spec parsing & validation            |
+| **openapi-spec-validator**   | Latest  | OpenAPI validation                           |
+| **httpx**                    | Latest  | Async HTTP client                            |
 
 ### Infrastructure
 
-| Technology | Purpose                                   |
-| ---------- | ----------------------------------------- |
-| **Redis**  | Session storage, caching                  |
-| **Docker** | Redis containerization                    |
-| **Ollama** | Local LLM hosting (mistral, llama3, etc.) |
+| Technology | Purpose                                                        |
+| ---------- | -------------------------------------------------------------- |
+| **Redis**  | Session storage, attack chain caching                          |
+| **Docker** | Redis containerization                                         |
+| **Ollama** | Local LLM hosting (mistral, llama3, etc.)                      |
+| **ChromaDB** | Persistent vector store for RAG knowledge bases (local SQLite) |
 
 ---
 
@@ -356,11 +452,16 @@ pip install -r requirements.txt
 # Copy environment template (first time only)
 cp .env.example .env
 
+# Initialize RAG knowledge bases (first time only)
+# This ingests OWASP, MITRE ATT&CK, CVSS, DREAD, and compliance frameworks
+python app/scripts/ingest_knowledge.py
+
 # Start the service
 uvicorn app.main:app --reload
 ```
 
 ✅ AI Service running at `http://localhost:8000`
+✅ RAG knowledge bases initialized at `data/vector_store/`
 
 #### 4️⃣ Start Java Backend
 
@@ -395,6 +496,13 @@ npm start
 4. **Try a Quick Fix** - Click ⚡ or ✨ on any suggestion
 5. **Ask the AI** - Use natural language to edit: "Add a GET /health endpoint"
 6. **Test Your API** - Click the "API Lab" tab and send test requests
+7. **Advanced Analysis** - Navigate to the "Advanced Analysis" tab for:
+   - **Attack Path Simulation** - RAG-enhanced multi-step attack chain detection
+   - **Taint Analysis** - Track sensitive data flow through your API
+   - **Authorization Matrix** - Visualize access control patterns
+   - **Schema Similarity** - Detect duplicate/near-duplicate schemas
+   - **Zombie API Detection** - Find shadowed and orphaned endpoints
+   - **Comprehensive Architecture Analysis** - Get an overall health score (0-100)
 
 ---
 
@@ -457,6 +565,101 @@ Every suggestion is **explainable**:
   - **Knowledge sources** (RAG-powered)
 
 Explanations are **cached** for performance.
+
+### 🧠 RAG-Enhanced Security Analysis
+
+SchemaSculpt uses **Retrieval-Augmented Generation (RAG)** to transform from a basic AI tool into a domain expert with specialized security knowledge:
+
+#### Dual Knowledge Base Architecture
+
+1. **Attacker Knowledge Base** (Offensive Security)
+   - **OWASP API Security Top 10**: All 10 vulnerabilities with exploitation techniques
+   - **MITRE ATT&CK Patterns**: API-specific attack techniques (T1190, T1557, T1212, T1550)
+   - Real-world attack scenarios and payloads
+   - Used by: Threat Modeling Agent
+
+2. **Governance Knowledge Base** (Defensive Security)
+   - **CVSS v3.1**: Complete scoring methodology for risk assessment
+   - **DREAD Framework**: Threat modeling and risk rating
+   - **Compliance Frameworks**: GDPR, HIPAA, PCI-DSS requirements
+   - Used by: Security Reporter Agent
+
+#### Multi-Agent Security Analysis
+
+When you run "Attack Path Simulation", three specialized agents work together:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│           Attack Path Orchestrator (Coordinator)            │
+└──────────┬─────────────────┬─────────────────┬──────────────┘
+           │                 │                 │
+           ▼                 ▼                 ▼
+  ┌────────────────┐  ┌──────────────┐  ┌──────────────────┐
+  │ Vulnerability  │  │   Threat     │  │    Security      │
+  │ Scanner Agent  │  │  Modeling    │  │    Reporter      │
+  │                │  │   Agent      │  │     Agent        │
+  │ • Finds attack │  │ (RAG-powered)│  │  (RAG-powered)   │
+  │   surface      │  │              │  │                  │
+  │ • Identifies   │  │ • Queries    │  │ • Queries        │
+  │   weak points  │  │   Attacker   │  │   Governance     │
+  │ • Extracts     │  │   KB         │  │   KB             │
+  │   patterns     │  │ • Builds     │  │ • Scores risks   │
+  │                │  │   attack     │  │   (CVSS/DREAD)   │
+  │                │  │   chains     │  │ • Compliance     │
+  │                │  │              │  │   implications   │
+  └────────────────┘  └──────────────┘  └──────────────────┘
+           │                 │                 │
+           └─────────────────┴─────────────────┘
+                             ▼
+              ┌─────────────────────────────┐
+              │   Comprehensive Report      │
+              │ • Multi-step attack chains  │
+              │ • Risk scores & severity    │
+              │ • Compliance violations     │
+              │ • Remediation guidance      │
+              └─────────────────────────────┘
+```
+
+#### Advanced Architectural Analyzers
+
+Beyond attack paths, SchemaSculpt provides four specialized analyzers:
+
+1. **🔍 Taint Analysis**
+   - Tracks sensitive data (PII, credentials, tokens) through your API
+   - Identifies data exposure vulnerabilities
+   - Maps data flow from sources to sinks
+   - Example: "User email exposed in GET /users/{id} without authentication"
+
+2. **🔐 Authorization Matrix**
+   - Visualizes access control patterns across all endpoints
+   - Maps OAuth scopes, API keys, and roles to operations
+   - Detects missing or inconsistent authorization
+   - Example: "Admin endpoints accessible with 'user:read' scope"
+
+3. **🧬 Schema Similarity Analysis**
+   - Uses AI to detect duplicate and near-duplicate schemas
+   - Identifies opportunities for schema reuse
+   - Improves API maintainability and consistency
+   - Example: "UserResponse and UserDTO are 90% similar - consider merging"
+
+4. **👻 Zombie API Detection**
+   - Finds shadowed endpoints (newer version makes old one obsolete)
+   - Detects orphaned endpoints (referenced but not implemented)
+   - Identifies technical debt and maintenance issues
+   - Example: "GET /api/v1/users shadowed by GET /api/v2/users"
+
+5. **📊 Comprehensive Architecture Analysis**
+   - Combines all 4 analyzers into a holistic view
+   - Calculates overall API health score (0-100)
+   - Generates executive summary with prioritized action items
+   - Provides business impact assessment
+
+#### Performance Optimizations
+
+- **Attack Chain Caching**: 80-90% reduction in AI calls during iterative development
+- **Multi-level Cache Strategy**: Spec cache → Finding signature cache → Graph structure cache
+- **24-hour TTL**: Automatic cache expiration
+- **Deterministic Findings Extraction**: Java-based pre-processing reduces payload size by 90%
 
 ---
 
