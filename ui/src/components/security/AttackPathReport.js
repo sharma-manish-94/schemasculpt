@@ -5,13 +5,17 @@
  * Shows multi-step attack chains, executive summary, and remediation roadmap.
  */
 
-import React, { useState } from 'react';
-import { formatSeverity, formatRiskLevel, getSecurityScoreColor } from '../../api/attackPathService';
-import './AttackPathReport.css';
+import React, { useState } from "react";
+import {
+  formatSeverity,
+  formatRiskLevel,
+  getSecurityScoreColor,
+} from "../../api/attackPathService";
+import "./AttackPathReport.css";
 
 const AttackPathReport = ({ report, onClose }) => {
   const [selectedChain, setSelectedChain] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   if (!report) return null;
 
@@ -29,7 +33,7 @@ const AttackPathReport = ({ report, onClose }) => {
     total_chains_found,
     total_vulnerabilities,
     vulnerabilities_in_chains,
-    isolated_vulnerabilities
+    isolated_vulnerabilities,
   } = report;
 
   const riskInfo = formatRiskLevel(risk_level);
@@ -38,7 +42,7 @@ const AttackPathReport = ({ report, onClose }) => {
   const renderAttackChain = (chain) => {
     // Safe defaults for missing fields
     const likelihood = chain.likelihood ?? 0.7;
-    const complexity = chain.complexity || 'Medium';
+    const complexity = chain.complexity || "Medium";
     const steps = Array.isArray(chain.steps) ? chain.steps : [];
 
     return (
@@ -49,29 +53,43 @@ const AttackPathReport = ({ report, onClose }) => {
       >
         <div className="attack-chain-header">
           <div className="attack-chain-title">
-            <span className={`severity-badge severity-${(chain.severity || 'medium').toLowerCase()}`}>
-              {formatSeverity(chain.severity || 'MEDIUM').label}
+            <span
+              className={`severity-badge severity-${(
+                chain.severity || "medium"
+              ).toLowerCase()}`}
+            >
+              {formatSeverity(chain.severity || "MEDIUM").label}
             </span>
-            <h3>{chain.name || 'Unknown Attack'}</h3>
+            <h3>{chain.name || "Unknown Attack"}</h3>
           </div>
           <div className="attack-chain-meta">
             <span className="chain-complexity">Complexity: {complexity}</span>
-            <span className="chain-likelihood">Likelihood: {(likelihood * 100).toFixed(0)}%</span>
+            <span className="chain-likelihood">
+              Likelihood: {(likelihood * 100).toFixed(0)}%
+            </span>
           </div>
         </div>
 
-        <p className="attack-goal">{chain.attack_goal || 'No description available'}</p>
-        <p className="business-impact">{chain.business_impact || 'Impact unknown'}</p>
+        <p className="attack-goal">
+          {chain.attack_goal || "No description available"}
+        </p>
+        <p className="business-impact">
+          {chain.business_impact || "Impact unknown"}
+        </p>
 
         <div className="attack-steps-preview">
           <strong>{steps.length} Steps:</strong>
           {steps.map((step, idx) => {
             // Handle both string steps and object steps
-            if (typeof step === 'string') {
-              return <span key={idx} className="step-preview">{step}</span>;
+            if (typeof step === "string") {
+              return (
+                <span key={idx} className="step-preview">
+                  {step}
+                </span>
+              );
             }
-            const method = step.http_method || 'API';
-            const endpoint = step.endpoint || 'call';
+            const method = step.http_method || "API";
+            const endpoint = step.endpoint || "call";
             return (
               <span key={idx} className="step-preview">
                 {idx + 1}. {method} {endpoint}
@@ -88,57 +106,66 @@ const AttackPathReport = ({ report, onClose }) => {
     const likelihood = chain.likelihood ?? 0.7;
     const impactScore = chain.impact_score ?? 7.5;
     const steps = Array.isArray(chain.steps) ? chain.steps : [];
-    const remediationSteps = Array.isArray(chain.remediation_steps) ? chain.remediation_steps : [];
+    const remediationSteps = Array.isArray(chain.remediation_steps)
+      ? chain.remediation_steps
+      : [];
 
     return (
       <div className="chain-details-page">
         <div className="chain-details-header">
-          <button onClick={() => setSelectedChain(null)} className="back-button">
+          <button
+            onClick={() => setSelectedChain(null)}
+            className="back-button"
+          >
             ← Back to All Chains
           </button>
-          <h2>{chain.name || 'Attack Chain Details'}</h2>
+          <h2>{chain.name || "Attack Chain Details"}</h2>
         </div>
 
         <div className="chain-details-content">
-            <div className="chain-overview">
-              <div className="overview-item">
-                <label>Attack Goal:</label>
-                <p>{chain.attack_goal || 'No description available'}</p>
+          <div className="chain-overview">
+            <div className="overview-item">
+              <label>Attack Goal:</label>
+              <p>{chain.attack_goal || "No description available"}</p>
+            </div>
+            <div className="overview-item">
+              <label>Business Impact:</label>
+              <p>{chain.business_impact || "Impact not specified"}</p>
+            </div>
+            <div className="overview-item">
+              <label>Attacker Profile:</label>
+              <p>{chain.attacker_profile || "Authenticated User"}</p>
+            </div>
+            <div className="overview-metrics">
+              <div className="metric">
+                <span
+                  className={`severity-badge severity-${(
+                    chain.severity || "medium"
+                  ).toLowerCase()}`}
+                >
+                  {chain.severity || "MEDIUM"}
+                </span>
               </div>
-              <div className="overview-item">
-                <label>Business Impact:</label>
-                <p>{chain.business_impact || 'Impact not specified'}</p>
+              <div className="metric">
+                <label>Complexity:</label>
+                <span>{chain.complexity || "Medium"}</span>
               </div>
-              <div className="overview-item">
-                <label>Attacker Profile:</label>
-                <p>{chain.attacker_profile || 'Authenticated User'}</p>
+              <div className="metric">
+                <label>Likelihood:</label>
+                <span>{(likelihood * 100).toFixed(0)}%</span>
               </div>
-              <div className="overview-metrics">
-                <div className="metric">
-                  <span className={`severity-badge severity-${(chain.severity || 'medium').toLowerCase()}`}>
-                    {chain.severity || 'MEDIUM'}
-                  </span>
-                </div>
-                <div className="metric">
-                  <label>Complexity:</label>
-                  <span>{chain.complexity || 'Medium'}</span>
-                </div>
-                <div className="metric">
-                  <label>Likelihood:</label>
-                  <span>{(likelihood * 100).toFixed(0)}%</span>
-                </div>
-                <div className="metric">
-                  <label>Impact:</label>
-                  <span>{impactScore.toFixed(1)}/10</span>
-                </div>
+              <div className="metric">
+                <label>Impact:</label>
+                <span>{impactScore.toFixed(1)}/10</span>
               </div>
             </div>
+          </div>
 
           <div className="attack-steps-detailed">
             <h3>Attack Steps</h3>
             {steps.map((step, idx) => {
               // Handle both string steps and object steps
-              if (typeof step === 'string') {
+              if (typeof step === "string") {
                 return (
                   <div key={idx} className="attack-step">
                     <div className="step-number">{idx + 1}</div>
@@ -151,37 +178,44 @@ const AttackPathReport = ({ report, onClose }) => {
 
               // Handle object steps with safe defaults
               const stepNumber = step.step_number || idx + 1;
-              const httpMethod = step.http_method || 'API';
-              const endpoint = step.endpoint || '/';
-              const description = step.description || 'Step not described';
-              const stepType = step.step_type || 'EXPLOIT';
+              const httpMethod = step.http_method || "API";
+              const endpoint = step.endpoint || "/";
+              const description = step.description || "Step not described";
+              const stepType = step.step_type || "EXPLOIT";
 
               return (
                 <div key={idx} className="attack-step">
                   <div className="step-number">{stepNumber}</div>
                   <div className="step-content">
                     <div className="step-header">
-                      <span className="step-type">{stepType.replace('_', ' ').toUpperCase()}</span>
+                      <span className="step-type">
+                        {stepType.replace("_", " ").toUpperCase()}
+                      </span>
                       <span className="step-endpoint">
-                        <code>{httpMethod} {endpoint}</code>
+                        <code>
+                          {httpMethod} {endpoint}
+                        </code>
                       </span>
                     </div>
                     <p className="step-description">{description}</p>
 
                     {step.technical_detail && (
-                      <p className="step-technical"><strong>How to exploit:</strong> {step.technical_detail}</p>
+                      <p className="step-technical">
+                        <strong>How to exploit:</strong> {step.technical_detail}
+                      </p>
                     )}
 
-                    {step.information_gained && step.information_gained.length > 0 && (
-                      <div className="step-gains">
-                        <strong>Information Gained:</strong>
-                        <ul>
-                          {step.information_gained.map((info, i) => (
-                            <li key={i}>{info}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {step.information_gained &&
+                      step.information_gained.length > 0 && (
+                        <div className="step-gains">
+                          <strong>Information Gained:</strong>
+                          <ul>
+                            {step.information_gained.map((info, i) => (
+                              <li key={i}>{info}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
 
                     {step.example_request && (
                       <details className="step-example">
@@ -227,7 +261,7 @@ const AttackPathReport = ({ report, onClose }) => {
               className="risk-badge"
               style={{
                 backgroundColor: riskInfo.bgColor,
-                color: riskInfo.color
+                color: riskInfo.color,
               }}
             >
               {riskInfo.label}
@@ -240,32 +274,34 @@ const AttackPathReport = ({ report, onClose }) => {
             </div>
           </div>
         </div>
-        <button onClick={onClose} className="close-report-btn">Close Report</button>
+        <button onClick={onClose} className="close-report-btn">
+          Close Report
+        </button>
       </div>
 
       <div className="report-tabs">
         <button
-          className={activeTab === 'overview' ? 'active' : ''}
-          onClick={() => setActiveTab('overview')}
+          className={activeTab === "overview" ? "active" : ""}
+          onClick={() => setActiveTab("overview")}
         >
           Overview
         </button>
         <button
-          className={activeTab === 'chains' ? 'active' : ''}
-          onClick={() => setActiveTab('chains')}
+          className={activeTab === "chains" ? "active" : ""}
+          onClick={() => setActiveTab("chains")}
         >
           Attack Chains ({total_chains_found})
         </button>
         <button
-          className={activeTab === 'remediation' ? 'active' : ''}
-          onClick={() => setActiveTab('remediation')}
+          className={activeTab === "remediation" ? "active" : ""}
+          onClick={() => setActiveTab("remediation")}
         >
           Remediation
         </button>
       </div>
 
       <div className="report-content">
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <div className="overview-tab">
             <div className="executive-summary">
               <h2>Executive Summary</h2>
@@ -304,7 +340,7 @@ const AttackPathReport = ({ report, onClose }) => {
           </div>
         )}
 
-        {activeTab === 'chains' && (
+        {activeTab === "chains" && (
           <div className="chains-tab">
             {selectedChain ? (
               renderChainDetails(selectedChain)
@@ -330,7 +366,10 @@ const AttackPathReport = ({ report, onClose }) => {
 
                 {all_chains.length === 0 && (
                   <div className="no-chains">
-                    <p>No attack chains discovered. Individual vulnerabilities may exist but cannot be easily chained together.</p>
+                    <p>
+                      No attack chains discovered. Individual vulnerabilities
+                      may exist but cannot be easily chained together.
+                    </p>
                   </div>
                 )}
               </>
@@ -338,7 +377,7 @@ const AttackPathReport = ({ report, onClose }) => {
           </div>
         )}
 
-        {activeTab === 'remediation' && (
+        {activeTab === "remediation" && (
           <div className="remediation-tab">
             {immediate_actions.length > 0 && (
               <div className="remediation-section">

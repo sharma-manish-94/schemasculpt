@@ -152,6 +152,7 @@ public class SessionServiceImpl implements SessionService {
   }
 
   @Override
+<<<<<<< HEAD
   @Transactional(readOnly = true)
   public String getSpecTextForSession(final String sessionId) {
     if (sessionId == null || sessionId.trim().isEmpty()) {
@@ -176,6 +177,8 @@ public class SessionServiceImpl implements SessionService {
   }
 
   @Override
+=======
+>>>>>>> origin/main
   public void closeSession(final String sessionId) {
     if (sessionId == null || sessionId.trim().isEmpty()) {
       throw new IllegalArgumentException("Session ID cannot be null or empty");

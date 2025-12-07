@@ -195,6 +195,7 @@ public class QuickFixService {
           addSuccessResponse(openApi, opPath, opMethod);
         }
         break;
+<<<<<<< HEAD
       case "create-missing-schema":
         String schemaName = (String) request.context().get("schemaName");
         if (schemaName != null) {
@@ -209,6 +210,8 @@ public class QuickFixService {
           addMissingDescription(openApi, descPath, descMethod, responseCode);
         }
         break;
+=======
+>>>>>>> origin/main
     }
   }
 
@@ -309,6 +312,7 @@ public class QuickFixService {
           new io.swagger.v3.oas.models.responses.ApiResponse();
       successResponse.setDescription("Successful operation");
       operation.getResponses().put("200", successResponse);
+<<<<<<< HEAD
     }
   }
 
@@ -423,5 +427,8 @@ public class QuickFixService {
     } catch (NumberFormatException e) {
       return "Response";
     }
+=======
+    }
+>>>>>>> origin/main
   }
 }
