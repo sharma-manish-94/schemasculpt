@@ -51,9 +51,7 @@ public class ProxyService {
         .map(
             body -> {
               Map<String, String> headers =
-                  clientResponse.headers().asHttpHeaders().entrySet().stream()
-                      .collect(
-                          Collectors.toMap(Map.Entry::getKey, e -> String.join(",", e.getValue())));
+                  clientResponse.headers().asHttpHeaders().toSingleValueMap();
               return new ProxyResponse(clientResponse.statusCode().value(), headers, body);
             });
   }

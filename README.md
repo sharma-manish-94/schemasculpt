@@ -265,17 +265,17 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 
 ### Service Communication
 
-| From                             | To                 | Protocol                     | Purpose                                   |
-| -------------------------------- | ------------------ | ---------------------------- | ----------------------------------------- |
-| **UI** → **API Gateway**         | REST               | `axios`                      | CRUD operations on specs                  |
-| **UI** → **API Gateway**         | WebSocket          | `SockJS`/`STOMP`             | Real-time validation updates              |
-| **API Gateway** → **AI Service** | HTTP               | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis           |
-| **API Gateway** → **Redis**      | TCP                | Spring Data Redis            | Session storage, attack chain caching     |
-| **AI Service** → **Ollama**      | HTTP               | `httpx`                      | LLM inference for all AI features         |
-| **AI Service** → **ChromaDB**    | Local/HTTP         | LangChain + ChromaDB client  | RAG knowledge base queries (vector store) |
-| **AI Service** → **GitHub/GitLab** | HTTP             | MCP client + REST APIs       | Repository browsing & spec discovery      |
-| **RAG Service** → **Agents**     | Python in-process  | Direct function calls        | Knowledge augmentation for security agents|
-| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls | Multi-agent coordination for attack analysis |
+| From                                      | To                | Protocol                     | Purpose                                      |
+| ----------------------------------------- | ----------------- | ---------------------------- | -------------------------------------------- |
+| **UI** → **API Gateway**                  | REST              | `axios`                      | CRUD operations on specs                     |
+| **UI** → **API Gateway**                  | WebSocket         | `SockJS`/`STOMP`             | Real-time validation updates                 |
+| **API Gateway** → **AI Service**          | HTTP              | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis              |
+| **API Gateway** → **Redis**               | TCP               | Spring Data Redis            | Session storage, attack chain caching        |
+| **AI Service** → **Ollama**               | HTTP              | `httpx`                      | LLM inference for all AI features            |
+| **AI Service** → **ChromaDB**             | Local/HTTP        | LangChain + ChromaDB client  | RAG knowledge base queries (vector store)    |
+| **AI Service** → **GitHub/GitLab**        | HTTP              | MCP client + REST APIs       | Repository browsing & spec discovery         |
+| **RAG Service** → **Agents**              | Python in-process | Direct function calls        | Knowledge augmentation for security agents   |
+| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls        | Multi-agent coordination for attack analysis |
 
 ### Data Flow Examples
 
@@ -378,26 +378,26 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 
 ### AI Service (Python)
 
-| Technology                   | Version | Purpose                                      |
-| ---------------------------- | ------- | -------------------------------------------- |
-| **Python**                   | 3.10+   | Programming language                         |
-| **FastAPI**                  | Latest  | Web framework                                |
-| **Ollama**                   | Latest  | Local LLM inference                          |
-| **LangChain**                | 0.1.0+  | RAG orchestration & agent coordination       |
-| **LangChain Community**      | 0.0.20+ | Additional integrations (ChromaDB, HuggingFace) |
-| **ChromaDB**                 | 0.4.0+  | Vector database for RAG knowledge bases      |
-| **Sentence Transformers**    | 2.2.0+  | Text embeddings for semantic search          |
-| **prance**                   | Latest  | OpenAPI spec parsing & validation            |
-| **openapi-spec-validator**   | Latest  | OpenAPI validation                           |
-| **httpx**                    | Latest  | Async HTTP client                            |
+| Technology                 | Version | Purpose                                         |
+| -------------------------- | ------- | ----------------------------------------------- |
+| **Python**                 | 3.10+   | Programming language                            |
+| **FastAPI**                | Latest  | Web framework                                   |
+| **Ollama**                 | Latest  | Local LLM inference                             |
+| **LangChain**              | 0.1.0+  | RAG orchestration & agent coordination          |
+| **LangChain Community**    | 0.0.20+ | Additional integrations (ChromaDB, HuggingFace) |
+| **ChromaDB**               | 0.4.0+  | Vector database for RAG knowledge bases         |
+| **Sentence Transformers**  | 2.2.0+  | Text embeddings for semantic search             |
+| **prance**                 | Latest  | OpenAPI spec parsing & validation               |
+| **openapi-spec-validator** | Latest  | OpenAPI validation                              |
+| **httpx**                  | Latest  | Async HTTP client                               |
 
 ### Infrastructure
 
-| Technology | Purpose                                                        |
-| ---------- | -------------------------------------------------------------- |
-| **Redis**  | Session storage, attack chain caching                          |
-| **Docker** | Redis containerization                                         |
-| **Ollama** | Local LLM hosting (mistral, llama3, etc.)                      |
+| Technology   | Purpose                                                        |
+| ------------ | -------------------------------------------------------------- |
+| **Redis**    | Session storage, attack chain caching                          |
+| **Docker**   | Redis containerization                                         |
+| **Ollama**   | Local LLM hosting (mistral, llama3, etc.)                      |
 | **ChromaDB** | Persistent vector store for RAG knowledge bases (local SQLite) |
 
 ---
@@ -573,6 +573,7 @@ SchemaSculpt uses **Retrieval-Augmented Generation (RAG)** to transform from a b
 #### Dual Knowledge Base Architecture
 
 1. **Attacker Knowledge Base** (Offensive Security)
+
    - **OWASP API Security Top 10**: All 10 vulnerabilities with exploitation techniques
    - **MITRE ATT&CK Patterns**: API-specific attack techniques (T1190, T1557, T1212, T1550)
    - Real-world attack scenarios and payloads
@@ -625,24 +626,28 @@ When you run "Attack Path Simulation", three specialized agents work together:
 Beyond attack paths, SchemaSculpt provides four specialized analyzers:
 
 1. **🔍 Taint Analysis**
+
    - Tracks sensitive data (PII, credentials, tokens) through your API
    - Identifies data exposure vulnerabilities
    - Maps data flow from sources to sinks
    - Example: "User email exposed in GET /users/{id} without authentication"
 
 2. **🔐 Authorization Matrix**
+
    - Visualizes access control patterns across all endpoints
    - Maps OAuth scopes, API keys, and roles to operations
    - Detects missing or inconsistent authorization
    - Example: "Admin endpoints accessible with 'user:read' scope"
 
 3. **🧬 Schema Similarity Analysis**
-   - Uses AI to detect duplicate and near-duplicate schemas
+
+   - Uses Jaggard Similarity to detect duplicate and near-duplicate schemas
    - Identifies opportunities for schema reuse
    - Improves API maintainability and consistency
    - Example: "UserResponse and UserDTO are 90% similar - consider merging"
 
 4. **👻 Zombie API Detection**
+
    - Finds shadowed endpoints (newer version makes old one obsolete)
    - Detects orphaned endpoints (referenced but not implemented)
    - Identifies technical debt and maintenance issues

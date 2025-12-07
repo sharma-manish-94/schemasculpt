@@ -20,9 +20,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  @Autowired private JwtTokenProvider tokenProvider;
+  private final JwtTokenProvider tokenProvider;
 
-  @Autowired private UserRepository userRepository;
+  private final UserRepository userRepository;
+
+  public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository) {
+      this.tokenProvider = tokenProvider;
+      this.userRepository = userRepository;
+  }
 
   @Override
   protected void doFilterInternal(
