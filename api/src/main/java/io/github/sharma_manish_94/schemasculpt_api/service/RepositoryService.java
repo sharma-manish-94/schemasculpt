@@ -45,15 +45,12 @@ public class RepositoryService {
                 .header("X-Session-ID", sessionId)
                 .bodyValue(request)
                 .retrieve()
-<<<<<<< HEAD
                 .onStatus(status -> status.value() == 422, response -> {
                     return response.bodyToMono(String.class).flatMap(body -> {
                         log.error("422 Validation error from AI service: {}", body);
                         return Mono.error(new RuntimeException("Validation failed: " + body));
                     });
                 })
-=======
->>>>>>> origin/main
                 .bodyToMono(RepositoryConnectionResponse.class)
                 .doOnSuccess(response ->
                         log.info("Successfully connected to {} for session: {}", request.getProvider(), sessionId))
@@ -89,11 +86,8 @@ public class RepositoryService {
     public Mono<BrowseTreeResponse> browseTree(String sessionId, BrowseTreeRequest request) {
         log.debug("Browsing tree: {}/{}/{} for session: {}",
                 request.getOwner(), request.getRepo(), request.getPath(), sessionId);
-<<<<<<< HEAD
         log.debug("Browse request payload - owner: {}, repo: {}, path: {}, branch: {}",
                 request.getOwner(), request.getRepo(), request.getPath(), request.getBranch());
-=======
->>>>>>> origin/main
 
         return webClient.post()
                 .uri("/api/repository/browse")
@@ -101,15 +95,12 @@ public class RepositoryService {
                 .header("X-Session-ID", sessionId)
                 .bodyValue(request)
                 .retrieve()
-<<<<<<< HEAD
                 .onStatus(status -> status.value() == 422, response -> {
                     return response.bodyToMono(String.class).flatMap(body -> {
                         log.error("422 Validation error from AI service: {}", body);
                         return Mono.error(new RuntimeException("Validation failed: " + body));
                     });
                 })
-=======
->>>>>>> origin/main
                 .bodyToMono(BrowseTreeResponse.class)
                 .doOnSuccess(response ->
                         log.debug("Retrieved {} files from {}/{}/{}",

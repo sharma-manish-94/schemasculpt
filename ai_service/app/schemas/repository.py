@@ -6,7 +6,7 @@ These schemas define the request/response models for repository endpoints.
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class RepositoryConnectionRequest(BaseModel):

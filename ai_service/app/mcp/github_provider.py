@@ -185,7 +185,6 @@ class GitHubProvider(RepositoryProvider):
             if branch:
                 args["ref"] = branch
 
-<<<<<<< HEAD
             logger.info(f"Calling get_file_contents with args: {args}")
             result = await self._client.call_tool("get_file_contents", args)
             logger.info(f"MCP result type: {type(result)}, hasattr content: {hasattr(result, 'content')}")
@@ -243,21 +242,6 @@ class GitHubProvider(RepositoryProvider):
 
         except Exception as e:
             logger.error(f"Error browsing tree {owner}/{repo}/{path}: {e}", exc_info=True)
-=======
-            result = await self._client.call_tool("get_file_contents", args)
-
-            files = []
-            file_data = result.content[0].text if hasattr(result, 'content') else result
-
-            if isinstance(file_data, list):
-                for item in file_data:
-                    files.append(self._parse_file_info(item))
-
-            return files
-
-        except Exception as e:
-            logger.error(f"Error browsing tree {owner}/{repo}/{path}: {e}")
->>>>>>> origin/main
             raise MCPOperationError(f"Error browsing tree: {e}") from e
 
     async def read_file(
