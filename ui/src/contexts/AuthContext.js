@@ -52,14 +52,12 @@ export const AuthProvider = ({ children }) => {
     if (!token) return;
 
     try {
-      const userData = await authAPI.getCurrentUser(token);
+      const userData = await authAPI.getCurrentUser();
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Failed to refresh user:', error);
-      if (error.response?.status === 401) {
-        logout();
-      }
+      // 401 handling is now done by axios interceptor
     }
   };
 

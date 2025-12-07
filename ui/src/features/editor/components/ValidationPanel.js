@@ -82,7 +82,9 @@ const ValidationPanel = React.memo(() => {
         'use-kebab-case',
         'replace-underscores-with-hyphens',
         'convert-camelcase-to-kebab',
-        'add-success-response'
+        'add-success-response',
+        'create-missing-schema',
+        'add-missing-description'
     ];
 
     const getFixButtonClass = (ruleId) => {

@@ -254,3 +254,13 @@
 2025-10-04 01:26:14,810 - __main__ - INFO - Ingestion completed successfully in 11.38 seconds
 2025-10-04 01:26:14,810 - __main__ - INFO - Processed 128 documents into 1073 chunks
 2025-10-04 01:26:14,810 - __main__ - INFO - Vector store ready for RAG-enhanced security analysis
+2025-11-20 18:08:23,180 - __main__ - INFO - Starting SchemaSculpt AI Security Knowledge Base Ingestion
+2025-11-20 18:08:23,180 - __main__ - INFO - Hardware: Intel i5-8400 (6 cores) optimization enabled
+2025-11-20 18:08:23,180 - __main__ - ERROR - Missing dependencies: No module named 'langchain.text_splitter'
+2025-11-20 18:08:23,180 - __main__ - ERROR - Install required packages:
+2025-11-20 18:08:23,180 - __main__ - ERROR - pip install langchain langchain-community chromadb sentence-transformers pypdf unstructured beautifulsoup4 html2text
+2025-11-20 18:09:37,365 - __main__ - INFO - Starting SchemaSculpt AI Security Knowledge Base Ingestion
+2025-11-20 18:09:37,366 - __main__ - INFO - Hardware: Intel i5-8400 (6 cores) optimization enabled
+2025-11-20 18:09:37,366 - __main__ - ERROR - Missing dependencies: No module named 'langchain.text_splitter'
+2025-11-20 18:09:37,366 - __main__ - ERROR - Install required packages:
+2025-11-20 18:09:37,366 - __main__ - ERROR - pip install langchain langchain-community chromadb sentence-transformers pypdf unstructured beautifulsoup4 html2text

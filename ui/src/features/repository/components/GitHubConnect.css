@@ -1,150 +1,233 @@
 .github-connect {
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 20px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e1e4e8;
+  margin-bottom: 20px;
 }
 
 .github-connect h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #333;
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #24292e;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.github-connect h3::before {
+  content: "🔗";
+  font-size: 24px;
 }
 
 .github-connect h4 {
-    margin-top: 20px;
-    margin-bottom: 10px;
-    font-size: 16px;
-    color: #555;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #24292e;
 }
 
 .github-connect.connected {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.github-connect.connected h3::before {
+  content: none;
 }
 
 .connection-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #c3e6cb;
+}
+
+.connection-status > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .status-icon {
-    font-size: 20px;
-    color: #28a745;
+  font-size: 24px;
+  color: #28a745;
+  font-weight: bold;
 }
 
 .status-text {
-    font-weight: 500;
-    color: #155724;
+  font-weight: 600;
+  font-size: 16px;
+  color: #155724;
 }
 
 .error-message {
-    padding: 10px;
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    color: #721c24;
-    margin-bottom: 15px;
+  padding: 10px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  color: #721c24;
+  margin-bottom: 15px;
 }
 
 .connect-options {
-    margin-bottom: 20px;
+  margin-bottom: 24px;
+  margin-top: 16px;
 }
 
 .oauth-section,
 .manual-auth-section {
-    margin: 15px 0;
+  background: #f6f8fa;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #e1e4e8;
+  margin: 16px 0;
 }
 
 .oauth-section p,
 .manual-auth-section p {
-    margin-bottom: 15px;
-    color: #666;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #586069;
+}
+
+.manual-auth-section p:last-of-type {
+  margin-bottom: 16px;
 }
 
 .form-group {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
 
 .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #333;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
 }
 
 .form-control {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 14px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5da;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+    sans-serif;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .form-control:focus {
-    outline: none;
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
+}
+
+.form-control::placeholder {
+  color: #6a737d;
 }
 
 .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+    sans-serif;
 }
 
 .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
-    background: #0366d6;
-    color: white;
+  background: #2da44e;
+  color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #0256b3;
+  background: #2c974b;
 }
 
 .btn-secondary {
-    background: #6c757d;
-    color: white;
+  background: #6c757d;
+  color: white;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: #5a6268;
+  background: #5a6268;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
 }
 
 .btn-link {
-    background: none;
-    color: #0366d6;
-    text-decoration: underline;
-    padding: 5px 10px;
+  background: none;
+  color: #0366d6;
+  text-decoration: underline;
+  padding: 5px 10px;
 }
 
 .btn-link:hover:not(:disabled) {
-    color: #0256b3;
+  color: #0256b3;
 }
 
 .quick-load-section {
-    padding-top: 20px;
-    border-top: 1px solid #dee2e6;
+  margin-top: 0;
+}
+
+.github-connect.connected .quick-load-section {
+  background: white;
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid #c3e6cb;
+}
+
+.quick-load-section h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #24292e;
+}
+
+.quick-load-section p {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #586069;
+}
+
+.quick-load-section .form-group {
+  margin-bottom: 12px;
+}
+
+.quick-load-section .btn {
+  width: 100%;
 }
 
 .manual-auth-section a {
-    color: #0366d6;
-    text-decoration: none;
+  color: #0366d6;
+  text-decoration: none;
 }
 
 .manual-auth-section a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }

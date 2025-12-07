@@ -9,7 +9,6 @@ import * as websocketService from "../../../api/websocketService";
 
 function EditorToolbar({ project }) {
     const { format, convertToJSON, convertToYAML, setSpecText, sessionId, specText } = useSpecStore();
-    const { token } = useAuth();
     const fileInputRef = useRef(null);
     const [saving, setSaving] = useState(false);
     const [loadingVersions, setLoadingVersions] = useState(false);
@@ -99,7 +98,7 @@ function EditorToolbar({ project }) {
                 commitMessage: commitMessage.trim()
             };
 
-            await projectAPI.saveSpecification(token, project.id, specData);
+            await projectAPI.saveSpecification(project.id, specData);
             alert('Version saved successfully!');
             setCommitMessage('');
             // Refresh versions list if it's open
@@ -119,7 +118,7 @@ function EditorToolbar({ project }) {
 
         setLoadingVersions(true);
         try {
-            const versionList = await projectAPI.getSpecificationVersions(token, project.id);
+            const versionList = await projectAPI.getSpecificationVersions(project.id);
             setVersions(versionList);
         } catch (error) {
             console.error('Failed to load versions:', error);
@@ -133,7 +132,7 @@ function EditorToolbar({ project }) {
         if (!project) return;
 
         try {
-            const spec = await projectAPI.getSpecificationVersion(token, project.id, version);
+            const spec = await projectAPI.getSpecificationVersion(project.id, version);
             setSpecText(spec.specContent);
             setShowVersions(false);
             if (sessionId) {

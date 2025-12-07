@@ -22,15 +22,13 @@ function ProjectDashboard({ onSelectProject, onCreateProject }) {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const data = await projectAPI.getProjects(token);
+      const data = await projectAPI.getProjects();
       setProjects(data);
       setError(null);
     } catch (err) {
       console.error('Failed to load projects:', err);
       setError('Failed to load projects');
-      if (err.response?.status === 401) {
-        logout();
-      }
+      // 401 handling is now done by axios interceptor
     } finally {
       setLoading(false);
     }
@@ -39,7 +37,7 @@ function ProjectDashboard({ onSelectProject, onCreateProject }) {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
-      const created = await projectAPI.createProject(token, newProject);
+      const created = await projectAPI.createProject(newProject);
       setProjects([created, ...projects]);
       setShowCreateModal(false);
       setNewProject({ name: '', description: '', isPublic: false });
@@ -60,7 +58,7 @@ function ProjectDashboard({ onSelectProject, onCreateProject }) {
     }
 
     try {
-      await projectAPI.deleteProject(token, projectId);
+      await projectAPI.deleteProject(projectId);
       setProjects(projects.filter(p => p.id !== projectId));
     } catch (err) {
       console.error('Failed to delete project:', err);

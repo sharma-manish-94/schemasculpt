@@ -9,7 +9,6 @@ import RightPanel from "./RightPanel";
 
 function ThreePanelLayout({ project }) {
   const specText = useSpecStore((state) => state.specText);
-  const { token } = useAuth();
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -31,7 +30,7 @@ function ThreePanelLayout({ project }) {
         commitMessage
       };
 
-      await projectAPI.saveSpecification(token, project.id, specData);
+      await projectAPI.saveSpecification(project.id, specData);
       alert('Specification saved successfully!');
     } catch (error) {
       console.error('Failed to save specification:', error);

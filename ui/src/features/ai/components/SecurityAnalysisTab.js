@@ -9,14 +9,15 @@ import { useSpecStore } from '../../../store/specStore';
 import { getSecuritySuggestions } from '../../../utils/suggestionGrouping';
 import SecurityReport from './SecurityReport';
 import SecurityIssuesList from './SecurityIssuesList';
+import AdvancedSecurityAudit from '../../../components/security/AdvancedSecurityAudit';
 
 const SecurityAnalysisTab = ({ specContent }) => {
-    const { suggestions } = useSpecStore();
+    const { sessionId, suggestions } = useSpecStore();
     const [analyzing, setAnalyzing] = useState(false);
     const [report, setReport] = useState(null);
     const [error, setError] = useState(null);
     const [cached, setCached] = useState(false);
-    const [activeView, setActiveView] = useState('overview'); // 'overview', 'issues', 'recommendations'
+    const [activeView, setActiveView] = useState('overview'); // 'overview', 'issues', 'recommendations', 'attack-chains'
 
     const handleAnalyze = async (forceRefresh = false) => {
         if (!specContent || specContent.trim() === '') {
@@ -137,6 +138,12 @@ const SecurityAnalysisTab = ({ specContent }) => {
                         >
                             Recommendations
                         </button>
+                        <button
+                            className={`view-tab ${activeView === 'attack-chains' ? 'active' : ''}`}
+                            onClick={() => setActiveView('attack-chains')}
+                        >
+                            ⚔️ Attack Chains
+                        </button>
                     </div>
 
                     {/* Overview View */}
@@ -232,6 +239,13 @@ const SecurityAnalysisTab = ({ specContent }) => {
                                     </ul>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Attack Chains View */}
+                    {activeView === 'attack-chains' && (
+                        <div className="attack-chains-view">
+                            <AdvancedSecurityAudit sessionId={sessionId} />
                         </div>
                     )}
                 </div>

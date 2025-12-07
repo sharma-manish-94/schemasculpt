@@ -1,8 +1,11 @@
 """
-Attack Path Orchestrator
+Attack Path Orchestrator - RAG-Enhanced Workflow Coordinator
 
 This is the "Planner" agent that coordinates the entire attack path simulation workflow.
-It manages the MCP (Model Context Protocol) and orchestrates all other agents.
+It manages the MCP (Model Context Protocol) and orchestrates all RAG-enhanced agents.
+
+RAG Enhancement: Provides shared RAG service to all agents, enabling them to query
+specialized knowledge bases (Attacker KB + Governance KB) throughout the analysis.
 """
 
 import logging
@@ -13,6 +16,7 @@ from datetime import datetime
 from .vulnerability_scanner_agent import VulnerabilityScannerAgent
 from .threat_modeling_agent import ThreatModelingAgent
 from .security_reporter_agent import SecurityReporterAgent
+from ..rag_service import RAGService
 from ...schemas.attack_path_schemas import (
     AttackPathContext,
     AttackPathAnalysisRequest,
@@ -24,26 +28,43 @@ logger = logging.getLogger(__name__)
 
 class AttackPathOrchestrator:
     """
-    Attack Path Orchestrator - The "Planner" agent
+    RAG-Enhanced Attack Path Orchestrator - The "Planner" agent
 
-    This orchestrator manages the entire attack path simulation workflow:
-    1. Initialize MCP context
-    2. Run VulnerabilityScanner to find individual issues
-    3. Run ThreatModelingAgent to find attack chains
-    4. Run SecurityReporter to generate final report
-    5. Handle progress updates and error recovery
+    This orchestrator manages the entire attack path simulation workflow with RAG:
+    1. Initialize shared RAG service (Attacker KB + Governance KB)
+    2. Initialize MCP context
+    3. Run VulnerabilityScanner to find individual issues
+    4. Run RAG-enhanced ThreatModelingAgent to find attack chains
+    5. Run RAG-enhanced SecurityReporter to generate final report
+    6. Handle progress updates and error recovery
     """
 
     def __init__(self, llm_service):
         """
-        Initialize the orchestrator with all required agents
+        Initialize the orchestrator with all required agents and RAG service
 
         Args:
             llm_service: LLM service for agents that need it
         """
+        # Initialize shared RAG service for all agents
+        logger.info("[AttackPathOrchestrator] Initializing RAG service...")
+        self.rag_service = RAGService()
+
+        # Initialize agents with RAG support
         self.scanner_agent = VulnerabilityScannerAgent()
-        self.threat_agent = ThreatModelingAgent(llm_service)
-        self.reporter_agent = SecurityReporterAgent(llm_service)
+        self.threat_agent = ThreatModelingAgent(llm_service, self.rag_service)
+        self.reporter_agent = SecurityReporterAgent(llm_service, self.rag_service)
+
+        # Log RAG availability
+        if self.rag_service.is_available():
+            attacker_kb_status = "✓" if self.rag_service.attacker_kb_available() else "✗"
+            governance_kb_status = "✓" if self.rag_service.governance_kb_available() else "✗"
+            logger.info(
+                f"[AttackPathOrchestrator] RAG-Enhanced mode enabled! "
+                f"Attacker KB: {attacker_kb_status}, Governance KB: {governance_kb_status}"
+            )
+        else:
+            logger.warning("[AttackPathOrchestrator] RAG service not available. Operating in basic mode.")
 
         logger.info("[AttackPathOrchestrator] Initialized with all agents")
 

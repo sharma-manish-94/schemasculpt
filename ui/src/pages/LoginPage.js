@@ -6,6 +6,7 @@ import './LoginPage.css';
 function LoginPage() {
   const [searchParams] = useSearchParams();
   const error = searchParams.get('error');
+  const expired = searchParams.get('expired');
 
   const handleGitHubLogin = () => {
     authAPI.initiateLogin();
@@ -17,7 +18,13 @@ function LoginPage() {
         <h1>SchemaSculpt</h1>
         <p className="login-subtitle">Your AI Co-pilot for Flawless APIs</p>
 
-        {error && (
+        {expired && (
+          <div className="login-error">
+            Your session has expired. Please log in again.
+          </div>
+        )}
+
+        {error && !expired && (
           <div className="login-error">
             Authentication failed. Please try again.
           </div>

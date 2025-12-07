@@ -32,7 +32,9 @@ export const runSecurityAnalysis = async (specText, forceRefresh = false, valida
             }));
         }
 
-        const response = await axios.post(`${AI_SERVICE_URL}/ai/security/analyze`, requestBody);
+        const response = await axios.post(`${AI_SERVICE_URL}/ai/security/analyze`, requestBody, {
+            timeout: 120000 // 120 second timeout for comprehensive security analysis
+        });
 
         return {
             success: true,
@@ -58,6 +60,8 @@ export const analyzeAuthentication = async (specText) => {
     try {
         const response = await axios.post(`${AI_SERVICE_URL}/ai/security/analyze/authentication`, {
             spec_text: specText
+        }, {
+            timeout: 120000 // 120 second timeout for authentication analysis
         });
 
         return {
@@ -83,6 +87,8 @@ export const analyzeAuthorization = async (specText) => {
     try {
         const response = await axios.post(`${AI_SERVICE_URL}/ai/security/analyze/authorization`, {
             spec_text: specText
+        }, {
+            timeout: 120000 // 120 second timeout for authorization analysis
         });
 
         return {
@@ -108,6 +114,8 @@ export const analyzeDataExposure = async (specText) => {
     try {
         const response = await axios.post(`${AI_SERVICE_URL}/ai/security/analyze/data-exposure`, {
             spec_text: specText
+        }, {
+            timeout: 120000 // 120 second timeout for data exposure analysis
         });
 
         return {

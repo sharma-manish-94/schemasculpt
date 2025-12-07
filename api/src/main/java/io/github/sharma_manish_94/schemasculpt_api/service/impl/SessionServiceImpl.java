@@ -1,5 +1,6 @@
 package io.github.sharma_manish_94.schemasculpt_api.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharma_manish_94.schemasculpt_api.config.ApplicationConstants;
 import io.github.sharma_manish_94.schemasculpt_api.exception.InvalidSpecificationException;
 import io.github.sharma_manish_94.schemasculpt_api.exception.SessionNotFoundException;
@@ -20,12 +21,15 @@ public class SessionServiceImpl implements SessionService {
 
   private final RedisTemplate<String, OpenAPI> redisTemplate;
   private final SpecParsingService specParsingService;
+  private final ObjectMapper objectMapper;
 
   public SessionServiceImpl(
       final SpecParsingService specParsingService,
-      final RedisTemplate<String, OpenAPI> redisTemplate) {
+      final RedisTemplate<String, OpenAPI> redisTemplate,
+      final ObjectMapper objectMapper) {
     this.specParsingService = specParsingService;
     this.redisTemplate = redisTemplate;
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -145,6 +149,30 @@ public class SessionServiceImpl implements SessionService {
 
     log.debug("Retrieving spec for session: {}", sessionId);
     return redisTemplate.opsForValue().get(sessionId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public String getSpecTextForSession(final String sessionId) {
+    if (sessionId == null || sessionId.trim().isEmpty()) {
+      throw new IllegalArgumentException("Session ID cannot be null or empty");
+    }
+
+    log.debug("Retrieving spec text for session: {}", sessionId);
+    OpenAPI openAPI = redisTemplate.opsForValue().get(sessionId);
+
+    if (openAPI == null) {
+      return null;
+    }
+
+    try {
+      // Convert OpenAPI object to JSON string
+      return objectMapper.writeValueAsString(openAPI);
+    } catch (Exception e) {
+      log.error("Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(), e);
+      throw new InvalidSpecificationException(
+          "Failed to serialize specification: " + e.getMessage(), e);
+    }
   }
 
   @Override

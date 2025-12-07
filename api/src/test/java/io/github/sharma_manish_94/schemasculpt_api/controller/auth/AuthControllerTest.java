@@ -1,9 +1,5 @@
 package io.github.sharma_manish_94.schemasculpt_api.controller.auth;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,10 +13,12 @@ import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
@@ -30,19 +28,41 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@WebMvcTest(AuthController.class)
-@Import({WebMvcConfig.class, JacksonConfig.class})
+@WebMvcTest(
+    controllers = AuthController.class,
+    excludeAutoConfiguration = {
+      org.springframework.boot.security.oauth2.client.autoconfigure.servlet
+              .OAuth2ClientWebSecurityAutoConfiguration.class,
+      org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration
+              .class
+    })
+@Import({WebMvcConfig.class, JacksonConfig.class, AuthControllerTest.TestConfig.class})
 @TestPropertySource(properties = {"app.jwt.expiration=3600000"})
 class AuthControllerTest {
+
+  @TestConfiguration
+  static class TestConfig {
+    @Bean
+    public JwtTokenProvider jwtTokenProvider() {
+      return Mockito.mock(JwtTokenProvider.class);
+    }
+
+    @Bean
+    public UserRepository userRepository() {
+      return Mockito.mock(UserRepository.class);
+    }
+  }
+
   @Autowired private MockMvc mockMvc;
   @Autowired private WebApplicationContext context;
 
+  @Autowired
   @Qualifier("cleanObjectMapper")
   private ObjectMapper cleanObjectMapper;
 
-  @MockBean private JwtTokenProvider tokenProvider;
+  @Autowired private JwtTokenProvider tokenProvider;
 
-  @MockBean private UserRepository userRepository;
+  @Autowired private UserRepository userRepository;
 
   private User user;
 
@@ -69,16 +89,6 @@ class AuthControllerTest {
             new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
                 Collections.singleton(new OAuth2UserAuthority(attributes)), attributes, "login"),
             user);
-
-    ObjectMapper realMapper = new ObjectMapper();
-    // Forward all common serialization methods to the real mapper
-    when(cleanObjectMapper.getSerializerProvider()).thenReturn(realMapper.getSerializerProvider());
-    when(cleanObjectMapper.getSerializationConfig())
-        .thenReturn(realMapper.getSerializationConfig());
-    doReturn(realMapper.getFactory()).when(cleanObjectMapper).getFactory();
-    doAnswer(invocation -> realMapper.writeValueAsString(invocation.getArgument(0)))
-        .when(cleanObjectMapper)
-        .writeValueAsString(any());
 
     this.mockMvc =
         MockMvcBuilders.webAppContextSetup(context)

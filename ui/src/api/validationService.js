@@ -444,6 +444,9 @@ export const generateTestCases = async (testRequest) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: testRequest
+            },
+            {
+                timeout: 120000 // 120 second timeout for test case generation
             }
         );
         return {
@@ -481,6 +484,9 @@ export const generateTestSuite = async (specText, options = {}) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: request
+            },
+            {
+                timeout: 120000 // 120 second timeout for test suite generation
             }
         );
         return {

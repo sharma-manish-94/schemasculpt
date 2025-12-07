@@ -1,353 +1,384 @@
-import React, { useState } from 'react';
-import { useSpecStore } from '../../../store/specStore';
-import Button from '../../../components/ui/Button';
-import LoadingSpinner from '../../../components/ui/LoadingSpinner';
-import ErrorMessage from '../../../components/ui/ErrorMessage';
-import AISpecGenerator from './AISpecGenerator';
-import SecurityAnalysisTab from './SecurityAnalysisTab';
+import React, { useState } from "react";
+import { useSpecStore } from "../../../store/specStore";
+import Button from "../../../components/ui/Button";
+import LoadingSpinner from "../../../components/ui/LoadingSpinner";
+import ErrorMessage from "../../../components/ui/ErrorMessage";
+import AISpecGenerator from "./AISpecGenerator";
+import SecurityAnalysisTab from "./SecurityAnalysisTab";
+import AdvancedAnalysisTab from "./AdvancedAnalysisTab";
 import {
-    addOAuth2Security,
-    addRateLimiting,
-    addCaching,
-    hardenOperationComplete
-} from '../../../api/validationService';
-import '../ai-features.css';
+  addOAuth2Security,
+  addRateLimiting,
+  addCaching,
+  hardenOperationComplete,
+  getSessionSpec,
+} from "../../../api/validationService";
+import "../ai-features.css";
 
 const AI_TABS = {
-    ASSISTANT: 'assistant',
-    SECURITY: 'security',
-    HARDENING: 'hardening',
-    GENERATOR: 'generator'
+  ASSISTANT: "assistant",
+  SECURITY: "security",
+  ADVANCED: "advanced",
+  HARDENING: "hardening",
+  GENERATOR: "generator",
 };
 
 function AIPanel() {
-    const [activeTab, setActiveTab] = useState(AI_TABS.ASSISTANT);
-    const {
-        aiResponse,
-        aiError,
-        clearAiResponse,
-        specText
-    } = useSpecStore();
+  const [activeTab, setActiveTab] = useState(AI_TABS.ASSISTANT);
+  const { aiResponse, aiError, clearAiResponse, specText } = useSpecStore();
 
-    const renderTabContent = () => {
-        switch (activeTab) {
-            case AI_TABS.ASSISTANT:
-                return <AIAssistantTab />;
-            case AI_TABS.SECURITY:
-                return <SecurityAnalysisTab specContent={specText} />;
-            case AI_TABS.HARDENING:
-                return <AIHardeningTab />;
-            case AI_TABS.GENERATOR:
-                return <AISpecGenerator />;
-            default:
-                return <AIAssistantTab />;
-        }
-    };
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case AI_TABS.ASSISTANT:
+        return <AIAssistantTab />;
+      case AI_TABS.SECURITY:
+        return <SecurityAnalysisTab specContent={specText} />;
+      case AI_TABS.ADVANCED:
+        return <AdvancedAnalysisTab specContent={specText} />;
+      case AI_TABS.HARDENING:
+        return <AIHardeningTab />;
+      case AI_TABS.GENERATOR:
+        return <AISpecGenerator />;
+      default:
+        return <AIAssistantTab />;
+    }
+  };
 
-    return (
-        <div className="ai-panel">
-            <div className="ai-panel-header">
-                <h3>AI Features</h3>
-                <div className="ai-tabs">
-                    {Object.entries(AI_TABS).map(([key, value]) => (
-                        <button
-                            key={value}
-                            className={`ai-tab ${activeTab === value ? 'active' : ''}`}
-                            onClick={() => setActiveTab(value)}
-                        >
-                            {key.charAt(0) + key.slice(1).toLowerCase()}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="ai-panel-content">
-                {renderTabContent()}
-            </div>
-
-            {/* Response/Error Display */}
-            {aiError && (
-                <div className="ai-response-section">
-                    <ErrorMessage message={aiError} />
-                </div>
-            )}
-
-            {aiResponse && (
-                <div className="ai-response-section">
-                    <h4>AI Response</h4>
-                    <div className="ai-response-content">
-                        <pre>{JSON.stringify(aiResponse, null, 2)}</pre>
-                    </div>
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={clearAiResponse}
-                    >
-                        Clear Response
-                    </Button>
-                </div>
-            )}
+  return (
+    <div className="ai-panel">
+      <div className="ai-panel-header">
+        <h3>AI Features</h3>
+        <div className="ai-tabs">
+          {Object.entries(AI_TABS).map(([key, value]) => (
+            <button
+              key={value}
+              className={`ai-tab ${activeTab === value ? "active" : ""}`}
+              onClick={() => setActiveTab(value)}
+            >
+              {key.charAt(0) + key.slice(1).toLowerCase()}
+            </button>
+          ))}
         </div>
-    );
+      </div>
+
+      <div className="ai-panel-content">{renderTabContent()}</div>
+
+      {/* Response/Error Display */}
+      {aiError && (
+        <div className="ai-response-section">
+          <ErrorMessage message={aiError} />
+        </div>
+      )}
+
+      {aiResponse && (
+        <div className="ai-response-section">
+          <h4>AI Response</h4>
+          <div className="ai-response-content">
+            <pre>{JSON.stringify(aiResponse, null, 2)}</pre>
+          </div>
+          <Button variant="secondary" size="small" onClick={clearAiResponse}>
+            Clear Response
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AIAssistantTab() {
-    const {
-        aiPrompt,
-        setAiPrompt,
-        submitAIRequest,
-        processSpecification,
-        isAiProcessing,
-        isStreaming
-    } = useSpecStore();
+  const {
+    aiPrompt,
+    setAiPrompt,
+    submitAIRequest,
+    processSpecification,
+    isAiProcessing,
+    isStreaming,
+  } = useSpecStore();
 
-    const [streamingMode, setStreamingMode] = useState(false);
+  const [streamingMode, setStreamingMode] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!aiPrompt.trim()) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) return;
 
-        if (streamingMode) {
-            const request = {
-                operationType: 'MODIFY',
-                prompt: aiPrompt,
-                streaming: 'REALTIME'
-            };
-            await processSpecification(request);
-        } else {
-            await submitAIRequest();
-        }
-    };
+    if (streamingMode) {
+      const request = {
+        operationType: "MODIFY",
+        prompt: aiPrompt,
+        streaming: "REALTIME",
+      };
+      await processSpecification(request);
+    } else {
+      await submitAIRequest();
+    }
+  };
 
-    return (
-        <div className="ai-assistant-tab">
-            <div className="ai-settings">
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={streamingMode}
-                        onChange={(e) => setStreamingMode(e.target.checked)}
-                    />
-                    Enable Streaming Mode
-                </label>
-            </div>
+  return (
+    <div className="ai-assistant-tab">
+      <div className="ai-settings">
+        <label>
+          <input
+            type="checkbox"
+            checked={streamingMode}
+            onChange={(e) => setStreamingMode(e.target.checked)}
+          />
+          Enable Streaming Mode
+        </label>
+      </div>
 
-            <form className="ai-assistant-form" onSubmit={handleSubmit}>
-                <div className="ai-input-group">
-                    <textarea
-                        className="ai-input"
-                        placeholder="Describe what you want to do with your API specification..."
-                        value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
-                        disabled={isAiProcessing}
-                        rows={4}
-                    />
-                    <div className="ai-input-actions">
-                        <Button
-                            type="submit"
-                            variant="ai"
-                            loading={isAiProcessing}
-                            disabled={!aiPrompt.trim()}
-                        >
-                            {streamingMode ? 'Stream Process' : 'Process'}
-                        </Button>
-                    </div>
-                </div>
-            </form>
-
-            {isStreaming && (
-                <div className="streaming-indicator">
-                    <LoadingSpinner />
-                    <span>Streaming response...</span>
-                </div>
-            )}
-
-            <div className="ai-suggestions">
-                <h4>Suggestion Templates</h4>
-                <div className="suggestion-buttons">
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={() => setAiPrompt('Add input validation to all POST endpoints')}
-                    >
-                        Add Validation
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={() => setAiPrompt('Add error response schemas to all endpoints')}
-                    >
-                        Add Error Schemas
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={() => setAiPrompt('Add authentication security scheme')}
-                    >
-                        Add Security
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="small"
-                        onClick={() => setAiPrompt('Generate realistic example responses')}
-                    >
-                        Add Examples
-                    </Button>
-                </div>
-            </div>
+      <form className="ai-assistant-form" onSubmit={handleSubmit}>
+        <div className="ai-input-group">
+          <textarea
+            className="ai-input"
+            placeholder="Describe what you want to do with your API specification..."
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            disabled={isAiProcessing}
+            rows={4}
+          />
+          <div className="ai-input-actions">
+            <Button
+              type="submit"
+              variant="ai"
+              loading={isAiProcessing}
+              disabled={!aiPrompt.trim()}
+            >
+              {streamingMode ? "Stream Process" : "Process"}
+            </Button>
+          </div>
         </div>
-    );
+      </form>
+
+      {isStreaming && (
+        <div className="streaming-indicator">
+          <LoadingSpinner />
+          <span>Streaming response...</span>
+        </div>
+      )}
+
+      <div className="ai-suggestions">
+        <h4>Suggestion Templates</h4>
+        <div className="suggestion-buttons">
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() =>
+              setAiPrompt("Add input validation to all POST endpoints")
+            }
+          >
+            Add Validation
+          </Button>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() =>
+              setAiPrompt("Add error response schemas to all endpoints")
+            }
+          >
+            Add Error Schemas
+          </Button>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => setAiPrompt("Add authentication security scheme")}
+          >
+            Add Security
+          </Button>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => setAiPrompt("Generate realistic example responses")}
+          >
+            Add Examples
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function AIHardeningTab() {
-    const { sessionId, specText } = useSpecStore();
-    const [selectedPath, setSelectedPath] = useState('/users');
-    const [selectedMethod, setSelectedMethod] = useState('GET');
-    const [rateLimit, setRateLimit] = useState('100/hour');
-    const [cacheTtl, setCacheTtl] = useState('300');
-    const [loading, setLoading] = useState({});
-    const [results, setResults] = useState({});
-    const [errors, setErrors] = useState({});
+  const { sessionId, specText, setSpecText } = useSpecStore();
+  const [selectedPath, setSelectedPath] = useState("/users");
+  const [selectedMethod, setSelectedMethod] = useState("GET");
+  const [rateLimit, setRateLimit] = useState("100/hour");
+  const [cacheTtl, setCacheTtl] = useState("300");
+  const [loading, setLoading] = useState({});
+  const [results, setResults] = useState({});
+  const [errors, setErrors] = useState({});
 
-    const runHardening = async (type, apiCall) => {
-        setLoading(prev => ({ ...prev, [type]: true }));
-        setErrors(prev => ({ ...prev, [type]: null }));
+  const runHardening = async (type, apiCall) => {
+    setLoading((prev) => ({ ...prev, [type]: true }));
+    setErrors((prev) => ({ ...prev, [type]: null }));
 
-        try {
-            const result = await apiCall();
-            setResults(prev => ({ ...prev, [type]: result }));
-        } catch (error) {
-            setErrors(prev => ({ ...prev, [type]: error.message || 'Operation failed' }));
-        } finally {
-            setLoading(prev => ({ ...prev, [type]: false }));
+    try {
+      const result = await apiCall();
+      setResults((prev) => ({ ...prev, [type]: result }));
+
+      // ✅ FIX: Update editor with hardened spec
+      if (result.success && sessionId) {
+        const specResult = await getSessionSpec(sessionId);
+        if (specResult.success) {
+          setSpecText(specResult.data);
         }
-    };
+      }
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        [type]: error.message || "Operation failed",
+      }));
+    } finally {
+      setLoading((prev) => ({ ...prev, [type]: false }));
+    }
+  };
 
-    return (
-        <div className="ai-hardening-tab">
-            <h4>🛡️ One-Click API Hardening</h4>
-            <p>Apply security and performance patterns to your API operations instantly.</p>
+  return (
+    <div className="ai-hardening-tab">
+      <h4>🛡️ One-Click API Hardening</h4>
+      <p>
+        Apply security and performance patterns to your API operations
+        instantly.
+      </p>
 
-            <div className="hardening-controls">
-                <div className="input-group">
-                    <label>Path:</label>
-                    <input
-                        type="text"
-                        value={selectedPath}
-                        onChange={(e) => setSelectedPath(e.target.value)}
-                        placeholder="/users"
-                    />
-                </div>
-                <div className="input-group">
-                    <label>Method:</label>
-                    <select value={selectedMethod} onChange={(e) => setSelectedMethod(e.target.value)}>
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="DELETE">DELETE</option>
-                        <option value="PATCH">PATCH</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="pattern-buttons">
-                <Button
-                    variant="primary"
-                    onClick={() => runHardening('oauth2', () =>
-                        addOAuth2Security(sessionId, selectedPath, selectedMethod)
-                    )}
-                    loading={loading['oauth2']}
-                >
-                    Add OAuth2 Security
-                </Button>
-
-                <div className="input-group inline">
-                    <input
-                        type="text"
-                        value={rateLimit}
-                        onChange={(e) => setRateLimit(e.target.value)}
-                        placeholder="100/hour"
-                        style={{ width: '100px', marginRight: '8px' }}
-                    />
-                    <Button
-                        variant="secondary"
-                        onClick={() => runHardening('rateLimit', () =>
-                            addRateLimiting(sessionId, selectedPath, selectedMethod, rateLimit)
-                        )}
-                        loading={loading['rateLimit']}
-                    >
-                        Add Rate Limiting
-                    </Button>
-                </div>
-
-                <div className="input-group inline">
-                    <input
-                        type="text"
-                        value={cacheTtl}
-                        onChange={(e) => setCacheTtl(e.target.value)}
-                        placeholder="300"
-                        style={{ width: '80px', marginRight: '8px' }}
-                    />
-                    <Button
-                        variant="secondary"
-                        onClick={() => runHardening('caching', () =>
-                            addCaching(sessionId, selectedPath, selectedMethod, cacheTtl)
-                        )}
-                        loading={loading['caching']}
-                    >
-                        Add HTTP Caching
-                    </Button>
-                </div>
-
-                <Button
-                    variant="ai"
-                    onClick={() => runHardening('complete', () =>
-                        hardenOperationComplete(sessionId, selectedPath, selectedMethod)
-                    )}
-                    loading={loading['complete']}
-                >
-                    Complete Hardening
-                </Button>
-            </div>
-
-            {Object.entries(results).map(([key, result]) => {
-                if (!result?.success) return null;
-                return (
-                    <div key={key} className="result-success">
-                        <h5>✅ {key.replace(/([A-Z])/g, ' $1').trim()} Applied</h5>
-                        {result.data?.appliedPatterns && (
-                            <p>Applied patterns: {result.data.appliedPatterns.join(', ')}</p>
-                        )}
-                        {result.data?.warnings?.length > 0 && (
-                            <div className="warnings">
-                                <strong>Warnings:</strong>
-                                <ul>
-                                    {result.data.warnings.map((warning, i) => (
-                                        <li key={i}>{warning}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-
-            {Object.entries(errors).map(([key, error]) => (
-                error && <ErrorMessage key={key} message={`${key} failed: ${error}`} />
-            ))}
-
-            <div className="features-info">
-                <h5>✨ Features:</h5>
-                <ul>
-                    <li>OAuth2 security scheme and requirements</li>
-                    <li>Rate limiting headers and 429 responses</li>
-                    <li>HTTP caching with ETag and 304 responses</li>
-                    <li>Idempotency keys for safe retries</li>
-                    <li>Standard error response patterns</li>
-                </ul>
-            </div>
+      <div className="hardening-controls">
+        <div className="input-group">
+          <label>Path:</label>
+          <input
+            type="text"
+            value={selectedPath}
+            onChange={(e) => setSelectedPath(e.target.value)}
+            placeholder="/users"
+          />
         </div>
-    );
+        <div className="input-group">
+          <label>Method:</label>
+          <select
+            value={selectedMethod}
+            onChange={(e) => setSelectedMethod(e.target.value)}
+          >
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="pattern-buttons">
+        <Button
+          variant="primary"
+          onClick={() =>
+            runHardening("oauth2", () =>
+              addOAuth2Security(sessionId, selectedPath, selectedMethod)
+            )
+          }
+          loading={loading["oauth2"]}
+        >
+          Add OAuth2 Security
+        </Button>
+
+        <div className="input-group inline">
+          <input
+            type="text"
+            value={rateLimit}
+            onChange={(e) => setRateLimit(e.target.value)}
+            placeholder="100/hour"
+            style={{ width: "100px", marginRight: "8px" }}
+          />
+          <Button
+            variant="secondary"
+            onClick={() =>
+              runHardening("rateLimit", () =>
+                addRateLimiting(
+                  sessionId,
+                  selectedPath,
+                  selectedMethod,
+                  rateLimit
+                )
+              )
+            }
+            loading={loading["rateLimit"]}
+          >
+            Add Rate Limiting
+          </Button>
+        </div>
+
+        <div className="input-group inline">
+          <input
+            type="text"
+            value={cacheTtl}
+            onChange={(e) => setCacheTtl(e.target.value)}
+            placeholder="300"
+            style={{ width: "80px", marginRight: "8px" }}
+          />
+          <Button
+            variant="secondary"
+            onClick={() =>
+              runHardening("caching", () =>
+                addCaching(sessionId, selectedPath, selectedMethod, cacheTtl)
+              )
+            }
+            loading={loading["caching"]}
+          >
+            Add HTTP Caching
+          </Button>
+        </div>
+
+        <Button
+          variant="ai"
+          onClick={() =>
+            runHardening("complete", () =>
+              hardenOperationComplete(sessionId, selectedPath, selectedMethod)
+            )
+          }
+          loading={loading["complete"]}
+        >
+          Complete Hardening
+        </Button>
+      </div>
+
+      {Object.entries(results).map(([key, result]) => {
+        if (!result?.success) return null;
+        return (
+          <div key={key} className="result-success">
+            <h5>✅ {key.replace(/([A-Z])/g, " $1").trim()} Applied</h5>
+            {result.data?.appliedPatterns && (
+              <p>Applied patterns: {result.data.appliedPatterns.join(", ")}</p>
+            )}
+            {result.data?.warnings?.length > 0 && (
+              <div className="warnings">
+                <strong>Warnings:</strong>
+                <ul>
+                  {result.data.warnings.map((warning, i) => (
+                    <li key={i}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {Object.entries(errors).map(
+        ([key, error]) =>
+          error && (
+            <ErrorMessage key={key} message={`${key} failed: ${error}`} />
+          )
+      )}
+
+      <div className="features-info">
+        <h5>✨ Features:</h5>
+        <ul>
+          <li>OAuth2 security scheme and requirements</li>
+          <li>Rate limiting headers and 429 responses</li>
+          <li>HTTP caching with ETag and 304 responses</li>
+          <li>Idempotency keys for safe retries</li>
+          <li>Standard error response patterns</li>
+        </ul>
+      </div>
+    </div>
+  );
 }
 
 export default AIPanel;
