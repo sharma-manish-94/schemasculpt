@@ -1,0 +1,50 @@
+name: Lint Code Base
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  run-lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history is required to check only new changes
+
+      - name: Lint Code Base
+        uses: super-linter/super-linter@v7
+        env:
+          # Basic Configuration
+          VALIDATE_ALL_CODEBASE: false # Only check changed files in the PR
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          # ---------------------------
+          # LANGUAGE SPECIFIC SETTINGS
+          # ---------------------------
+          
+          # Python (FastAPI) - Using Black (Formatting) and Flake8 (Logic)
+          VALIDATE_PYTHON_BLACK: true
+          VALIDATE_PYTHON_FLAKE8: true
+          
+          # Java (Spring Boot) - Using Google Java Format
+          VALIDATE_JAVA: true 
+          # Note: Ensures your Java follows the Google Style Guide
+          
+          # React (UI) - Using ESLint and Prettier
+          VALIDATE_TYPESCRIPT_ESLINT: true
+          VALIDATE_TYPESCRIPT_PRETTIER: true
+          VALIDATE_JAVASCRIPT_ESLINT: true
+          
+          # Infrastructure
+          VALIDATE_YAML: true
+          VALIDATE_JSON: true
