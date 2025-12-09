@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^org.springframework"],
+      "groupName": "Spring Boot Dependencies"
+    },
+    {
+      "matchPackagePatterns": ["^react", "^react-dom"],
+      "groupName": "React Core"
+    },
+    {
+      "matchPackagePatterns": ["^fastapi", "^uvicorn"],
+      "groupName": "FastAPI Core"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "automerge": true
+  },
+  "labels": ["dependencies"]
+}
