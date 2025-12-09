@@ -1,0 +1,45 @@
+name: "CodeQL Security Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    # Scan every PR to main to stop vulnerabilities from entering
+    branches: [ "main" ]
+  schedule:
+    # Scan the repo once a week even if no code changes (to catch newly discovered exploits)
+    - cron: '30 1 * * 0'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java', 'python', 'javascript' ]
+        # CodeQL supports 'javascript' which covers both JS and TypeScript (React)
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # If you have specific build commands, you can specify them here, 
+        # but the default 'autobuild' below works for 95% of standard Spring/Python projects.
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
