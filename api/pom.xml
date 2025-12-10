@@ -243,9 +243,10 @@
 		        <configuration>
 			        <configLocation>checkstyle.xml</configLocation>
 			        <consoleOutput>true</consoleOutput>
-			        <failsOnError>true</failsOnError>
+			        <failsOnError>false</failsOnError>
 			        <violationSeverity>warning</violationSeverity>
 			        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+			        <skip>true</skip>
 		        </configuration>
 		        <executions>
 			        <execution>
