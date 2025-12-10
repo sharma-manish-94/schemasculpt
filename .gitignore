@@ -12,5 +12,10 @@ Desktop.ini
 .idea/
 .vscode/
 
-# Documentation - exclude all markdown files except README.md
+# Claude Code configuration
+.claude/
+
+# Root level files - ignore everything except README.md
+/*
 !README.md
+!/*/
