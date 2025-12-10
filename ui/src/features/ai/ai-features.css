@@ -75,34 +75,65 @@
 
 /* Response Section */
 .ai-response-section {
-  margin-top: 16px;
-  padding: 16px;
+  margin-top: 24px;
+  padding: 20px;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background: white;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .ai-response-section h4 {
-  margin: 0 0 12px 0;
-  color: #333;
-  font-size: 14px;
+  margin: 0 0 16px 0;
+  color: #1e293b;
+  font-size: 15px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-response-section h4::before {
+  content: '✨';
+  font-size: 16px;
 }
 
 .ai-response-content {
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #e8e8e8;
-  border-radius: 4px;
-  padding: 12px;
-  background: #f9f9f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 16px;
+  background: #ffffff;
   font-family: 'Monaco', 'Consolas', monospace;
   font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
 
 .ai-response-content pre {
   margin: 0;
   white-space: pre-wrap;
+  word-break: break-word;
+  color: #334155;
+}
+
+.ai-response-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ai-response-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.ai-response-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.ai-response-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Assistant Tab Styles */

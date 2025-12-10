@@ -74,18 +74,32 @@ export const createAiSlice = (set, get) => ({
 
     // Enhanced AI Processing
     processSpecification: async (request) => {
+        const { sessionId, setSpecText } = useSpecStore.getState();
+        if (!sessionId) {
+            set({
+                aiError: 'No active session',
+                isAiProcessing: false
+            });
+            return { success: false, error: 'No active session' };
+        }
+
         set({isAiProcessing: true, aiError: null, aiResponse: null});
 
-        const result = await processSpecification(request);
+        // Use the working executeAiAction endpoint for now
+        const result = await executeAiAction(sessionId, request.prompt || '');
 
         if (result.success) {
+            // Update the editor with the new spec
+            const updatedSpecText = JSON.stringify(result.data, null, 2);
+            setSpecText(updatedSpecText);
+
             set({
                 aiResponse: result.data,
                 isAiProcessing: false
             });
         } else {
             set({
-                aiError: result.error,
+                aiError: result.error || 'AI processing failed',
                 isAiProcessing: false
             });
         }

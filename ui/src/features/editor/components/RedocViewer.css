@@ -1,0 +1,348 @@
+/* =================================================================
+   RedocViewer Component Styles
+   Integrates Redoc with SchemaSculpt's light theme
+   ================================================================= */
+
+/* Redoc Container Styling */
+.redoc-viewer-container {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--white);
+  position: relative;
+}
+
+.redoc-viewer-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Hide Redoc's built-in download button - we use custom ones */
+.redoc-viewer-wrapper .download-button {
+  display: none;
+}
+
+/* Single Operation View - Hide sidebar (when in InspectionPanel) */
+.redoc-viewer-container.single-operation .menu-content {
+  display: none;
+}
+
+/* Full Spec View - Show sidebar (when in DocumentationPanel) */
+.redoc-viewer-container.full-spec .menu-content {
+  display: block;
+}
+
+/* Adjust content padding based on view mode */
+.redoc-viewer-container.single-operation .api-content {
+  margin-left: 0 !important;
+  padding: 20px;
+}
+
+.redoc-viewer-container.full-spec .api-content {
+  padding: 20px;
+}
+
+/* =================================================================
+   Custom Header for Download Buttons & Operation Info
+   ================================================================= */
+
+.redoc-header-controls {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.redoc-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Custom Logo Styling */
+.redoc-custom-logo {
+  max-height: 32px;
+  margin-right: 12px;
+}
+
+/* Operation Badge Styling */
+.redoc-header-title .operation-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* HTTP Method Colors - Matching SchemaSculpt theme */
+.redoc-header-title .operation-badge.get {
+  background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+  color: var(--white);
+}
+
+.redoc-header-title .operation-badge.post {
+  background: linear-gradient(135deg, var(--secondary-green) 0%, #059669 100%);
+  color: var(--white);
+}
+
+.redoc-header-title .operation-badge.put {
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+  color: var(--white);
+}
+
+.redoc-header-title .operation-badge.delete {
+  background: linear-gradient(135deg, var(--error) 0%, #dc2626 100%);
+  color: var(--white);
+}
+
+.redoc-header-title .operation-badge.patch {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: var(--white);
+}
+
+.redoc-header-title .operation-badge.options,
+.redoc-header-title .operation-badge.head {
+  background: linear-gradient(135deg, var(--gray-500) 0%, var(--gray-600) 100%);
+  color: var(--white);
+}
+
+/* =================================================================
+   Download Buttons
+   ================================================================= */
+
+.spec-download-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-700);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.download-btn:hover {
+  background: var(--primary-blue-light);
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.download-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.download-icon {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* =================================================================
+   Loading State
+   ================================================================= */
+
+.redoc-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+.redoc-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =================================================================
+   Error State
+   ================================================================= */
+
+.redoc-error {
+  padding: 20px;
+  background: var(--error-light);
+  border: 1px solid var(--error);
+  border-radius: 8px;
+  color: var(--error);
+  margin: 20px;
+}
+
+.redoc-error-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.redoc-error-message {
+  font-size: 13px;
+  color: var(--gray-700);
+}
+
+/* =================================================================
+   Redoc Content Overrides - Match SchemaSculpt Theme
+   ================================================================= */
+
+/* Override Redoc's default search styling */
+.redoc-viewer-wrapper .search-box {
+  background-color: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 4px;
+  color: var(--gray-700);
+}
+
+.redoc-viewer-wrapper .search-box:focus {
+  border-color: var(--primary-blue);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-blue-light);
+}
+
+/* Custom scrollbar for Redoc content */
+.redoc-viewer-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.redoc-viewer-wrapper::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+
+.redoc-viewer-wrapper::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+}
+
+.redoc-viewer-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+/* Override Redoc typography to match SchemaSculpt */
+.redoc-viewer-wrapper h1,
+.redoc-viewer-wrapper h2,
+.redoc-viewer-wrapper h3,
+.redoc-viewer-wrapper h4,
+.redoc-viewer-wrapper h5 {
+  color: var(--gray-900);
+}
+
+.redoc-viewer-wrapper p,
+.redoc-viewer-wrapper li {
+  color: var(--gray-700);
+}
+
+.redoc-viewer-wrapper a {
+  color: var(--primary-blue);
+}
+
+.redoc-viewer-wrapper a:hover {
+  color: var(--primary-blue-hover);
+}
+
+/* Override code block styling */
+.redoc-viewer-wrapper code {
+  background-color: var(--gray-100);
+  color: #1d4ed8;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+/* Override HTTP method badges in Redoc content */
+.redoc-viewer-wrapper .http-verb {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.redoc-viewer-wrapper .http-verb.get {
+  background-color: var(--info);
+  color: var(--white);
+}
+
+.redoc-viewer-wrapper .http-verb.post {
+  background-color: var(--secondary-green);
+  color: var(--white);
+}
+
+.redoc-viewer-wrapper .http-verb.put {
+  background-color: var(--warning);
+  color: var(--white);
+}
+
+.redoc-viewer-wrapper .http-verb.delete {
+  background-color: var(--error);
+  color: var(--white);
+}
+
+.redoc-viewer-wrapper .http-verb.patch {
+  background-color: #8b5cf6;
+  color: var(--white);
+}
+
+/* =================================================================
+   Responsive Design
+   ================================================================= */
+
+@media (max-width: 768px) {
+  .redoc-header-controls {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .spec-download-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .redoc-viewer-container .api-content {
+    padding: 12px;
+  }
+}
+
+/* =================================================================
+   Placeholder State
+   ================================================================= */
+
+.panel-content-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--gray-500);
+  font-size: 14px;
+  font-style: italic;
+}

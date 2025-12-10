@@ -7,6 +7,7 @@ import asyncio
 import json
 import uuid
 import hashlib
+import yaml
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 
@@ -2346,6 +2347,25 @@ Please provide your analysis in JSON format:
 # Test Case Generation Endpoints
 # ============================================================================
 
+def sanitize_openapi_spec(spec_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively sanitize OpenAPI spec by replacing None/null schema values with {}.
+    This prevents validation errors when parsing specs with missing schemas.
+    """
+    if isinstance(spec_dict, dict):
+        sanitized = {}
+        for key, value in spec_dict.items():
+            # Replace None schemas with empty schema
+            if key == 'schema' and value is None:
+                sanitized[key] = {}
+            else:
+                sanitized[key] = sanitize_openapi_spec(value)
+        return sanitized
+    elif isinstance(spec_dict, list):
+        return [sanitize_openapi_spec(item) for item in spec_dict]
+    else:
+        return spec_dict
+
 @router.post("/tests/generate")
 async def generate_test_cases(request: Dict[str, Any], _: None = Depends(handle_exceptions)):
     """
@@ -2398,7 +2418,20 @@ async def generate_test_cases(request: Dict[str, Any], _: None = Depends(handle_
         spec = cache_service.get_parsed_spec(spec_text)
         if not spec:
             try:
-                parser = ResolvingParser(spec_string=spec_text, backend='openapi-spec-validator')
+                # First, parse the spec text to dict and sanitize it
+                try:
+                    spec_dict = json.loads(spec_text)
+                except json.JSONDecodeError:
+                    spec_dict = yaml.safe_load(spec_text)
+
+                # Sanitize the spec to replace None schemas with {}
+                sanitized_spec = sanitize_openapi_spec(spec_dict)
+
+                # Convert back to JSON string for ResolvingParser
+                sanitized_spec_text = json.dumps(sanitized_spec)
+
+                # Now parse with ResolvingParser
+                parser = ResolvingParser(spec_string=sanitized_spec_text, backend='openapi-spec-validator')
                 spec = parser.specification
                 cache_service.cache_parsed_spec(spec_text, spec)
             except Exception as e:

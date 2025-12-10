@@ -61,26 +61,28 @@ function AIPanel() {
         </div>
       </div>
 
-      <div className="ai-panel-content">{renderTabContent()}</div>
+      <div className="ai-panel-content">
+        {renderTabContent()}
 
-      {/* Response/Error Display */}
-      {aiError && (
-        <div className="ai-response-section">
-          <ErrorMessage message={aiError} />
-        </div>
-      )}
-
-      {aiResponse && (
-        <div className="ai-response-section">
-          <h4>AI Response</h4>
-          <div className="ai-response-content">
-            <pre>{JSON.stringify(aiResponse, null, 2)}</pre>
+        {/* Response/Error Display - Now inside scrollable content */}
+        {aiError && (
+          <div className="ai-response-section">
+            <ErrorMessage message={aiError} />
           </div>
-          <Button variant="secondary" size="small" onClick={clearAiResponse}>
-            Clear Response
-          </Button>
-        </div>
-      )}
+        )}
+
+        {aiResponse && (
+          <div className="ai-response-section">
+            <h4>AI Response</h4>
+            <div className="ai-response-content">
+              <pre>{JSON.stringify(aiResponse, null, 2)}</pre>
+            </div>
+            <Button variant="secondary" size="small" onClick={clearAiResponse}>
+              Clear Response
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
