@@ -5,6 +5,7 @@
     ":dependencyDashboard",
     ":semanticCommits"
   ],
+  "schedule": ["before 5am on Monday"],
   "packageRules": [
     {
       "matchPackagePatterns": ["^org.springframework"],
@@ -15,18 +16,12 @@
       "groupName": "React Core"
     },
     {
-      "matchPackagePatterns": ["^fastapi", "^uvicorn"],
+      "matchPackagePatterns": ["^fastapi", "^uvicorn", "^pydantic"],
       "groupName": "FastAPI Core"
-    },
-    {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true,
-      "automergeType": "pr"
     }
   ],
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "automerge": true
-  },
-  "labels": ["dependencies"]
+  "osvVulnerabilityAlerts": true,
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2
 }
