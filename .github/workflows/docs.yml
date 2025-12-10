@@ -24,11 +24,12 @@ jobs:
           distribution: 'temurin'
           
       - name: Build Spring & Generate OpenAPI
-        # This starts the app in background during build to grab the JSON
+        # This generates OpenAPI spec using springdoc-maven-plugin
+        working-directory: ./api
         run: |
-          mvn verify -Dspring.application.admin.enabled=true -Pintegration
+          mvn clean verify
           # Move the generated file to root for easy access
-          mv target/openapi-spring.json .
+          mv target/openapi.json ../openapi-spring.json
 
       # ---------------------------
       # 2. GENERATE FASTAPI DOCS
@@ -39,15 +40,17 @@ jobs:
           python-version: '3.10'
 
       - name: Install Python Dependencies
+        working-directory: ./ai_service
         run: |
           pip install fastapi uvicorn
           # Add any other requirements your app needs to load
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Generate FastAPI OpenAPI
+        working-directory: ./ai_service
         run: |
-          python ai_service/scripts/export_openapi.py
-          mv openapi-fastapi.json .
+          python scripts/export_openapi.py
+          mv openapi-fastapi.json ../openapi-fastapi.json
 
       # ---------------------------
       # 3. MERGE & BUILD SITE (REDOCLY)
