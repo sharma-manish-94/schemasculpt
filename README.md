@@ -5,8 +5,8 @@
 **Your AI-Powered Co-Pilot for Building Production-Ready APIs**
 
 [![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-25-orange)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-green)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4-green)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Latest-teal)](https://fastapi.tiangolo.com/)
@@ -205,7 +205,7 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   API Gateway (Backend)                         │
-│  Java 25 • Spring Boot 3 • WebFlux • Redis Sessions            │
+│  Java 21 • Spring Boot 4 • WebFlux • Redis Sessions            │
 │  ├─ Validation Service (swagger-parser)                        │
 │  ├─ Linter Engine (11+ rules)                                  │
 │  ├─ Session Manager (Redis)                                    │
@@ -368,11 +368,11 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 
 | Technology                       | Version | Purpose                           |
 | -------------------------------- | ------- | --------------------------------- |
-| **Java**                         | 25      | Programming language              |
-| **Spring Boot**                  | 3.x     | Application framework             |
-| **Spring WebFlux**               | 3.x     | Reactive HTTP client (AI service) |
-| **Spring WebSockets**            | 3.x     | Real-time validation updates      |
-| **Spring Data Redis**            | 3.x     | Session storage                   |
+| **Java**                         | 21      | Programming language              |
+| **Spring Boot**                  | 4.x     | Application framework             |
+| **Spring WebFlux**               | 4.x     | Reactive HTTP client (AI service) |
+| **Spring WebSockets**            | 4.x     | Real-time validation updates      |
+| **Spring Data Redis**            | 4.x     | Session storage                   |
 | **swagger-parser**               | Latest  | OpenAPI validation                |
 | **JUnit 5** + **Testcontainers** | Latest  | Testing                           |
 
@@ -408,7 +408,7 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 
 Before starting, ensure you have:
 
-- ✅ **Java 25+** ([Download](https://jdk.java.net/))
+- ✅ **Java 21+** ([Download](https://jdk.java.net/))
 - ✅ **Maven 3.9+** (included with `./mvnw`)
 - ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
 - ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
