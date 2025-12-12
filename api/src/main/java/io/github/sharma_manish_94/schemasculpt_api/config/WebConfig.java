@@ -19,7 +19,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
 
-  /** Comma-separated list of allowed origins for CORS, injected from application properties. */
+  /**
+   * Comma-separated list of allowed origins for CORS, injected from application properties.
+   */
   @Value("${app.cors.allowed-origins}")
   private String allowedOrigins;
 

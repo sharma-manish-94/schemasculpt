@@ -186,7 +186,7 @@ public class PathNamingRule implements LinterRule {
 
     // Common irregular plurals
     String[] irregularPlurals = {
-      "children", "people", "men", "women", "feet", "teeth", "mice", "data"
+        "children", "people", "men", "women", "feet", "teeth", "mice", "data"
     };
     for (String plural : irregularPlurals) {
       if (segment.equals(plural)) {

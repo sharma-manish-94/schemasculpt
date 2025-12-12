@@ -2,9 +2,17 @@ package io.github.sharma_manish_94.schemasculpt_api.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.media.Schema;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -74,31 +82,6 @@ public class TreeShakingService {
     }
   }
 
-  private OpenAPI createFallbackSpec(
-      OpenAPI fullSpec,
-      String path,
-      String method,
-      Operation operation,
-      Set<String> allDependencies) {
-    Components newComponents = new Components();
-    if (fullSpec.getComponents() != null && fullSpec.getComponents().getSchemas() != null) {
-      Map<String, Schema> originalSchemas = fullSpec.getComponents().getSchemas();
-      for (String referencedSchema : allDependencies) {
-        if (originalSchemas.containsKey(referencedSchema)) {
-          newComponents.addSchemas(referencedSchema, originalSchemas.get(referencedSchema));
-        }
-      }
-    }
-    OpenAPI miniSpec = new OpenAPI();
-    miniSpec.setInfo(fullSpec.getInfo());
-    miniSpec.setPaths(new Paths());
-    PathItem newPathItem = new PathItem();
-    newPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase()), operation);
-    miniSpec.getPaths().addPathItem(path, newPathItem);
-    miniSpec.setComponents(newComponents);
-    return miniSpec;
-  }
-
   private Set<String> findDependencies(Operation operation, OpenAPI fullSpec) {
     Set<String> foundRefs = new HashSet<>();
     Queue<JsonNode> nodesToVisit = new LinkedList<>();
@@ -129,5 +112,30 @@ public class TreeShakingService {
       }
     }
     return foundRefs;
+  }
+
+  private OpenAPI createFallbackSpec(
+      OpenAPI fullSpec,
+      String path,
+      String method,
+      Operation operation,
+      Set<String> allDependencies) {
+    Components newComponents = new Components();
+    if (fullSpec.getComponents() != null && fullSpec.getComponents().getSchemas() != null) {
+      Map<String, Schema> originalSchemas = fullSpec.getComponents().getSchemas();
+      for (String referencedSchema : allDependencies) {
+        if (originalSchemas.containsKey(referencedSchema)) {
+          newComponents.addSchemas(referencedSchema, originalSchemas.get(referencedSchema));
+        }
+      }
+    }
+    OpenAPI miniSpec = new OpenAPI();
+    miniSpec.setInfo(fullSpec.getInfo());
+    miniSpec.setPaths(new Paths());
+    PathItem newPathItem = new PathItem();
+    newPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase()), operation);
+    miniSpec.getPaths().addPathItem(path, newPathItem);
+    miniSpec.setComponents(newComponents);
+    return miniSpec;
   }
 }

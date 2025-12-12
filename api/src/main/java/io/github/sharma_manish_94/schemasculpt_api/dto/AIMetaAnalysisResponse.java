@@ -10,7 +10,9 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AIMetaAnalysisResponse(
     List<AIInsight> insights, String summary, double confidenceScore) {
-  /** Individual AI-generated insight about the specification. */
+  /**
+   * Individual AI-generated insight about the specification.
+   */
   @JsonInclude(JsonInclude.Include.NON_NULL)
   public record AIInsight(
       String title,
@@ -19,5 +21,6 @@ public record AIMetaAnalysisResponse(
       String category, // "security", "design", "performance", "governance"
       List<String> affectedPaths,
       List<String> relatedIssues // References to original linter issue ruleIds
-      ) {}
+  ) {
+  }
 }

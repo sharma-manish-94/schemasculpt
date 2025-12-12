@@ -109,8 +109,8 @@ public class AIFriendlyResponseFormatRule implements LinterRule {
                                     if (statusCode.startsWith("4") || statusCode.startsWith("5")) {
                                       if (response.getContent() != null
                                           && response
-                                              .getContent()
-                                              .containsKey("application/json")) {
+                                          .getContent()
+                                          .containsKey("application/json")) {
 
                                         var mediaType =
                                             response.getContent().get("application/json");
@@ -121,9 +121,9 @@ public class AIFriendlyResponseFormatRule implements LinterRule {
                                           Schema errorSchema = mediaType.getSchema();
                                           if (errorSchema.getProperties() == null
                                               || (!errorSchema.getProperties().containsKey("error")
-                                                  && !errorSchema
-                                                      .getProperties()
-                                                      .containsKey("type"))) {
+                                              && !errorSchema
+                                              .getProperties()
+                                              .containsKey("type"))) {
 
                                             suggestions.add(
                                                 new ValidationSuggestion(

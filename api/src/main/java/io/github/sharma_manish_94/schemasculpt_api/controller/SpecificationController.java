@@ -19,7 +19,11 @@ import io.swagger.v3.oas.models.OpenAPI;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/spec")
@@ -97,18 +101,6 @@ public class SpecificationController {
     return ResponseEntity.ok(fixedSpec);
   }
 
-  @PostMapping("/transform")
-  public ResponseEntity<Map<String, Object>> executeAIAction(
-      @PathVariable String sessionId, @RequestBody AIProxyRequest request) {
-    aiService.processSpecification(sessionId, request.prompt());
-    OpenAPI updatedSpecObject = sessionService.getSpecForSession(sessionId);
-
-    // CRITICAL: Convert to Map to avoid Swagger parser's uppercase enum issue
-    Map<String, Object> fixedSpec = convertToMapWithFixedEnums(updatedSpecObject);
-
-    return ResponseEntity.ok(fixedSpec);
-  }
-
   /**
    * Convert OpenAPI object to Map with fixed lowercase enum values. This avoids re-parsing through
    * Swagger parser which converts enums to uppercase.
@@ -129,11 +121,24 @@ public class SpecificationController {
 
       // Parse to Map using Jackson (NOT Swagger parser to avoid re-uppercasing)
       ObjectMapper jacksonMapper = new ObjectMapper();
-      return jacksonMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+      return jacksonMapper.readValue(json, new TypeReference<Map<String, Object>>() {
+      });
 
     } catch (Exception e) {
       log.error("Failed to convert OpenAPI to Map with fixed enums", e);
       throw new RuntimeException("Enum fixing failed", e);
     }
+  }
+
+  @PostMapping("/transform")
+  public ResponseEntity<Map<String, Object>> executeAIAction(
+      @PathVariable String sessionId, @RequestBody AIProxyRequest request) {
+    aiService.processSpecification(sessionId, request.prompt());
+    OpenAPI updatedSpecObject = sessionService.getSpecForSession(sessionId);
+
+    // CRITICAL: Convert to Map to avoid Swagger parser's uppercase enum issue
+    Map<String, Object> fixedSpec = convertToMapWithFixedEnums(updatedSpecObject);
+
+    return ResponseEntity.ok(fixedSpec);
   }
 }

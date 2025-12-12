@@ -11,7 +11,8 @@ public record DescriptionAnalysisRequest(List<DescriptionItem> items) {
       String path, // e.g., "/paths/~1users~1{id}/get" or "/components/schemas/User"
       String type, // "operation", "schema", "parameter", "response"
       String currentDescription, // May be null or empty
-      DescriptionContext context) {}
+      DescriptionContext context) {
+  }
 
   public record DescriptionContext(
       String method, // For operations: GET, POST, etc.
@@ -19,5 +20,6 @@ public record DescriptionAnalysisRequest(List<DescriptionItem> items) {
       List<String> propertyNames, // For schemas: list of property names for context
       String operationSummary, // For operations: existing summary for context
       Integer statusCode // For responses: 200, 404, etc.
-      ) {}
+  ) {
+  }
 }

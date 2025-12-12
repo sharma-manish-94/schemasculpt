@@ -8,7 +8,13 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/hardening")
@@ -20,6 +26,24 @@ public class HardeningController {
 
   public HardeningController(HardeningService hardeningService) {
     this.hardeningService = hardeningService;
+  }
+
+  @PostMapping("/operations/oauth2")
+  public ResponseEntity<HardeningResponse> addOAuth2Security(
+      @PathVariable String sessionId, @RequestBody Map<String, String> request) {
+
+    String path = request.get("path");
+    String method = request.get("method");
+
+    HardenOperationRequest hardenRequest =
+        new HardenOperationRequest(
+            path,
+            method,
+            List.of("oauth2"),
+            new HardenOperationRequest.HardeningOptions(
+                true, false, false, false, false, false, null, null, "oauth2"));
+
+    return hardenOperation(sessionId, hardenRequest);
   }
 
   @PostMapping("/operations")
@@ -55,24 +79,6 @@ public class HardeningController {
                   List.of("Internal server error"),
                   false));
     }
-  }
-
-  @PostMapping("/operations/oauth2")
-  public ResponseEntity<HardeningResponse> addOAuth2Security(
-      @PathVariable String sessionId, @RequestBody Map<String, String> request) {
-
-    String path = request.get("path");
-    String method = request.get("method");
-
-    HardenOperationRequest hardenRequest =
-        new HardenOperationRequest(
-            path,
-            method,
-            List.of("oauth2"),
-            new HardenOperationRequest.HardeningOptions(
-                true, false, false, false, false, false, null, null, "oauth2"));
-
-    return hardenOperation(sessionId, hardenRequest);
   }
 
   @PostMapping("/operations/rate-limiting")
@@ -191,14 +197,14 @@ public class HardeningController {
             Map.of(
                 "GET", List.of("oauth2", "rate-limiting", "caching", "error-handling"),
                 "POST",
-                    List.of(
-                        "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
+                List.of(
+                    "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
                 "PUT",
-                    List.of(
-                        "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
+                List.of(
+                    "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
                 "PATCH",
-                    List.of(
-                        "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
+                List.of(
+                    "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
                 "DELETE", List.of("oauth2", "rate-limiting", "error-handling"))));
   }
 

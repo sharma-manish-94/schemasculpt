@@ -11,18 +11,22 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SmartAIFixRequest(
     @JsonProperty("specText") // Keep camelCase to match Python alias
-        String specText,
+    String specText,
     String prompt,
     @JsonProperty("target_path") String targetPath,
     @JsonProperty("target_method") String targetMethod,
     @JsonProperty("validation_errors") List<String> validationErrors,
     @JsonProperty("force_full_regeneration") Boolean forceFullRegeneration) {
-  /** Convenience constructor for simple requests without targeting. */
+  /**
+   * Convenience constructor for simple requests without targeting.
+   */
   public SmartAIFixRequest(String specText, String prompt) {
     this(specText, prompt, null, null, null, false);
   }
 
-  /** Convenience constructor with targeting. */
+  /**
+   * Convenience constructor with targeting.
+   */
   public SmartAIFixRequest(String specText, String prompt, String targetPath, String targetMethod) {
     this(specText, prompt, targetPath, targetMethod, null, false);
   }

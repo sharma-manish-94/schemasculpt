@@ -32,7 +32,9 @@ public class ProjectController {
     this.projectService = projectService;
   }
 
-  /** Create a new project */
+  /**
+   * Create a new project
+   */
   @PostMapping
   public ResponseEntity<ProjectDTO> createProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -47,7 +49,9 @@ public class ProjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDTO(project));
   }
 
-  /** Get all projects for the authenticated user */
+  /**
+   * Get all projects for the authenticated user
+   */
   @GetMapping
   public ResponseEntity<List<ProjectDTO>> getUserProjects(
       @AuthenticationPrincipal CustomOAuth2User principal) {
@@ -62,7 +66,9 @@ public class ProjectController {
     return ResponseEntity.ok(projects);
   }
 
-  /** Get a specific project */
+  /**
+   * Get a specific project
+   */
   @GetMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> getProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
@@ -73,7 +79,9 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /** Update a project */
+  /**
+   * Update a project
+   */
   @PutMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> updateProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -93,7 +101,9 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /** Delete a project */
+  /**
+   * Delete a project
+   */
   @DeleteMapping("/{projectId}")
   public ResponseEntity<Void> deleteProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {

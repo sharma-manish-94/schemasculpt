@@ -1,6 +1,15 @@
 package io.github.sharma_manish_94.schemasculpt_api.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,9 +23,9 @@ import org.hibernate.type.SqlTypes;
 @Table(
     name = "operation_test_cases",
     uniqueConstraints =
-        @UniqueConstraint(
-            name = "unique_project_operation_tests",
-            columnNames = {"project_id", "path", "method"}))
+    @UniqueConstraint(
+        name = "unique_project_operation_tests",
+        columnNames = {"project_id", "path", "method"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

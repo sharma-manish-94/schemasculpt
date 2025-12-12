@@ -3,7 +3,11 @@ package io.github.sharma_manish_94.schemasculpt_api.service.linter;
 import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
@@ -165,7 +169,9 @@ public class BatchEndpointSuggestionRule implements LinterRule {
     return suggestions;
   }
 
-  /** Group paths by their base resource (e.g., /users/{id} -> users). */
+  /**
+   * Group paths by their base resource (e.g., /users/{id} -> users).
+   */
   private Map<String, List<PathInfo>> groupPathsByResource(OpenAPI openApi) {
     Map<String, List<PathInfo>> grouped = new HashMap<>();
 
@@ -184,14 +190,12 @@ public class BatchEndpointSuggestionRule implements LinterRule {
     return grouped;
   }
 
-  /** Extract resource name from path (e.g., /users/{id} -> users). */
+  /**
+   * Extract resource name from path (e.g., /users/{id} -> users).
+   */
   private String extractResourceName(String path) {
     // Remove leading slash and split by /
     String[] parts = path.substring(1).split("/");
-
-    if (parts.length == 0) {
-      return null;
-    }
 
     // Return first non-parameterized segment
     for (String part : parts) {
@@ -203,7 +207,9 @@ public class BatchEndpointSuggestionRule implements LinterRule {
     return null;
   }
 
-  /** Helper class to track path information. */
+  /**
+   * Helper class to track path information.
+   */
   private static class PathInfo {
     final String path;
     final boolean hasPathParam;

@@ -14,7 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-/** Service for applying JSON Patch (RFC 6902) operations to OpenAPI specifications. */
+/**
+ * Service for applying JSON Patch (RFC 6902) operations to OpenAPI specifications.
+ */
 @Service
 public class JsonPatchService {
 
@@ -26,9 +28,26 @@ public class JsonPatchService {
   }
 
   /**
+   * Validate that patch operations can be applied to the spec without actually applying them.
+   *
+   * @param openApi  The OpenAPI specification
+   * @param patchOps The list of JSON Patch operations
+   * @return true if patch can be applied, false otherwise
+   */
+  public boolean validatePatch(OpenAPI openApi, List<JsonPatchOperation> patchOps) {
+    try {
+      applyPatch(openApi, patchOps);
+      return true;
+    } catch (Exception e) {
+      log.warn("Patch validation failed: {}", e.getMessage());
+      return false;
+    }
+  }
+
+  /**
    * Apply JSON Patch operations to an OpenAPI specification.
    *
-   * @param openApi The OpenAPI specification to patch
+   * @param openApi  The OpenAPI specification to patch
    * @param patchOps The list of JSON Patch operations
    * @return The patched OpenAPI specification
    * @throws JsonPatchException if patch application fails
@@ -71,23 +90,6 @@ public class JsonPatchService {
     } catch (Exception e) {
       log.error("Failed to apply JSON Patch: {}", e.getMessage());
       throw new JsonPatchException("Patch application failed: " + e.getMessage(), e);
-    }
-  }
-
-  /**
-   * Validate that patch operations can be applied to the spec without actually applying them.
-   *
-   * @param openApi The OpenAPI specification
-   * @param patchOps The list of JSON Patch operations
-   * @return true if patch can be applied, false otherwise
-   */
-  public boolean validatePatch(OpenAPI openApi, List<JsonPatchOperation> patchOps) {
-    try {
-      applyPatch(openApi, patchOps);
-      return true;
-    } catch (Exception e) {
-      log.warn("Patch validation failed: {}", e.getMessage());
-      return false;
     }
   }
 }

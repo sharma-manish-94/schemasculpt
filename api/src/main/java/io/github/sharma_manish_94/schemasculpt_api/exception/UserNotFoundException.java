@@ -1,6 +1,8 @@
 package io.github.sharma_manish_94.schemasculpt_api.exception;
 
-/** Exception thrown when a user is not found in the database */
+/**
+ * Exception thrown when a user is not found in the database
+ */
 public class UserNotFoundException extends SchemaSculptException {
 
   public UserNotFoundException(Long userId) {

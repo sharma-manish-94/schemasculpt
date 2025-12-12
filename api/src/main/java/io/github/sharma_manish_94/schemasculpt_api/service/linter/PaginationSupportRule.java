@@ -120,7 +120,9 @@ public class PaginationSupportRule implements LinterRule {
     return pathIndicatesCollection || descIndicatesCollection || responseIsArray;
   }
 
-  /** Check if operation has pagination parameters. */
+  /**
+   * Check if operation has pagination parameters.
+   */
   private boolean checkPaginationSupport(Operation operation) {
     if (operation.getParameters() == null || operation.getParameters().isEmpty()) {
       return false;

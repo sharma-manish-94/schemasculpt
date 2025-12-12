@@ -23,8 +23,10 @@ public class SessionServiceImplIntegrationTest {
   static final GenericContainer<?> redis =
       new GenericContainer<>(DockerImageName.parse("redis:latest")).withExposedPorts(6379);
 
-  @Autowired private SessionService sessionService;
-  @Autowired private RedisTemplate<String, OpenAPI> redisTemplate;
+  @Autowired
+  private SessionService sessionService;
+  @Autowired
+  private RedisTemplate<String, OpenAPI> redisTemplate;
 
   @DynamicPropertySource
   static void setProperties(DynamicPropertyRegistry registry) {

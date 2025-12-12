@@ -14,15 +14,6 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class JacksonConfig {
 
-  /** Mixin to ignore internal Swagger fields */
-  public abstract static class SchemaMixin {
-    @JsonIgnore
-    abstract boolean getExampleSetFlag();
-
-    @JsonIgnore
-    abstract void setExampleSetFlag(boolean flag);
-  }
-
   @Bean
   @Primary
   public ObjectMapper objectMapper() {
@@ -52,7 +43,9 @@ public class JacksonConfig {
     return mapper;
   }
 
-  /** Alternative configuration that's more aggressive about excluding nulls */
+  /**
+   * Alternative configuration that's more aggressive about excluding nulls
+   */
   @Bean("cleanObjectMapper")
   public ObjectMapper cleanObjectMapper() {
     ObjectMapper mapper = new ObjectMapper();
@@ -74,5 +67,16 @@ public class JacksonConfig {
     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     return mapper;
+  }
+
+  /**
+   * Mixin to ignore internal Swagger fields
+   */
+  public abstract static class SchemaMixin {
+    @JsonIgnore
+    abstract boolean getExampleSetFlag();
+
+    @JsonIgnore
+    abstract void setExampleSetFlag(boolean flag);
   }
 }

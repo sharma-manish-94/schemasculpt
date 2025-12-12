@@ -169,7 +169,8 @@ public class SessionServiceImpl implements SessionService {
       // Convert OpenAPI object to JSON string
       return objectMapper.writeValueAsString(openAPI);
     } catch (Exception e) {
-      log.error("Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(), e);
+      log.error("Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(),
+          e);
       throw new InvalidSpecificationException(
           "Failed to serialize specification: " + e.getMessage(), e);
     }

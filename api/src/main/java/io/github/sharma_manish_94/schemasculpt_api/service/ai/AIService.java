@@ -95,6 +95,24 @@ public class AIService {
     }
   }
 
+  private String formatSpec(String rawSpec) {
+    if (rawSpec == null || rawSpec.isBlank()) {
+      return "";
+    }
+    try {
+      // Heuristic to detect if the string is JSON
+      if (rawSpec.trim().startsWith("{")) {
+        Object jsonObject = Json.mapper().readValue(rawSpec, Object.class);
+        return Json.pretty(jsonObject);
+      } else {
+        Object yamlObject = Yaml.mapper().readValue(rawSpec, Object.class);
+        return Yaml.pretty(yamlObject);
+      }
+    } catch (JsonProcessingException e) {
+      return rawSpec;
+    }
+  }
+
   /**
    * Legacy method: Call the original /process endpoint for full regeneration. Kept for backward
    * compatibility, but prefer callSmartAIFix() for better performance.
@@ -129,7 +147,8 @@ public class AIService {
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(request)
           .retrieve()
-          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+          })
           .block();
     } catch (Exception e) {
       log.error("Failed to get explanation from AI service: {}", e.getMessage(), e);
@@ -147,7 +166,8 @@ public class AIService {
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(request)
           .retrieve()
-          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+          })
           .block();
     } catch (Exception e) {
       log.error("Failed to generate test cases from AI service: {}", e.getMessage(), e);
@@ -165,7 +185,8 @@ public class AIService {
           .contentType(MediaType.APPLICATION_JSON)
           .bodyValue(request)
           .retrieve()
-          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+          })
           .block();
     } catch (Exception e) {
       log.error("Failed to generate test suite from AI service: {}", e.getMessage(), e);
@@ -246,11 +267,21 @@ public class AIService {
       String path, PathItem pathItem, List<DescriptionAnalysisRequest.DescriptionItem> items) {
     // Build map with only non-null operations (Map.of() doesn't accept null values)
     Map<String, Operation> operations = new java.util.HashMap<>();
-    if (pathItem.getGet() != null) operations.put("get", pathItem.getGet());
-    if (pathItem.getPost() != null) operations.put("post", pathItem.getPost());
-    if (pathItem.getPut() != null) operations.put("put", pathItem.getPut());
-    if (pathItem.getDelete() != null) operations.put("delete", pathItem.getDelete());
-    if (pathItem.getPatch() != null) operations.put("patch", pathItem.getPatch());
+      if (pathItem.getGet() != null) {
+          operations.put("get", pathItem.getGet());
+      }
+      if (pathItem.getPost() != null) {
+          operations.put("post", pathItem.getPost());
+      }
+      if (pathItem.getPut() != null) {
+          operations.put("put", pathItem.getPut());
+      }
+      if (pathItem.getDelete() != null) {
+          operations.put("delete", pathItem.getDelete());
+      }
+      if (pathItem.getPatch() != null) {
+          operations.put("patch", pathItem.getPatch());
+      }
 
     operations.forEach(
         (method, operation) -> {
@@ -314,24 +345,6 @@ public class AIService {
     } catch (Exception e) {
       log.error("Failed to analyze description quality: {}", e.getMessage(), e);
       throw new RuntimeException("AI description analysis service unavailable", e);
-    }
-  }
-
-  private String formatSpec(String rawSpec) {
-    if (rawSpec == null || rawSpec.isBlank()) {
-      return "";
-    }
-    try {
-      // Heuristic to detect if the string is JSON
-      if (rawSpec.trim().startsWith("{")) {
-        Object jsonObject = Json.mapper().readValue(rawSpec, Object.class);
-        return Json.pretty(jsonObject);
-      } else {
-        Object yamlObject = Yaml.mapper().readValue(rawSpec, Object.class);
-        return Yaml.pretty(yamlObject);
-      }
-    } catch (JsonProcessingException e) {
-      return rawSpec;
     }
   }
 }

@@ -13,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Service for managing user projects */
+/**
+ * Service for managing user projects
+ */
 @SuppressWarnings("checkstyle:SummaryJavadoc")
 @Service
 @Slf4j
@@ -28,7 +30,9 @@ public class ProjectService {
     this.userRepository = userRepository;
   }
 
-  /** Create a new project for a user */
+  /**
+   * Create a new project for a user
+   */
   @Transactional
   public Project createProject(Long userId, String name, String description, Boolean isPublic) {
     log.info("Creating project '{}' for user {}", name, userId);
@@ -53,32 +57,18 @@ public class ProjectService {
     return savedProject;
   }
 
-  /** Get all projects for a user */
+  /**
+   * Get all projects for a user
+   */
   @Transactional(readOnly = true)
   public List<Project> getUserProjects(Long userId) {
     log.debug("Fetching projects for user {}", userId);
     return projectRepository.findByUserIdOrderByCreatedAtDesc(userId);
   }
 
-  /** Get a specific project by ID */
-  @SuppressWarnings({"checkstyle:Indentation", "checkstyle:FileTabCharacter"})
-  @Transactional(readOnly = true)
-  public Project getProject(Long projectId, Long userId) {
-    log.debug("Fetching project {} for user {}", projectId, userId);
-
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-    if (!project.getUser().getId().equals(userId) && !project.getIsPublic()) {
-      throw new ForbiddenException("You don't have access to this project");
-    }
-
-    return project;
-  }
-
-  /** Update project details */
+  /**
+   * Update project details
+   */
   @Transactional
   public Project updateProject(
       Long projectId, Long userId, String name, String description, Boolean isPublic) {
@@ -105,7 +95,29 @@ public class ProjectService {
     return projectRepository.save(project);
   }
 
-  /** Delete a project and all its specifications */
+  /**
+   * Get a specific project by ID
+   */
+  @SuppressWarnings({"checkstyle:Indentation", "checkstyle:FileTabCharacter"})
+  @Transactional(readOnly = true)
+  public Project getProject(Long projectId, Long userId) {
+    log.debug("Fetching project {} for user {}", projectId, userId);
+
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+    if (!project.getUser().getId().equals(userId) && !project.getIsPublic()) {
+      throw new ForbiddenException("You don't have access to this project");
+    }
+
+    return project;
+  }
+
+  /**
+   * Delete a project and all its specifications
+   */
   @Transactional
   public void deleteProject(Long projectId, Long userId) {
     log.info("Deleting project {} for user {}", projectId, userId);

@@ -25,7 +25,7 @@ public class MissingDescriptionRule implements LinterRule {
     // Check API level description
     if (openApi.getInfo() != null
         && (openApi.getInfo().getDescription() == null
-            || openApi.getInfo().getDescription().trim().isEmpty())) {
+        || openApi.getInfo().getDescription().trim().isEmpty())) {
       suggestions.add(
           new ValidationSuggestion(
               "API is missing a description in the 'info' section.",
@@ -113,7 +113,8 @@ public class MissingDescriptionRule implements LinterRule {
                       "add-missing-description",
                       "error",
                       "documentation",
-                      Map.of("path", path, "method", method.toString(), "responseCode", responseCode),
+                      Map.of("path", path, "method", method.toString(), "responseCode",
+                          responseCode),
                       true));
             }
           }

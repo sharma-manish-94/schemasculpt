@@ -4,11 +4,16 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -46,7 +51,7 @@ public class FindingEnrichmentService {
    * that would be expensive/unreliable for the AI to discover.
    *
    * @param findings Raw validation suggestions
-   * @param openApi The OpenAPI spec
+   * @param openApi  The OpenAPI spec
    * @return Map of enriched finding data ready for AI
    */
   public List<Map<String, Object>> enrichFindings(
@@ -187,12 +192,10 @@ public class FindingEnrichmentService {
     // Check global security
     if (openApi.getSecurity() != null && !openApi.getSecurity().isEmpty()) {
       // Global security exists, but operation might override with empty array
-      if (operation.getSecurity() != null
+      return operation.getSecurity() != null
           && operation.getSecurity().isEmpty()
-          && operation.getSecurity() instanceof List) {
-        return true; // Explicitly public (overrides global)
-      }
-      return false; // Uses global security
+          && operation.getSecurity() instanceof List; // Explicitly public (overrides global)
+// Uses global security
     }
 
     return true; // No security at all = public

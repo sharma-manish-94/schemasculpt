@@ -6,7 +6,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
@@ -23,6 +22,16 @@ public class ProxyService {
     this.webClient = webClientBuilder.build();
   }
 
+  public Mono<ProxyResponse> forwardRequest(ProxyRequest request) {
+    this.validateUrl(request.url());
+    return webClient
+        .method(HttpMethod.valueOf(request.method().toUpperCase()))
+        .uri(request.url())
+        .headers(headers -> headers.setAll(request.headers()))
+        .bodyValue(request.body() != null ? request.body() : "")
+        .exchangeToMono(this::handleResponse);
+  }
+
   private void validateUrl(String url) {
     try {
       URI uri = new URI(url);
@@ -32,16 +41,6 @@ public class ProxyService {
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException("Invalid URL format", e);
     }
-  }
-
-  public Mono<ProxyResponse> forwardRequest(ProxyRequest request) {
-    this.validateUrl(request.url());
-    return webClient
-        .method(HttpMethod.valueOf(request.method().toUpperCase()))
-        .uri(request.url())
-        .headers(headers -> headers.setAll(request.headers()))
-        .bodyValue(request.body() != null ? request.body() : "")
-        .exchangeToMono(this::handleResponse);
   }
 
   private Mono<ProxyResponse> handleResponse(ClientResponse clientResponse) {

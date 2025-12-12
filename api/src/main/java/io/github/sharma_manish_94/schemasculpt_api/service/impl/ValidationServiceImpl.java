@@ -76,7 +76,9 @@ public class ValidationServiceImpl implements ValidationService {
     }
   }
 
-  /** Cleans up validation messages from the Swagger parser to make them more user-friendly */
+  /**
+   * Cleans up validation messages from the Swagger parser to make them more user-friendly
+   */
   private String cleanUpValidationMessage(String message) {
     if (message == null) {
       return "Unknown validation error";

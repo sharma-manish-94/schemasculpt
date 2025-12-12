@@ -13,9 +13,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-/** Authentication Controller for OAuth2 and JWT */
+/**
+ * Authentication Controller for OAuth2 and JWT
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 @Slf4j
@@ -34,7 +39,9 @@ public class AuthController {
     this.jwtExpirationMs = jwtExpirationMs;
   }
 
-  /** Get current authenticated user */
+  /**
+   * Get current authenticated user
+   */
   @GetMapping("/me")
   public ResponseEntity<UserDTO> getCurrentUser(
       @AuthenticationPrincipal CustomOAuth2User principal) {
@@ -85,7 +92,9 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
-  /** Logout endpoint */
+  /**
+   * Logout endpoint
+   */
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(HttpServletRequest request) {
     // JWT tokens are stateless, so just clear session if exists
@@ -97,7 +106,9 @@ public class AuthController {
     return ResponseEntity.ok().build();
   }
 
-  /** Health check endpoint (public) */
+  /**
+   * Health check endpoint (public)
+   */
   @GetMapping("/health")
   public ResponseEntity<String> health() {
     return ResponseEntity.ok("Authentication service is running");

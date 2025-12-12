@@ -1,7 +1,12 @@
 package io.github.sharma_manish_94.schemasculpt_api.security;
 
 import io.github.sharma_manish_94.schemasculpt_api.entity.User;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -10,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/** JWT Token Provider for generating and validating JWT tokens */
+/**
+ * JWT Token Provider for generating and validating JWT tokens
+ */
 @Component
 @Slf4j
 public class JwtTokenProvider {
@@ -20,10 +27,6 @@ public class JwtTokenProvider {
 
   @Value("${app.jwt.expiration}")
   private long jwtExpirationMs;
-
-  private SecretKey getSigningKey() {
-    return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-  }
 
   public String generateToken(User user) {
     Date now = new Date();
@@ -39,6 +42,10 @@ public class JwtTokenProvider {
         .setExpiration(expiryDate)
         .signWith(getSigningKey(), SignatureAlgorithm.HS512)
         .compact();
+  }
+
+  private SecretKey getSigningKey() {
+    return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
   }
 
   public Long getUserIdFromToken(String token) {

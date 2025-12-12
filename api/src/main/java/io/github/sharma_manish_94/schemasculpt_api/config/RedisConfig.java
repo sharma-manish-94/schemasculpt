@@ -9,7 +9,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-/** Defined Redis template to store specification in */
+/**
+ * Defined Redis template to store specification in
+ */
+
 /**
  * Configuration class for setting up Redis integration.
  *
@@ -26,7 +29,8 @@ public class RedisConfig {
    * @return a configured {@link RedisTemplate} for String keys and OpenAPI values
    */
   @Bean
-  public RedisTemplate<String, OpenAPI> redisTemplate(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
+  public RedisTemplate<String, OpenAPI> redisTemplate(RedisConnectionFactory connectionFactory,
+                                                      ObjectMapper objectMapper) {
     RedisTemplate<String, OpenAPI> template = new RedisTemplate<>();
     template.setConnectionFactory(connectionFactory);
     template.setKeySerializer(new StringRedisSerializer());

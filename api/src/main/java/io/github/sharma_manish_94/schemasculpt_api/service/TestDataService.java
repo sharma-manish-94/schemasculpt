@@ -145,6 +145,52 @@ public class TestDataService {
   }
 
   /**
+   * Calculate SHA-256 hash of specification text for change detection.
+   */
+  private String calculateSpecHash(String specText) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(specText.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(hash);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException("SHA-256 algorithm not available", e);
+    }
+  }
+
+  /**
+   * Record test data generation attempt in history for analytics.
+   */
+  private void recordGenerationHistory(
+      Project project,
+      User user,
+      String dataType,
+      String path,
+      String method,
+      boolean success,
+      String errorMessage,
+      long durationMs,
+      boolean cacheHit) {
+
+    try {
+      TestDataGenerationHistory history = new TestDataGenerationHistory();
+      history.setProject(project);
+      history.setDataType(dataType);
+      history.setPath(path);
+      history.setMethod(method);
+      history.setSuccess(success);
+      history.setErrorMessage(errorMessage);
+      history.setGenerationTimeMs((int) durationMs);
+      history.setCacheHit(cacheHit);
+      history.setCreatedBy(user);
+
+      historyRepository.save(history);
+    } catch (Exception e) {
+      // Don't fail the main operation if history recording fails
+      log.warn("Failed to record generation history: {}", e.getMessage());
+    }
+  }
+
+  /**
    * Generate or retrieve cached mock data variations for an operation. Implements two-level
    * caching: DB (persistent) + AI service in-memory cache.
    */
@@ -268,7 +314,20 @@ public class TestDataService {
     }
   }
 
-  /** Invalidate cached test data when specification changes. */
+  /**
+   * Call AI service endpoint for mock data generation. This is a placeholder - should call the
+   * actual endpoint when available.
+   */
+  private Map<String, Object> callAIServiceForMockData(Map<String, Object> request) {
+    // TODO: Implement actual AI service call for mock data generation
+    // For now, return a simple response structure
+    log.warn("Mock data generation endpoint not yet implemented, returning placeholder");
+    return Map.of("variations", "[]", "count", request.getOrDefault("count", 3), "cached", false);
+  }
+
+  /**
+   * Invalidate cached test data when specification changes.
+   */
   @Transactional
   public void invalidateCache(Long projectId, String specText) {
     String newSpecHash = calculateSpecHash(specText);
@@ -279,58 +338,5 @@ public class TestDataService {
 
     // Note: We don't actually delete entries, just let the hash mismatch trigger regeneration
     // This preserves historical data for analytics
-  }
-
-  /** Record test data generation attempt in history for analytics. */
-  private void recordGenerationHistory(
-      Project project,
-      User user,
-      String dataType,
-      String path,
-      String method,
-      boolean success,
-      String errorMessage,
-      long durationMs,
-      boolean cacheHit) {
-
-    try {
-      TestDataGenerationHistory history = new TestDataGenerationHistory();
-      history.setProject(project);
-      history.setDataType(dataType);
-      history.setPath(path);
-      history.setMethod(method);
-      history.setSuccess(success);
-      history.setErrorMessage(errorMessage);
-      history.setGenerationTimeMs((int) durationMs);
-      history.setCacheHit(cacheHit);
-      history.setCreatedBy(user);
-
-      historyRepository.save(history);
-    } catch (Exception e) {
-      // Don't fail the main operation if history recording fails
-      log.warn("Failed to record generation history: {}", e.getMessage());
-    }
-  }
-
-  /** Calculate SHA-256 hash of specification text for change detection. */
-  private String calculateSpecHash(String specText) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(specText.getBytes(StandardCharsets.UTF_8));
-      return HexFormat.of().formatHex(hash);
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("SHA-256 algorithm not available", e);
-    }
-  }
-
-  /**
-   * Call AI service endpoint for mock data generation. This is a placeholder - should call the
-   * actual endpoint when available.
-   */
-  private Map<String, Object> callAIServiceForMockData(Map<String, Object> request) {
-    // TODO: Implement actual AI service call for mock data generation
-    // For now, return a simple response structure
-    log.warn("Mock data generation endpoint not yet implemented, returning placeholder");
-    return Map.of("variations", "[]", "count", request.getOrDefault("count", 3), "cached", false);
   }
 }

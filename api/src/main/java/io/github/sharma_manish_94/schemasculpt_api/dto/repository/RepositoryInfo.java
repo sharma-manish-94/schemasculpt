@@ -2,10 +2,10 @@ package io.github.sharma_manish_94.schemasculpt_api.dto.repository;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.time.LocalDateTime;
 
 /**
  * Information about a repository
@@ -15,29 +15,29 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RepositoryInfo {
 
-    private String owner;
-    private String name;
+  private String owner;
+  private String name;
 
-    @JsonProperty("full_name")
-    @JsonAlias({"fullName", "full_name"})
-    private String fullName;
+  @JsonProperty("full_name")
+  @JsonAlias({"fullName", "full_name"})
+  private String fullName;
 
-    private String description;
-    private String url;
+  private String description;
+  private String url;
 
-    @JsonProperty("default_branch")
-    @JsonAlias({"defaultBranch", "default_branch"})
-    private String defaultBranch;
+  @JsonProperty("default_branch")
+  @JsonAlias({"defaultBranch", "default_branch"})
+  private String defaultBranch;
 
-    @JsonProperty("private")
-    @JsonAlias({"isPrivate", "private"})
-    private boolean isPrivate;
+  @JsonProperty("private")
+  @JsonAlias({"isPrivate", "private"})
+  private boolean isPrivate;
 
-    @JsonProperty("created_at")
-    @JsonAlias({"createdAt", "created_at"})
-    private LocalDateTime createdAt;
+  @JsonProperty("created_at")
+  @JsonAlias({"createdAt", "created_at"})
+  private LocalDateTime createdAt;
 
-    @JsonProperty("updated_at")
-    @JsonAlias({"updatedAt", "updated_at"})
-    private LocalDateTime updatedAt;
+  @JsonProperty("updated_at")
+  @JsonAlias({"updatedAt", "updated_at"})
+  private LocalDateTime updatedAt;
 }

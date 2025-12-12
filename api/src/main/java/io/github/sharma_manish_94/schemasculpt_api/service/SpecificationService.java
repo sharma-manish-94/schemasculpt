@@ -15,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Service for managing specification versions */
+/**
+ * Service for managing specification versions
+ */
 @Service
 @Slf4j
 public class SpecificationService {
@@ -33,7 +35,89 @@ public class SpecificationService {
     this.userRepository = userRepository;
   }
 
-  /** Save a new version of a specification */
+  /**
+   * Get the current version of a specification
+   */
+  @Transactional(readOnly = true)
+  public Specification getCurrentSpecification(Long projectId, Long userId) {
+    log.debug("Fetching current specification for project {}", projectId);
+
+    // Verify project access
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+    if (!project.getUser().getId().equals(userId)) {
+      throw new ForbiddenException("You don't have access to this project");
+    }
+
+    return specificationRepository.findByProjectIdAndIsCurrentTrue(projectId).orElse(null);
+  }
+
+  /**
+   * Get all versions of a specification
+   */
+  @Transactional(readOnly = true)
+  public List<Specification> getSpecificationVersions(Long projectId, Long userId) {
+    log.debug("Fetching all specification versions for project {}", projectId);
+
+    // Verify project access
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+    if (!project.getUser().getId().equals(userId)) {
+      throw new ForbiddenException("You don't have access to this project");
+    }
+
+    return specificationRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
+  }
+
+  /**
+   * Revert to a previous version
+   */
+  @Transactional
+  public Specification revertToVersion(
+      Long projectId, String version, Long userId, String commitMessage) {
+    log.info("Reverting project {} to version {}", projectId, version);
+
+    // Get the version to revert to
+    Specification targetSpec = getSpecificationByVersion(projectId, version, userId);
+
+    // Create a new version based on the old content
+    String revertMessage = commitMessage != null ? commitMessage : "Reverted to version " + version;
+
+    return saveSpecification(
+        projectId, userId, targetSpec.getSpecContent(), targetSpec.getSpecFormat(), revertMessage);
+  }
+
+  /**
+   * Get a specific version of a specification
+   */
+  @Transactional(readOnly = true)
+  public Specification getSpecificationByVersion(Long projectId, String version, Long userId) {
+    log.debug("Fetching specification version {} for project {}", version, projectId);
+
+    // Verify project access
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+    if (!project.getUser().getId().equals(userId)) {
+      throw new ForbiddenException("You don't have access to this project");
+    }
+
+    return specificationRepository
+        .findByProjectIdAndVersion(projectId, version)
+        .orElseThrow(() -> new SpecificationNotFoundException(version));
+  }
+
+  /**
+   * Save a new version of a specification
+   */
   @Transactional
   public Specification saveSpecification(
       Long projectId, Long userId, String specContent, String specFormat, String commitMessage) {
@@ -79,79 +163,9 @@ public class SpecificationService {
     return saved;
   }
 
-  /** Get the current version of a specification */
-  @Transactional(readOnly = true)
-  public Specification getCurrentSpecification(Long projectId, Long userId) {
-    log.debug("Fetching current specification for project {}", projectId);
-
-    // Verify project access
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-    if (!project.getUser().getId().equals(userId)) {
-      throw new ForbiddenException("You don't have access to this project");
-    }
-
-    return specificationRepository.findByProjectIdAndIsCurrentTrue(projectId).orElse(null);
-  }
-
-  /** Get all versions of a specification */
-  @Transactional(readOnly = true)
-  public List<Specification> getSpecificationVersions(Long projectId, Long userId) {
-    log.debug("Fetching all specification versions for project {}", projectId);
-
-    // Verify project access
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-    if (!project.getUser().getId().equals(userId)) {
-      throw new ForbiddenException("You don't have access to this project");
-    }
-
-    return specificationRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
-  }
-
-  /** Get a specific version of a specification */
-  @Transactional(readOnly = true)
-  public Specification getSpecificationByVersion(Long projectId, String version, Long userId) {
-    log.debug("Fetching specification version {} for project {}", version, projectId);
-
-    // Verify project access
-    Project project =
-        projectRepository
-            .findById(projectId)
-            .orElseThrow(() -> new ProjectNotFoundException(projectId));
-
-    if (!project.getUser().getId().equals(userId)) {
-      throw new ForbiddenException("You don't have access to this project");
-    }
-
-    return specificationRepository
-        .findByProjectIdAndVersion(projectId, version)
-        .orElseThrow(() -> new SpecificationNotFoundException(version));
-  }
-
-  /** Revert to a previous version */
-  @Transactional
-  public Specification revertToVersion(
-      Long projectId, String version, Long userId, String commitMessage) {
-    log.info("Reverting project {} to version {}", projectId, version);
-
-    // Get the version to revert to
-    Specification targetSpec = getSpecificationByVersion(projectId, version, userId);
-
-    // Create a new version based on the old content
-    String revertMessage = commitMessage != null ? commitMessage : "Reverted to version " + version;
-
-    return saveSpecification(
-        projectId, userId, targetSpec.getSpecContent(), targetSpec.getSpecFormat(), revertMessage);
-  }
-
-  /** Generate version number in format v1, v2, v3, etc. */
+  /**
+   * Generate version number in format v1, v2, v3, etc.
+   */
   private String generateVersionNumber(int versionNum) {
     return "v" + versionNum;
   }

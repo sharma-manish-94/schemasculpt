@@ -114,10 +114,14 @@ public class ExampleRule implements LinterRule {
 
   private boolean shouldHaveExample(Schema schema) {
     // Skip certain schema types that don't benefit from examples
-    if (schema == null) return false;
+      if (schema == null) {
+          return false;
+      }
 
     String type = schema.getType();
-    if (type == null) return true; // Object schemas without explicit type
+      if (type == null) {
+          return true; // Object schemas without explicit type
+      }
 
     // Examples are particularly useful for object and array schemas
     return "object".equals(type)
@@ -136,7 +140,9 @@ public class ExampleRule implements LinterRule {
   }
 
   private boolean hasPropertyExamples(Schema schema) {
-    if (schema.getProperties() == null) return false;
+      if (schema.getProperties() == null) {
+          return false;
+      }
 
     // If at least some properties have examples, consider it acceptable
     long propertiesWithExamples =

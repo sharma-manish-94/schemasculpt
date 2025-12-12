@@ -9,11 +9,11 @@ import io.github.sharma_manish_94.schemasculpt_api.dto.ai.PatchGenerationRespons
 import io.github.sharma_manish_94.schemasculpt_api.service.SessionService;
 import io.github.sharma_manish_94.schemasculpt_api.util.OpenAPIEnumFixer;
 import io.swagger.v3.core.util.Json;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.Components;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,63 +83,6 @@ public class QuickFixService {
 
     sessionService.updateSessionSpec(sessionId, openApi);
     return openApi;
-  }
-
-  /**
-   * Apply AI-powered fix using JSON Patch (RFC 6902). The AI service generates precise patch
-   * operations instead of the full spec.
-   */
-  private OpenAPI applyAIFix(OpenAPI openApi, QuickFixRequest request) {
-    try {
-      // CRITICAL: Use Swagger's Json.pretty() instead of Spring's ObjectMapper
-      // This ensures enums are serialized correctly as lowercase (oauth2, not OAUTH2)
-      String specJson = Json.pretty(openApi);
-
-      // Fix uppercase enums that Swagger parser stores in the model
-      specJson = OpenAPIEnumFixer.fixEnums(specJson);
-
-      // Create request for AI service
-      PatchGenerationRequest patchRequest =
-          new PatchGenerationRequest(
-              specJson,
-              request.ruleId(),
-              request.context(),
-              "Generated fix for: " + request.ruleId());
-
-      // Call AI service to generate JSON Patch
-      PatchGenerationResponse patchResponse =
-          aiServiceClient
-              .post()
-              .uri("/ai/patch/generate")
-              .bodyValue(patchRequest)
-              .retrieve()
-              .bodyToMono(PatchGenerationResponse.class)
-              .block();
-
-      if (patchResponse == null || patchResponse.patches().isEmpty()) {
-        log.warn("AI service returned no patch operations for rule: {}", request.ruleId());
-        return openApi; // Return unchanged
-      }
-
-      log.info(
-          "AI service generated {} patch operations with confidence: {}",
-          patchResponse.patches().size(),
-          patchResponse.confidence());
-
-      // Apply the JSON Patch operations
-      OpenAPI patchedSpec = jsonPatchService.applyPatch(openApi, patchResponse.patches());
-
-      log.info(
-          "Successfully applied AI-generated patch. Explanation: {}", patchResponse.explanation());
-      return patchedSpec;
-
-    } catch (JsonPatchException e) {
-      log.error("Failed to apply AI-generated patch: {}", e.getMessage());
-      throw new RuntimeException("AI fix failed: " + e.getMessage(), e);
-    } catch (Exception e) {
-      log.error("AI service call failed: {}", e.getMessage());
-      throw new RuntimeException("AI service error: " + e.getMessage(), e);
-    }
   }
 
   private void updateOpenAPI(QuickFixRequest request, OpenAPI openApi) {
@@ -212,30 +155,78 @@ public class QuickFixService {
     }
   }
 
+  /**
+   * Apply AI-powered fix using JSON Patch (RFC 6902). The AI service generates precise patch
+   * operations instead of the full spec.
+   */
+  private OpenAPI applyAIFix(OpenAPI openApi, QuickFixRequest request) {
+    try {
+      // CRITICAL: Use Swagger's Json.pretty() instead of Spring's ObjectMapper
+      // This ensures enums are serialized correctly as lowercase (oauth2, not OAUTH2)
+      String specJson = Json.pretty(openApi);
+
+      // Fix uppercase enums that Swagger parser stores in the model
+      specJson = OpenAPIEnumFixer.fixEnums(specJson);
+
+      // Create request for AI service
+      PatchGenerationRequest patchRequest =
+          new PatchGenerationRequest(
+              specJson,
+              request.ruleId(),
+              request.context(),
+              "Generated fix for: " + request.ruleId());
+
+      // Call AI service to generate JSON Patch
+      PatchGenerationResponse patchResponse =
+          aiServiceClient
+              .post()
+              .uri("/ai/patch/generate")
+              .bodyValue(patchRequest)
+              .retrieve()
+              .bodyToMono(PatchGenerationResponse.class)
+              .block();
+
+      if (patchResponse == null || patchResponse.patches().isEmpty()) {
+        log.warn("AI service returned no patch operations for rule: {}", request.ruleId());
+        return openApi; // Return unchanged
+      }
+
+      log.info(
+          "AI service generated {} patch operations with confidence: {}",
+          patchResponse.patches().size(),
+          patchResponse.confidence());
+
+      // Apply the JSON Patch operations
+      OpenAPI patchedSpec = jsonPatchService.applyPatch(openApi, patchResponse.patches());
+
+      log.info(
+          "Successfully applied AI-generated patch. Explanation: {}", patchResponse.explanation());
+      return patchedSpec;
+
+    } catch (JsonPatchException e) {
+      log.error("Failed to apply AI-generated patch: {}", e.getMessage());
+      throw new RuntimeException("AI fix failed: " + e.getMessage(), e);
+    } catch (Exception e) {
+      log.error("AI service call failed: {}", e.getMessage());
+      throw new RuntimeException("AI service error: " + e.getMessage(), e);
+    }
+  }
+
   private void generateOperationId(OpenAPI openApi, String path, String method) {
     PathItem pathItem = openApi.getPaths().get(path);
-    if (pathItem == null) return;
+      if (pathItem == null) {
+          return;
+      }
 
     Operation operation =
         pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
-    if (operation == null) return;
+      if (operation == null) {
+          return;
+      }
 
     // Build the new operationId (e.g., "getUsersById")
     String generatedId = buildIdFromPath(method.toLowerCase(), path);
     operation.setOperationId(generatedId);
-  }
-
-  private String buildIdFromPath(String method, String path) {
-    String pathWithoutParams =
-        PATH_PARAM_PATTERN
-            .matcher(path)
-            .replaceAll(
-                match -> "By " + CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, match.group(1)));
-
-    String cleanPath = pathWithoutParams.replaceAll("[^a-zA-Z0-9 ]", " ").trim();
-
-    return method.toLowerCase()
-        + CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, cleanPath.replace(" ", "-"));
   }
 
   private void fixHttpsUrl(OpenAPI openApi, int serverIndex, String serverUrl) {
@@ -281,11 +272,15 @@ public class QuickFixService {
 
   private void addSuccessResponse(OpenAPI openApi, String path, String method) {
     PathItem pathItem = openApi.getPaths().get(path);
-    if (pathItem == null) return;
+      if (pathItem == null) {
+          return;
+      }
 
     Operation operation =
         pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
-    if (operation == null) return;
+      if (operation == null) {
+          return;
+      }
 
     if (operation.getResponses() == null) {
       operation.responses(new io.swagger.v3.oas.models.responses.ApiResponses());
@@ -336,7 +331,8 @@ public class QuickFixService {
     // Create a basic object schema with placeholder properties
     Schema<?> newSchema = new Schema<>();
     newSchema.setType("object");
-    newSchema.setDescription("Auto-generated schema for " + schemaName + ". Please update with actual properties.");
+    newSchema.setDescription(
+        "Auto-generated schema for " + schemaName + ". Please update with actual properties.");
 
     // Add a sample id property as a hint
     Map<String, Schema> properties = new HashMap<>();
@@ -357,24 +353,45 @@ public class QuickFixService {
    * Add a missing description to a response.
    * Provides sensible defaults based on HTTP status code.
    */
-  private void addMissingDescription(OpenAPI openApi, String path, String method, String responseCode) {
+  private void addMissingDescription(OpenAPI openApi, String path, String method,
+                                     String responseCode) {
     PathItem pathItem = openApi.getPaths().get(path);
-    if (pathItem == null) return;
+      if (pathItem == null) {
+          return;
+      }
 
     Operation operation =
         pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
-    if (operation == null || operation.getResponses() == null) return;
+      if (operation == null || operation.getResponses() == null) {
+          return;
+      }
 
     io.swagger.v3.oas.models.responses.ApiResponse response =
         operation.getResponses().get(responseCode);
-    if (response == null) return;
+      if (response == null) {
+          return;
+      }
 
     // Only add description if missing
     if (response.getDescription() == null || response.getDescription().trim().isEmpty()) {
       String description = getDefaultDescription(responseCode, method);
       response.setDescription(description);
-      log.info("Added description for {} {} response {}: {}", method.toUpperCase(), path, responseCode, description);
+      log.info("Added description for {} {} response {}: {}", method.toUpperCase(), path,
+          responseCode, description);
     }
+  }
+
+  private String buildIdFromPath(String method, String path) {
+    String pathWithoutParams =
+        PATH_PARAM_PATTERN
+            .matcher(path)
+            .replaceAll(
+                match -> "By " + CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, match.group(1)));
+
+    String cleanPath = pathWithoutParams.replaceAll("[^a-zA-Z0-9 ]", " ").trim();
+
+    return method.toLowerCase()
+        + CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, cleanPath.replace(" ", "-"));
   }
 
   /**

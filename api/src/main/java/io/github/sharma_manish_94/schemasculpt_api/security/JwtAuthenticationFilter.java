@@ -9,14 +9,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** JWT Authentication Filter that validates JWT tokens and sets authentication */
+/**
+ * JWT Authentication Filter that validates JWT tokens and sets authentication
+ */
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -25,8 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final UserRepository userRepository;
 
   public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserRepository userRepository) {
-      this.tokenProvider = tokenProvider;
-      this.userRepository = userRepository;
+    this.tokenProvider = tokenProvider;
+    this.userRepository = userRepository;
   }
 
   @Override
