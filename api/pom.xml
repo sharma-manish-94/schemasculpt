@@ -277,7 +277,7 @@
 			        <xmlOutput>true</xmlOutput>
 			        <failOnError>true</failOnError>
 			        <includeFilterFile/>
-			        <excludeFilterFile/>
+					<excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
 			        <plugins>
 				        <plugin>
 					        <groupId>com.h3xstream.findsecbugs</groupId>

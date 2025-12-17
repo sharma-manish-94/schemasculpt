@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.servers.Server;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -81,11 +82,11 @@ public class HttpsOnlyRule implements LinterRule {
 
   private boolean isSecureUrl(String url) {
     // Check if URL starts with HTTPS
-    return url.toLowerCase().startsWith("https://");
+    return url.toLowerCase(Locale.ROOT).startsWith("https://");
   }
 
   private boolean isDevelopmentServer(String url) {
-    String lowerUrl = url.toLowerCase();
+    String lowerUrl = url.toLowerCase(Locale.ROOT);
     return lowerUrl.contains("localhost")
         || lowerUrl.contains("127.0.0.1")
         || lowerUrl.contains("0.0.0.0")
@@ -99,9 +100,9 @@ public class HttpsOnlyRule implements LinterRule {
     for (Server server : servers) {
       String url = server.getUrl();
       if (url != null) {
-        if (url.toLowerCase().startsWith("http://")) {
+        if (url.toLowerCase(Locale.ROOT).startsWith("http://")) {
           hasHttp = true;
-        } else if (url.toLowerCase().startsWith("https://")) {
+        } else if (url.toLowerCase(Locale.ROOT).startsWith("https://")) {
           hasHttps = true;
         }
       }

@@ -19,6 +19,7 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -288,7 +289,7 @@ public class AIService {
           String jsonPath = "/paths/" + path.replace("/", "~1") + "/" + method;
           DescriptionAnalysisRequest.DescriptionContext context =
               new DescriptionAnalysisRequest.DescriptionContext(
-                  method.toUpperCase(), null, null, operation.getSummary(), null);
+                  method.toUpperCase(Locale.ROOT), null, null, operation.getSummary(), null);
 
           items.add(
               new DescriptionAnalysisRequest.DescriptionItem(

@@ -13,6 +13,7 @@ import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.ValidationService;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
 import io.github.sharmanish.schemasculpt.service.fix.QuickFixService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -55,7 +56,7 @@ public class SpecificationController {
   @PostMapping("/ai-analysis")
   public ResponseEntity<AIMetaAnalysisResponse> performAIMetaAnalysis(
       @PathVariable String sessionId) {
-    log.info("Performing AI meta-analysis for session: {}", sessionId);
+    log.info("Performing AI meta-analysis for session: {}", LogSanitizer.sanitize(sessionId));
 
     // Step 1: Get the spec and run standard validation + linting
     OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
@@ -76,7 +77,7 @@ public class SpecificationController {
   @PostMapping("/analyze-descriptions")
   public ResponseEntity<DescriptionAnalysisResponse> analyzeDescriptions(
       @PathVariable String sessionId) {
-    log.info("Analyzing description quality for session: {}", sessionId);
+    log.info("Analyzing description quality for session: {}", LogSanitizer.sanitize(sessionId));
 
     // Get the spec
     OpenAPI openAPI = sessionService.getSpecForSession(sessionId);

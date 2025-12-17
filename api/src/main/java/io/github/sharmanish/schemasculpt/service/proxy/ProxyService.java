@@ -5,6 +5,7 @@ import io.github.sharmanish.schemasculpt.dto.ProxyResponse;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,7 @@ public class ProxyService {
   public Mono<ProxyResponse> forwardRequest(ProxyRequest request) {
     this.validateUrl(request.url());
     return webClient
-        .method(HttpMethod.valueOf(request.method().toUpperCase()))
+        .method(HttpMethod.valueOf(request.method().toUpperCase(Locale.ROOT)))
         .uri(request.url())
         .headers(headers -> headers.setAll(request.headers()))
         .bodyValue(request.body() != null ? request.body() : "")

@@ -4,6 +4,7 @@ import io.github.sharmanish.schemasculpt.dto.request.UpdateOperationRequest;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,7 @@ public class SpecUpdateService {
             .getPaths()
             .get(request.path())
             .readOperationsMap()
-            .get(PathItem.HttpMethod.valueOf(request.method().toUpperCase()));
+            .get(PathItem.HttpMethod.valueOf(request.method().toUpperCase(Locale.ROOT)));
 
     if (null != operation) {
       if (StringUtils.isNotBlank(request.summary())) {

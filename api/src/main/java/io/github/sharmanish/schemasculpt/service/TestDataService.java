@@ -61,7 +61,7 @@ public class TestDataService {
       Optional<OperationTestCases> cachedTests =
           testCasesRepository.findByProject_IdAndPathAndMethod(project.getId(), path, method);
 
-      if (cachedTests.isPresent() && cachedTests.get().getSpecHash().equals(specHash)) {
+      if (cachedTests.isPresent() && MessageDigest.isEqual(cachedTests.get().getSpecHash().getBytes(), specHash.getBytes())) {
         log.info(
             "Found cached test cases in DB for {}/{} (project: {})", method, path, project.getId());
 

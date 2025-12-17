@@ -5,6 +5,7 @@ import io.github.sharmanish.schemasculpt.dto.ExplanationRequest;
 import io.github.sharmanish.schemasculpt.dto.ExplanationResponse;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.HashMap;
 import java.util.List;
@@ -42,8 +43,8 @@ public class ExplanationController {
 
     log.info(
         "Generating explanation for rule: {} in category: {}",
-        request.ruleId(),
-        request.category());
+        LogSanitizer.sanitize(request.ruleId()),
+        LogSanitizer.sanitize(request.category()));
 
     try {
       // Get spec from session if available
@@ -55,7 +56,7 @@ public class ExplanationController {
             specText = objectMapper.writeValueAsString(openAPI);
           }
         } catch (Exception e) {
-          log.warn("Could not retrieve spec from session {}: {}", sessionId, e.getMessage());
+          log.warn("Could not retrieve spec from session {}: {}", LogSanitizer.sanitize(sessionId), e.getMessage());
         }
       }
 
@@ -81,12 +82,12 @@ public class ExplanationController {
               (List<String>) aiResponse.getOrDefault("additional_resources", List.of()),
               (Map<String, Object>) aiResponse.getOrDefault("metadata", Map.of()));
 
-      log.info("Successfully generated explanation for rule: {}", request.ruleId());
+      log.info("Successfully generated explanation for rule: {}", LogSanitizer.sanitize(request.ruleId()));
       return ResponseEntity.ok(response);
 
     } catch (Exception e) {
       log.error(
-          "Failed to generate explanation for rule {}: {}", request.ruleId(), e.getMessage(), e);
+          "Failed to generate explanation for rule {}: {}", LogSanitizer.sanitize(request.ruleId()), e.getMessage(), e);
 
       // Return a fallback explanation
       ExplanationResponse fallbackResponse =

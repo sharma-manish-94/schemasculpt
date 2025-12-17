@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.media.Schema;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -35,7 +36,7 @@ public class TreeShakingService {
     }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
+        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
     if (null == operation) {
       return null;
     }
@@ -56,7 +57,7 @@ public class TreeShakingService {
       // Create clean paths with only the requested operation
       Paths cleanPaths = new Paths();
       PathItem cleanPathItem = new PathItem();
-      cleanPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase()), operation);
+      cleanPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), operation);
       cleanPaths.addPathItem(path, cleanPathItem);
       miniSpec.setPaths(cleanPaths);
 
@@ -133,7 +134,7 @@ public class TreeShakingService {
     miniSpec.setInfo(fullSpec.getInfo());
     miniSpec.setPaths(new Paths());
     PathItem newPathItem = new PathItem();
-    newPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase()), operation);
+    newPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), operation);
     miniSpec.getPaths().addPathItem(path, newPathItem);
     miniSpec.setComponents(newComponents);
     return miniSpec;

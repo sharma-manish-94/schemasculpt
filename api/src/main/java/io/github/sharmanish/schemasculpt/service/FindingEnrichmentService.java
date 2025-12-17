@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -137,7 +138,7 @@ public class FindingEnrichmentService {
       PathItem pathItem = openApi.getPaths().get(path);
       if (pathItem != null && method != null) {
         Operation operation =
-            pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
+            pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
         if (operation != null) {
           boolean isPublic = isPublicEndpoint(operation, openApi);
           boolean authRequired = requiresAuthentication(operation, openApi);
@@ -158,7 +159,7 @@ public class FindingEnrichmentService {
   }
 
   private String categorize(ValidationSuggestion finding) {
-    String message = finding.message().toLowerCase();
+    String message = finding.message().toLowerCase(Locale.ROOT);
     String category = finding.category();
 
     if (message.contains("auth") || message.contains("security")) {

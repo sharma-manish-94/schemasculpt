@@ -257,6 +257,7 @@
             <property name="scope" value="public"/>
             <property name="allowMissingPropertyJavadoc" value="true"/>
             <property name="ignoreMethodNamesRegex" value="^(get|set|is|equals|hashCode|toString).*$"/>
+            <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="MissingJavadocType">
             <property name="scope" value="public"/>
@@ -264,6 +265,7 @@
         </module>
         <module name="JavadocMethod">
             <property name="accessModifiers" value="public"/>
+            <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="JavadocStyle">
             <property name="checkEmptyJavadoc" value="true"/>

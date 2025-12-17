@@ -3,6 +3,7 @@ package io.github.sharmanish.schemasculpt.controller;
 import io.github.sharmanish.schemasculpt.dto.HardeningResponse;
 import io.github.sharmanish.schemasculpt.dto.request.HardenOperationRequest;
 import io.github.sharmanish.schemasculpt.service.HardeningService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class HardeningController {
       @PathVariable String sessionId, @RequestBody HardenOperationRequest request) {
 
     log.info(
-        "Hardening operation {} {} for session {}", request.method(), request.path(), sessionId);
+        "Hardening operation {} {} for session {}", LogSanitizer.sanitize(request.method()), LogSanitizer.sanitize(request.path()), LogSanitizer.sanitize(sessionId));
 
     try {
       HardeningResponse response = hardeningService.hardenOperation(sessionId, request);

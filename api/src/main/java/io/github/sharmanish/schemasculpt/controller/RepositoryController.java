@@ -7,6 +7,7 @@ import io.github.sharmanish.schemasculpt.dto.repository.ReadFileResponse;
 import io.github.sharmanish.schemasculpt.dto.repository.RepositoryConnectionRequest;
 import io.github.sharmanish.schemasculpt.dto.repository.RepositoryConnectionResponse;
 import io.github.sharmanish.schemasculpt.service.RepositoryService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
@@ -50,8 +51,8 @@ public class RepositoryController {
       @RequestHeader("X-Session-ID") @NotBlank String sessionId,
       @Valid @RequestBody RepositoryConnectionRequest request) {
 
-    log.info("Connection request for session: {} to provider: {}", sessionId,
-        request.getProvider());
+    log.info("Connection request for session: {} to provider: {}", LogSanitizer.sanitize(sessionId),
+        LogSanitizer.sanitize(request.getProvider()));
 
     return repositoryService.connect(sessionId, request)
         .map(response -> {
@@ -86,7 +87,7 @@ public class RepositoryController {
   public Mono<ResponseEntity<String>> disconnectRepository(
       @RequestHeader("X-Session-ID") @NotBlank String sessionId) {
 
-    log.info("Disconnect request for session: {}", sessionId);
+    log.info("Disconnect request for session: {}", LogSanitizer.sanitize(sessionId));
 
     return repositoryService.disconnect(sessionId)
         .then(Mono.just(
@@ -111,7 +112,7 @@ public class RepositoryController {
       @Valid @RequestBody BrowseTreeRequest request) {
 
     log.info("Browse tree request for session: {} - {}/{}/{}",
-        sessionId, request.getOwner(), request.getRepo(), request.getPath());
+        LogSanitizer.sanitize(sessionId), LogSanitizer.sanitize(request.getOwner()), LogSanitizer.sanitize(request.getRepo()), LogSanitizer.sanitize(request.getPath()));
 
     return repositoryService.browseTree(sessionId, request)
         .map(ResponseEntity::ok)
@@ -134,7 +135,7 @@ public class RepositoryController {
       @Valid @RequestBody ReadFileRequest request) {
 
     log.info("Read file request for session: {} - {}/{}/{}",
-        sessionId, request.getOwner(), request.getRepo(), request.getPath());
+        LogSanitizer.sanitize(sessionId), LogSanitizer.sanitize(request.getOwner()), LogSanitizer.sanitize(request.getRepo()), LogSanitizer.sanitize(request.getPath()));
 
     return repositoryService.readFile(sessionId, request)
         .map(ResponseEntity::ok)
@@ -154,7 +155,7 @@ public class RepositoryController {
   public ResponseEntity<RepositoryConnectionResponse> getConnectionStatus(
       @RequestHeader("X-Session-ID") @NotBlank String sessionId) {
 
-    log.debug("Checking repository connection status for session: {}", sessionId);
+    log.debug("Checking repository connection status for session: {}", LogSanitizer.sanitize(sessionId));
 
     RepositoryConnectionResponse context = repositoryService.getRepositoryContext(sessionId);
 

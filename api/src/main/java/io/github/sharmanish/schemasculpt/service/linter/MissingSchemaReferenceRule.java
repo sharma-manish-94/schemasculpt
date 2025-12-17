@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -137,7 +138,7 @@ public class MissingSchemaReferenceRule implements LinterRule {
               new ValidationSuggestion(
                   String.format(
                       "Path '%s' (%s) references schema '%s' which doesn't exist in components.",
-                      path, method.toUpperCase(), schemaName),
+                      path, method.toUpperCase(Locale.ROOT), schemaName),
                   "create-missing-schema",
                   "error",
                   "schema",

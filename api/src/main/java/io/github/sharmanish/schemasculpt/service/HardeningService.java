@@ -19,6 +19,7 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -110,7 +111,7 @@ public class HardeningService {
   }
 
   private Operation getOperationByMethod(PathItem pathItem, String method) {
-    return switch (method.toUpperCase()) {
+    return switch (method.toUpperCase(Locale.ROOT)) {
       case "GET" -> pathItem.getGet();
       case "POST" -> pathItem.getPost();
       case "PUT" -> pathItem.getPut();
@@ -309,7 +310,7 @@ public class HardeningService {
             ? operation.getTags().get(0)
             : "";
 
-    if (List.of("POST", "PUT", "PATCH").contains(method.toUpperCase())) {
+    if (List.of("POST", "PUT", "PATCH").contains(method.toUpperCase(Locale.ROOT))) {
       if (operation.getParameters() == null) {
         operation.setParameters(new ArrayList<>());
       }

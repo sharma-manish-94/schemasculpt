@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +39,7 @@ public class AIFriendlyResponseFormatRule implements LinterRule {
 
       // Check for standard success wrapper (e.g., ApiResponse, StandardResponse)
       for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
-        String schemaName = entry.getKey().toLowerCase();
+        String schemaName = entry.getKey().toLowerCase(Locale.ROOT);
         Schema schema = entry.getValue();
 
         if (schema.getProperties() != null) {

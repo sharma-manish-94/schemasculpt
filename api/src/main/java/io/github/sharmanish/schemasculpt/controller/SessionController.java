@@ -9,6 +9,7 @@ import io.github.sharmanish.schemasculpt.dto.request.CreateSessionRequest;
 import io.github.sharmanish.schemasculpt.dto.request.UpdateSpecRequest;
 import io.github.sharmanish.schemasculpt.exception.SessionNotFoundException;
 import io.github.sharmanish.schemasculpt.service.SessionService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -53,7 +54,7 @@ public class SessionController {
       @Valid @RequestBody CreateSessionRequest request) {
     log.info("Creating new session");
     String sessionId = sessionService.createSession(request.specText());
-    log.info("Created session with ID: {}", sessionId);
+    log.info("Created session with ID: {}", LogSanitizer.sanitize(sessionId));
     return ResponseEntity.status(HttpStatus.CREATED).body(new SessionResponse(sessionId));
   }
 
@@ -77,7 +78,7 @@ public class SessionController {
   @GetMapping("/{sessionId}/spec")
   public ResponseEntity<String> getSessionSpec(
       @PathVariable @NotBlank(message = "Session ID cannot be blank") String sessionId) {
-    log.debug("Retrieving spec for session: {}", sessionId);
+    log.debug("Retrieving spec for session: {}", LogSanitizer.sanitize(sessionId));
 
     OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
     if (Objects.isNull(openAPI)) {
@@ -95,7 +96,7 @@ public class SessionController {
   public ResponseEntity<Void> updateSessionSpec(
       @PathVariable @NotBlank(message = "Session ID cannot be blank") String sessionId,
       @Valid @RequestBody UpdateSpecRequest request) {
-    log.debug("Updating spec for session: {}", sessionId);
+    log.debug("Updating spec for session: {}", LogSanitizer.sanitize(sessionId));
 
     sessionService.updateSessionSpec(sessionId, request.specText());
     return ResponseEntity.noContent().build();
@@ -104,7 +105,7 @@ public class SessionController {
   @DeleteMapping("/{sessionId}")
   public ResponseEntity<Void> deleteSession(
       @PathVariable @NotBlank(message = "Session ID cannot be blank") String sessionId) {
-    log.info("Deleting session: {}", sessionId);
+    log.info("Deleting session: {}", LogSanitizer.sanitize(sessionId));
 
     sessionService.closeSession(sessionId);
     return ResponseEntity.noContent().build();

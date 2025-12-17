@@ -17,6 +17,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -219,13 +220,13 @@ public class QuickFixService {
       }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
+        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
       if (operation == null) {
           return;
       }
 
     // Build the new operationId (e.g., "getUsersById")
-    String generatedId = buildIdFromPath(method.toLowerCase(), path);
+    String generatedId = buildIdFromPath(method.toLowerCase(Locale.ROOT), path);
     operation.setOperationId(generatedId);
   }
 
@@ -262,7 +263,7 @@ public class QuickFixService {
           segment
               .replaceAll("([a-z])([A-Z])", "$1-$2") // Convert camelCase to kebab-case first
               .replaceAll("_", "-") // Replace underscores with hyphens
-              .toLowerCase();
+              .toLowerCase(Locale.ROOT);
 
       String fixedPath = originalPath.replace(segment, fixedSegment);
       PathItem pathItem = openApi.getPaths().remove(originalPath);
@@ -277,7 +278,7 @@ public class QuickFixService {
       }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
+        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
       if (operation == null) {
           return;
       }
@@ -361,7 +362,7 @@ public class QuickFixService {
       }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase()));
+        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
       if (operation == null || operation.getResponses() == null) {
           return;
       }
@@ -376,7 +377,7 @@ public class QuickFixService {
     if (response.getDescription() == null || response.getDescription().trim().isEmpty()) {
       String description = getDefaultDescription(responseCode, method);
       response.setDescription(description);
-      log.info("Added description for {} {} response {}: {}", method.toUpperCase(), path,
+      log.info("Added description for {} {} response {}: {}", method.toUpperCase(Locale.ROOT), path,
           responseCode, description);
     }
   }
@@ -390,7 +391,7 @@ public class QuickFixService {
 
     String cleanPath = pathWithoutParams.replaceAll("[^a-zA-Z0-9 ]", " ").trim();
 
-    return method.toLowerCase()
+    return method.toLowerCase(Locale.ROOT)
         + CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, cleanPath.replace(" ", "-"));
   }
 
@@ -400,7 +401,7 @@ public class QuickFixService {
   private String getDefaultDescription(String responseCode, String method) {
     try {
       int code = Integer.parseInt(responseCode);
-      String methodUpper = method.toUpperCase();
+      String methodUpper = method.toUpperCase(Locale.ROOT);
 
       // Standard HTTP status code descriptions
       switch (code) {

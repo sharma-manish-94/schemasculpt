@@ -6,6 +6,7 @@ import io.github.sharmanish.schemasculpt.dto.specification.SpecificationDetailDT
 import io.github.sharmanish.schemasculpt.entity.Specification;
 import io.github.sharmanish.schemasculpt.security.CustomOAuth2User;
 import io.github.sharmanish.schemasculpt.service.SpecificationService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public class SpecificationManagementController {
       @PathVariable Long projectId,
       @Valid @RequestBody SaveSpecificationRequest request) {
 
-    log.info("Saving new specification version for project {}", projectId);
+    log.info("Saving new specification version for project {}", LogSanitizer.sanitize(projectId));
 
     Specification spec =
         specificationService.saveSpecification(
@@ -64,7 +65,7 @@ public class SpecificationManagementController {
   public ResponseEntity<SpecificationDetailDTO> getCurrentSpecification(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
 
-    log.debug("Fetching current specification for project {}", projectId);
+    log.debug("Fetching current specification for project {}", LogSanitizer.sanitize(projectId));
 
     Specification spec =
         specificationService.getCurrentSpecification(projectId, principal.getUserId());
@@ -83,7 +84,7 @@ public class SpecificationManagementController {
   public ResponseEntity<List<SpecificationDTO>> getSpecificationVersions(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
 
-    log.debug("Fetching all specification versions for project {}", projectId);
+    log.debug("Fetching all specification versions for project {}", LogSanitizer.sanitize(projectId));
 
     List<SpecificationDTO> versions =
         specificationService.getSpecificationVersions(projectId, principal.getUserId()).stream()
@@ -102,7 +103,7 @@ public class SpecificationManagementController {
       @PathVariable Long projectId,
       @PathVariable String version) {
 
-    log.debug("Fetching specification version {} for project {}", version, projectId);
+    log.debug("Fetching specification version {} for project {}", LogSanitizer.sanitize(version), LogSanitizer.sanitize(projectId));
 
     Specification spec =
         specificationService.getSpecificationByVersion(projectId, version, principal.getUserId());
@@ -120,7 +121,7 @@ public class SpecificationManagementController {
       @PathVariable String version,
       @RequestParam(required = false) String commitMessage) {
 
-    log.info("Reverting project {} to version {}", projectId, version);
+    log.info("Reverting project {} to version {}", LogSanitizer.sanitize(projectId), LogSanitizer.sanitize(version));
 
     Specification spec =
         specificationService.revertToVersion(

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -90,13 +91,13 @@ public class PaginationSupportRule implements LinterRule {
    */
   private boolean isCollectionEndpoint(String path, Operation operation) {
     // Check path for plural or collection indicators
-    String lowerPath = path.toLowerCase();
+    String lowerPath = path.toLowerCase(Locale.ROOT);
     boolean pathIndicatesCollection = lowerPath.matches(".*(s|list|all|search|query)(/.*)?$");
 
     // Check operation summary/description
-    String summary = operation.getSummary() != null ? operation.getSummary().toLowerCase() : "";
+    String summary = operation.getSummary() != null ? operation.getSummary().toLowerCase(Locale.ROOT) : "";
     String description =
-        operation.getDescription() != null ? operation.getDescription().toLowerCase() : "";
+        operation.getDescription() != null ? operation.getDescription().toLowerCase(Locale.ROOT) : "";
     boolean descIndicatesCollection =
         summary.contains("list")
             || summary.contains("all")

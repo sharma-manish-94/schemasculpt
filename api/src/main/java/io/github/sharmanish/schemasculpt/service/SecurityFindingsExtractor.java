@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -235,8 +236,8 @@ public class SecurityFindingsExtractor {
     // Check properties
     if (schema.getProperties() != null) {
       schema.getProperties().values().forEach(propSchema -> {
-        if (propSchema instanceof Schema) {
-          referenced.addAll(findReferencedSchemas((Schema<?>) propSchema, visited));
+        if (propSchema != null) {
+          referenced.addAll(findReferencedSchemas(propSchema, visited));
         }
       });
     }
@@ -267,7 +268,7 @@ public class SecurityFindingsExtractor {
       if (text == null) {
           return false;
       }
-    String lower = text.toLowerCase();
+    String lower = text.toLowerCase(Locale.ROOT);
     return SENSITIVE_KEYWORDS.stream().anyMatch(lower::contains);
   }
 }

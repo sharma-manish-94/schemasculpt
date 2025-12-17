@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -465,7 +466,7 @@ public class AnalysisService {
       if (text == null) {
           return false;
       }
-    String lower = text.toLowerCase();
+    String lower = text.toLowerCase(Locale.ROOT);
     return SENSITIVE_KEYWORDS.stream().anyMatch(lower::contains);
   }
 

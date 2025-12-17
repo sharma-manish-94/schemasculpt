@@ -6,6 +6,7 @@ import io.github.sharmanish.schemasculpt.dto.request.UpdateOperationRequest;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.SpecUpdateService;
 import io.github.sharmanish.schemasculpt.service.TreeShakingService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -61,9 +62,9 @@ public class SpecUpdateController {
     } catch (Exception e) {
       log.error(
           "Error extracting operation details for session: {}, path: {}, method: {}",
-          sessionId,
-          path,
-          method,
+          LogSanitizer.sanitize(sessionId),
+          LogSanitizer.sanitize(path),
+          LogSanitizer.sanitize(method),
           e);
       return ResponseEntity.internalServerError().build();
     }

@@ -7,6 +7,7 @@ import io.github.sharmanish.schemasculpt.exception.UserNotFoundException;
 import io.github.sharmanish.schemasculpt.repository.UserRepository;
 import io.github.sharmanish.schemasculpt.security.CustomOAuth2User;
 import io.github.sharmanish.schemasculpt.security.JwtTokenProvider;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,7 +56,7 @@ public class AuthController {
             .findById(principal.getUserId())
             .orElseThrow(() -> new UserNotFoundException(principal.getUserId()));
 
-    log.info("Returning current user: {}", user.getUsername());
+    log.info("Returning current user: {}", LogSanitizer.sanitize(user.getUsername()));
     return ResponseEntity.ok(new UserDTO(user));
   }
 
@@ -77,7 +78,7 @@ public class AuthController {
 
     String token = tokenProvider.generateToken(user);
 
-    log.info("Generated JWT token for user: {}", user.getUsername());
+    log.info("Generated JWT token for user: {}", LogSanitizer.sanitize(user.getUsername()));
 
     TokenResponse response =
         new TokenResponse(
