@@ -36,9 +36,10 @@ jobs:
           VALIDATE_PYTHON_BLACK: true
           VALIDATE_PYTHON_FLAKE8: true
           
-          # Java (Spring Boot) - Using Google Java Format
-          VALIDATE_JAVA: true 
-          # Note: Ensures your Java follows the Google Style Guide
+          # Java (Spring Boot) - Using Custom Checkstyle Configuration
+          VALIDATE_JAVA: true
+          # Note: Uses custom checkstyle rules from .github/linters/sun_checks.xml
+          # (based on api/checkstyle.xml)
           
           # React (UI) - Using ESLint and Prettier
           VALIDATE_TYPESCRIPT_ESLINT: true
