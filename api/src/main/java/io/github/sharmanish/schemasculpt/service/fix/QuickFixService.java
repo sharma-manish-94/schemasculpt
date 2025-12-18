@@ -7,7 +7,7 @@ import io.github.sharmanish.schemasculpt.dto.QuickFixRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationResponse;
 import io.github.sharmanish.schemasculpt.service.SessionService;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -167,7 +167,7 @@ public class QuickFixService {
       String specJson = Json.pretty(openApi);
 
       // Fix uppercase enums that Swagger parser stores in the model
-      specJson = OpenAPIEnumFixer.fixEnums(specJson);
+      specJson = OpenApiEnumFixer.fixEnums(specJson);
 
       // Create request for AI service
       PatchGenerationRequest patchRequest =

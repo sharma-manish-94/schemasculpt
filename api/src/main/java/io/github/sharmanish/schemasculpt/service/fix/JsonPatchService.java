@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import io.github.sharmanish.schemasculpt.dto.ai.JsonPatchOperation;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
@@ -76,7 +76,7 @@ public class JsonPatchService {
       String patchedJson = swaggerMapper.writeValueAsString(patchedNode);
 
       // CRITICAL: Fix uppercase enums that Swagger parser creates
-      patchedJson = OpenAPIEnumFixer.fixEnums(patchedJson);
+      patchedJson = OpenApiEnumFixer.fixEnums(patchedJson);
 
       OpenAPI patchedOpenApi = new OpenAPIV3Parser().readContents(patchedJson).getOpenAPI();
 

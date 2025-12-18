@@ -1,6 +1,5 @@
 package io.github.sharmanish.schemasculpt.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
@@ -9,17 +8,18 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
+import org.springframework.http.codec.json.JacksonJsonDecoder;
+import org.springframework.http.codec.json.JacksonJsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 public class WebClientConfig {
 
   @Bean
-  public WebClient.Builder webClientBuilder(ObjectMapper objectMapper) {
+  public WebClient.Builder webClientBuilder(JsonMapper jsonMapper) {
     // Configure HttpClient with proper timeouts and connection settings
     // Increased timeouts for AI operations which can take longer with local LLMs
     HttpClient httpClient = HttpClient.create()
@@ -36,11 +36,11 @@ public class WebClientConfig {
           // Increase buffer size to 10MB to handle large OpenAPI specs
           configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024);
 
-          configurer.defaultCodecs().jackson2JsonEncoder(
-              new Jackson2JsonEncoder(objectMapper)
+          configurer.defaultCodecs().jacksonJsonEncoder(
+              new JacksonJsonEncoder(jsonMapper)
           );
-          configurer.defaultCodecs().jackson2JsonDecoder(
-              new Jackson2JsonDecoder(objectMapper)
+          configurer.defaultCodecs().jacksonJsonDecoder(
+              new JacksonJsonDecoder(jsonMapper)
           );
         })
         .build();

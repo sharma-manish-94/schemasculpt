@@ -14,7 +14,7 @@ import io.github.sharmanish.schemasculpt.service.ValidationService;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
 import io.github.sharmanish.schemasculpt.service.fix.QuickFixService;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.Map;
@@ -116,7 +116,7 @@ public class SpecificationController {
           json.contains("OAUTH2") || json.contains("APIKEY") || json.contains("HTTP\""));
 
       // Fix all uppercase enums
-      json = OpenAPIEnumFixer.fixEnums(json);
+      json = OpenApiEnumFixer.fixEnums(json);
 
       log.debug("After enum fix - fixed to lowercase");
 

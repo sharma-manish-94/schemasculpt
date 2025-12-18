@@ -10,7 +10,7 @@ import io.github.sharmanish.schemasculpt.dto.request.UpdateSpecRequest;
 import io.github.sharmanish.schemasculpt.exception.SessionNotFoundException;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.validation.Valid;
@@ -87,7 +87,7 @@ public class SessionController {
 
     String specText = Yaml.pretty(openAPI);
 
-    specText = OpenAPIEnumFixer.fixEnums(specText);
+    specText = OpenApiEnumFixer.fixEnums(specText);
 
     return ResponseEntity.ok(specText);
   }

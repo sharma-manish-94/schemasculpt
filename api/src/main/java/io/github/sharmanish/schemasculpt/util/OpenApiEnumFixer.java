@@ -1,12 +1,16 @@
 package io.github.sharmanish.schemasculpt.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * Utility to fix uppercase enum values in OpenAPI JSON.
  *
  * <p>The Swagger parser stores enums as uppercase in the model objects, but the OpenAPI spec
  * requires lowercase values. This utility fixes the JSON after serialization.
  */
-public class OpenAPIEnumFixer {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class OpenApiEnumFixer {
 
   /**
    * Fix all uppercase enum values in OpenAPI JSON to their correct lowercase forms.
