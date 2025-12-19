@@ -12,9 +12,9 @@ public class AiAgentUtilityRule implements LinterRule {
 	@Override
 	public List<ValidationSuggestion> lint(OpenAPI openApi) {
 		List<ValidationSuggestion> suggestions = new ArrayList<>();
-		suggestions.addAll(checkEnumConsistency(openApi));
-		suggestions.addAll(checkDescriptionQuality(openApi));
-		suggestions.addAll(checkOperationIdClarity(openApi));
+//		suggestions.addAll(checkEnumConsistency(openApi));
+//		suggestions.addAll(checkDescriptionQuality(openApi));
+//		suggestions.addAll(checkOperationIdClarity(openApi));
 		return suggestions;
 	}
 }

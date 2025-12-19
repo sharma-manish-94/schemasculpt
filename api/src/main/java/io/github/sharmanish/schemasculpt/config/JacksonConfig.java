@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
@@ -19,6 +20,7 @@ public class JacksonConfig {
   public JsonMapper jsonMapper() {
     return createBaseBuilder().build();
   }
+
 
   /**
    * More aggressive configuration for specific use cases

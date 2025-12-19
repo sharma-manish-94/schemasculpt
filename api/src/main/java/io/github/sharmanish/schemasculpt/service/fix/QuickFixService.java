@@ -1,6 +1,5 @@
 package io.github.sharmanish.schemasculpt.service.fix;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.google.common.base.CaseFormat;
 import io.github.sharmanish.schemasculpt.dto.QuickFixRequest;
@@ -26,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class QuickFixService {
@@ -52,17 +52,17 @@ public class QuickFixService {
 
   private final SessionService sessionService;
   private final JsonPatchService jsonPatchService;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
   private final WebClient aiServiceClient;
 
   public QuickFixService(
       SessionService sessionService,
       JsonPatchService jsonPatchService,
-      ObjectMapper objectMapper,
+      JsonMapper jsonMapper,
       @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl) {
     this.sessionService = sessionService;
     this.jsonPatchService = jsonPatchService;
-    this.objectMapper = objectMapper;
+    this.jsonMapper = jsonMapper;
     this.aiServiceClient = WebClient.builder().baseUrl(aiServiceUrl).build();
   }
 

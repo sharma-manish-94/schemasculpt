@@ -1,6 +1,5 @@
 package io.github.sharmanish.schemasculpt.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.dto.ExplanationRequest;
 import io.github.sharmanish.schemasculpt.dto.ExplanationResponse;
 import io.github.sharmanish.schemasculpt.service.SessionService;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @RequestMapping("/api/v1/explanations")
@@ -28,13 +28,13 @@ public class ExplanationController {
 
   private final AIService aiService;
   private final SessionService sessionService;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
   public ExplanationController(
-      AIService aiService, SessionService sessionService, ObjectMapper objectMapper) {
+      AIService aiService, SessionService sessionService, JsonMapper jsonMapper) {
     this.aiService = aiService;
     this.sessionService = sessionService;
-    this.objectMapper = objectMapper;
+    this.jsonMapper = jsonMapper;
   }
 
   @PostMapping("/explain")
@@ -53,7 +53,7 @@ public class ExplanationController {
         try {
           OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
           if (openAPI != null) {
-            specText = objectMapper.writeValueAsString(openAPI);
+            specText = jsonMapper.writeValueAsString(openAPI);
           }
         } catch (Exception e) {
           log.warn("Could not retrieve spec from session {}: {}", LogSanitizer.sanitize(sessionId), e.getMessage());

@@ -1,7 +1,5 @@
 package io.github.sharmanish.schemasculpt.service.linter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.Collections;
@@ -12,13 +10,15 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 @Component
 public class UnusedComponentRule implements LinterRule {
 
   private static final Pattern REF_PATTERN =
       Pattern.compile("\"\\$ref\":\\s*\"#/components/schemas/([^\"]+)\"");
-  private final ObjectMapper jsonMapper = new ObjectMapper();
+  private final JsonMapper jsonMapper = new JsonMapper();
 
   @Override
   public List<ValidationSuggestion> lint(OpenAPI openApi) {
@@ -35,7 +35,7 @@ public class UnusedComponentRule implements LinterRule {
       while (matcher.find()) {
         referencedSchemas.add(matcher.group(1));
       }
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       // If we can't process the spec, we can't find references.
       return Collections.emptyList();
     }

@@ -1,10 +1,7 @@
 package io.github.sharmanish.schemasculpt.util;
-<<<<<<<< HEAD:api/src/main/java/io/github/sharmanish/schemasculpt/util/OpenApiEnumFixer.java
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-========
->>>>>>>> c2b2855 (changed package name, spotbug fixes):api/src/main/java/io/github/sharmanish/schemasculpt/util/OpenAPIEnumFixer.java
 
 /**
  * Utility to fix uppercase enum values in OpenAPI JSON.

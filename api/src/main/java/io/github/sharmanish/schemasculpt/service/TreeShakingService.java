@@ -1,7 +1,5 @@
 package io.github.sharmanish.schemasculpt.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -16,14 +14,16 @@ import java.util.Queue;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 @Slf4j
 public class TreeShakingService {
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
-  public TreeShakingService(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public TreeShakingService(JsonMapper jsonMapper) {
+    this.jsonMapper = jsonMapper;
   }
 
   public OpenAPI extractOperationWithDependencies(OpenAPI fullSpec, String path, String method) {
@@ -46,8 +46,8 @@ public class TreeShakingService {
     // Create a clean OpenAPI response that will serialize properly
     try {
       // Convert to JSON and back to ensure clean serialization
-      String fullSpecJson = objectMapper.writeValueAsString(fullSpec);
-      OpenAPI cleanFullSpec = objectMapper.readValue(fullSpecJson, OpenAPI.class);
+      String fullSpecJson = jsonMapper.writeValueAsString(fullSpec);
+      OpenAPI cleanFullSpec = jsonMapper.readValue(fullSpecJson, OpenAPI.class);
 
       // Extract only what we need
       OpenAPI miniSpec = new OpenAPI();
@@ -86,7 +86,7 @@ public class TreeShakingService {
   private Set<String> findDependencies(Operation operation, OpenAPI fullSpec) {
     Set<String> foundRefs = new HashSet<>();
     Queue<JsonNode> nodesToVisit = new LinkedList<>();
-    nodesToVisit.add(objectMapper.valueToTree(operation));
+    nodesToVisit.add(jsonMapper.valueToTree(operation));
     while (!nodesToVisit.isEmpty()) {
       JsonNode currentNode = nodesToVisit.poll();
       if (currentNode.isObject()) {
@@ -101,7 +101,7 @@ public class TreeShakingService {
                       foundRefs.add(schemaName);
                       Schema schemaDef = fullSpec.getComponents().getSchemas().get(schemaName);
                       if (schemaDef != null) {
-                        nodesToVisit.add(objectMapper.valueToTree(schemaDef));
+                        nodesToVisit.add(jsonMapper.valueToTree(schemaDef));
                       }
                     }
                   } else {

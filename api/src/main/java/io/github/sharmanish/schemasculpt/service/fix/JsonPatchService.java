@@ -13,6 +13,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Service for applying JSON Patch (RFC 6902) operations to OpenAPI specifications.
@@ -21,10 +22,10 @@ import org.springframework.stereotype.Service;
 public class JsonPatchService {
 
   private static final Logger log = LoggerFactory.getLogger(JsonPatchService.class);
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
-  public JsonPatchService(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public JsonPatchService(JsonMapper jsonMapper) {
+    this.jsonMapper = jsonMapper;
   }
 
   /**
