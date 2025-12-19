@@ -4,6 +4,7 @@ import io.github.sharmanish.schemasculpt.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,20 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
 
   private void lintOperation(String path, String method, Operation operation, OpenAPI openApi,
                              List<ValidationSuggestion> suggestions) {
+    if (operation.getOperationId() == null || operation.getOperationId().isBlank()) {
+      suggestions.add(new ValidationSuggestion("Missing operationId at " + path,
+              "AI_MISSING_OPERATION_ID"));
+    }
+    if (operation.getParameters() != null) {
+      for (Parameter parameter : operation.getParameters()) {
+        if (parameter.getDescription() == null || parameter.getDescription().isBlank()) {
+          suggestions.add(new ValidationSuggestion(
+                  "Parameter '" + parameter.getName() + "' needs a descriptive 'description' for AI reasoning.",
+                  "AI_LOW_DESCRIPTION_QUALITY"));
+        }
+      }
+    }
+
     if (operation.getResponses() == null || operation.getResponses().isEmpty()) {
       return;
     }
@@ -144,13 +159,13 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
             || statusCode.equalsIgnoreCase("default");
   }
 
-private ValidationSuggestion createStandardWrapperSuggestion() {
+  private ValidationSuggestion createStandardWrapperSuggestion() {
 	String message = """
-			Missing standardized response wrapper or RFC 7807 Problem Details.
-			
-			WHY: AI agents (and MCP servers) perform best when they can use a 'Uniform Observation' pattern. \
-			Without a standard wrapper, the agent must re-learn the success/failure indicators for every endpoint, \
-			which increases token usage and the risk of hallucination.""";
+        Missing standardized response wrapper or RFC 7807 Problem Details.
+        
+        WHY: AI agents (and MCP servers) perform best when they can use a 'Uniform Observation' pattern. \
+        Without a standard wrapper, the agent must re-learn the success/failure indicators for every endpoint, \
+        which increases token usage and the risk of hallucination.""";
 
 	Map<String, Object> metadata = Map.of(
             "recommendation", "implement-standard-envelope",
