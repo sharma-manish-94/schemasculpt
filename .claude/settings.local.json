@@ -11,7 +11,9 @@
       "Bash(cat:*)",
       "Bash(./mvnw:*)",
       "Bash(source:*)",
-      "Bash(sudo tee:*)"
+      "Bash(sudo tee:*)",
+      "Bash(ls:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

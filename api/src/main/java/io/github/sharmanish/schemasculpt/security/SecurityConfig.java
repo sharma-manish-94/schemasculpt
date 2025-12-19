@@ -42,7 +42,8 @@ public class SecurityConfig {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(csrf -> csrf
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .ignoringRequestMatchers("/ws/**"))
+            .ignoringRequestMatchers("/ws/**", "/api/v1/auth/**", "/api/v1/sessions/**",
+                "/api/v1/explanations/**", "/api/v1/repository/**", "/proxy/**"))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(

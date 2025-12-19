@@ -6,6 +6,7 @@ from app.api import endpoints
 from app.api import repository_endpoints
 from app.core.config import settings
 from app.providers.provider_factory import initialize_provider
+from app.services.rag_initializer import initialize_rag_on_startup
 from app.core.logging import get_logger
 
 logger = get_logger("main")
@@ -27,6 +28,22 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize provider: {str(e)}")
         # Continue anyway - endpoints will handle errors gracefully
+
+    # Startup: Initialize RAG knowledge bases
+    try:
+        logger.info("Initializing RAG knowledge bases...")
+        rag_result = await initialize_rag_on_startup()
+        if rag_result.get("status") == "success":
+            total_docs = rag_result.get("total_documents", 0)
+            logger.info(f"RAG knowledge bases initialized successfully ({total_docs} documents)")
+        elif rag_result.get("status") == "already_initialized":
+            logger.info("RAG knowledge bases already populated, skipping initialization")
+        else:
+            logger.warning(f"RAG initialization completed with warnings: {rag_result}")
+    except Exception as e:
+        logger.error(f"Failed to initialize RAG knowledge bases: {str(e)}")
+        logger.warning("Application will continue without RAG support")
+        # Continue anyway - RAG is optional, app can work without it
 
     yield
 
