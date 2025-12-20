@@ -336,13 +336,21 @@ public class SchemaDiffService {
     // A. Check Removed Properties
     oldSchema.getProperties().forEach((name, schema) -> {
       if (!newProps.containsKey(name)) {
-        // BREAKING if in Response (Client expects it).
-        // SAFE if in Request (Server just stops using it).
-        DiffEntry.ChangeType type = isResponseContext
-            ? DiffEntry.ChangeType.BREAKING
-            : DiffEntry.ChangeType.SAFE;
-        diffs.add(createDiff(context + "." + name, type, "PROPERTY_REMOVED",
-            "Property removed from schema", name, REMOVED));
+        if (isResponseContext) {
+          // RESPONSE: BREAKING
+          // Clients accessing response.field will NPE.
+          diffs.add(createDiff(context + "." + name, DiffEntry.ChangeType.BREAKING,
+              "PROPERTY_REMOVED",
+              "Property removed from response (Client contract broken)",
+              name, REMOVED));
+        } else {
+          // REQUEST: DANGEROUS
+          // We don't know if the Backend @Controller still requires this.
+          diffs.add(createDiff(context + "." + name, DiffEntry.ChangeType.DANGEROUS,
+              "PROPERTY_REMOVED",
+              "Property removed from request. Verify backend validation is removed.",
+              name, REMOVED));
+        }
       } else {
         compareSchemas(context + "." + name, schema, newProps.get(name),
             diffs,
