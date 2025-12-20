@@ -29,8 +29,14 @@
     }
   },
 
-  "black-formatter.args": ["--config", "${workspaceFolder}/ai_service/pyproject.toml"],
-  "isort.args": ["--settings-path", "${workspaceFolder}/ai_service/pyproject.toml"],
+  "black-formatter.args": [
+    "--config",
+    "${workspaceFolder}/ai_service/pyproject.toml"
+  ],
+  "isort.args": [
+    "--settings-path",
+    "${workspaceFolder}/ai_service/pyproject.toml"
+  ],
   "flake8.args": ["--config", "${workspaceFolder}/ai_service/.flake8"],
   "python.linting.enabled": true,
   "python.linting.flake8Enabled": true,
@@ -66,5 +72,6 @@
 
   "eslint.workingDirectories": ["ui"],
   "prettier.tabWidth": 2,
-  "prettier.printWidth": 80
+  "prettier.printWidth": 80,
+  "java.compile.nullAnalysis.mode": "automatic"
 }
