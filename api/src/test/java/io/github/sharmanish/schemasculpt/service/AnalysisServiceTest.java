@@ -17,6 +17,7 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 class AnalysisServiceTest {
 
@@ -25,7 +26,7 @@ class AnalysisServiceTest {
 
   @BeforeEach
   void setUp() {
-    analysisService = new AnalysisService(new ObjectMapper());
+    analysisService = new AnalysisService(new JsonMapper());
 
   }
 

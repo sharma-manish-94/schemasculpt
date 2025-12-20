@@ -1,6 +1,5 @@
 package io.github.sharmanish.schemasculpt.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.config.ApplicationConstants;
 import io.github.sharmanish.schemasculpt.exception.InvalidSpecificationException;
 import io.github.sharmanish.schemasculpt.exception.SessionNotFoundException;
@@ -13,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 @Transactional
@@ -21,15 +21,15 @@ public class SessionServiceImpl implements SessionService {
 
   private final RedisTemplate<String, OpenAPI> redisTemplate;
   private final SpecParsingService specParsingService;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
   public SessionServiceImpl(
       final SpecParsingService specParsingService,
       final RedisTemplate<String, OpenAPI> redisTemplate,
-      final ObjectMapper objectMapper) {
+      final JsonMapper jsonMapper) {
     this.specParsingService = specParsingService;
     this.redisTemplate = redisTemplate;
-    this.objectMapper = objectMapper;
+    this.jsonMapper = jsonMapper;
   }
 
   @Override
@@ -167,7 +167,7 @@ public class SessionServiceImpl implements SessionService {
 
     try {
       // Convert OpenAPI object to JSON string
-      return objectMapper.writeValueAsString(openAPI);
+      return jsonMapper.writeValueAsString(openAPI);
     } catch (Exception e) {
       log.error("Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(),
           e);

@@ -7,13 +7,13 @@ instead of asking the AI to parse the entire specification.
 KEY INSIGHT: We send FACTS (from Java), not DATA (spec).
 """
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 
 def build_graph_aware_chain_discovery_prompt(
     enriched_findings: List[Dict[str, Any]],
     rag_context: Dict[str, Any],
-    max_chain_length: int = 5
+    max_chain_length: int = 5,
 ) -> str:
     """
     Build a prompt that uses pre-computed graph data instead of raw spec.
@@ -167,7 +167,9 @@ def _build_graph_summary(findings: List[Dict[str, Any]]) -> str:
             dep_type = dep.get("dependency_type")
             target = dep.get("target")
             if dep_type == "SCHEMA_REFERENCE":
-                endpoint_dependencies.append(f"  - {method} {endpoint} depends on schema '{target}'")
+                endpoint_dependencies.append(
+                    f"  - {method} {endpoint} depends on schema '{target}'"
+                )
 
     summary_lines = ["SCHEMA USAGE MAP:"]
     for schema, endpoints in schema_to_endpoints.items():

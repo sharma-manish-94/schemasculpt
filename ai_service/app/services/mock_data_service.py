@@ -5,8 +5,9 @@ Generates realistic, context-aware test data based on OpenAPI schemas.
 
 import json
 import random
-from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
 from ..core.logging import get_logger
 from ..schemas.ai_schemas import AIRequest, OperationType
 
@@ -29,27 +30,63 @@ class MockDataService:
                 "john.doe@example.com",
                 "jane.smith@company.io",
                 "admin@test.org",
-                "user{}@demo.com"
+                "user{}@demo.com",
             ],
             "phone": [
                 "+1-555-0{:03d}-{:04d}",
                 "(555) {:03d}-{:04d}",
-                "555.{:03d}.{:04d}"
+                "555.{:03d}.{:04d}",
             ],
             "name": {
-                "first": ["John", "Jane", "Michael", "Sarah", "David", "Emma", "Chris", "Lisa"],
-                "last": ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis"]
+                "first": [
+                    "John",
+                    "Jane",
+                    "Michael",
+                    "Sarah",
+                    "David",
+                    "Emma",
+                    "Chris",
+                    "Lisa",
+                ],
+                "last": [
+                    "Smith",
+                    "Johnson",
+                    "Williams",
+                    "Brown",
+                    "Jones",
+                    "Garcia",
+                    "Miller",
+                    "Davis",
+                ],
             },
             "company": [
-                "Acme Corp", "TechStart Inc", "Global Solutions", "Innovation Labs",
-                "Digital Ventures", "Cloud Systems", "Data Dynamics", "Smart Tech"
+                "Acme Corp",
+                "TechStart Inc",
+                "Global Solutions",
+                "Innovation Labs",
+                "Digital Ventures",
+                "Cloud Systems",
+                "Data Dynamics",
+                "Smart Tech",
             ],
             "address": {
-                "street": ["{} {} Street", "{} {} Avenue", "{} {} Road", "{} {} Boulevard"],
-                "city": ["New York", "San Francisco", "Chicago", "Boston", "Seattle", "Austin"],
+                "street": [
+                    "{} {} Street",
+                    "{} {} Avenue",
+                    "{} {} Road",
+                    "{} {} Boulevard",
+                ],
+                "city": [
+                    "New York",
+                    "San Francisco",
+                    "Chicago",
+                    "Boston",
+                    "Seattle",
+                    "Austin",
+                ],
                 "state": ["NY", "CA", "IL", "MA", "WA", "TX"],
-                "country": ["USA", "United States", "US"]
-            }
+                "country": ["USA", "United States", "US"],
+            },
         }
 
     async def generate_mock_response(
@@ -58,7 +95,7 @@ class MockDataService:
         response_schema: Dict[str, Any],
         spec_context: Dict[str, Any],
         variation: int = 1,
-        use_ai: bool = True
+        use_ai: bool = True,
     ) -> Dict[str, Any]:
         """
         Generate a realistic mock response for an OpenAPI operation.
@@ -81,7 +118,9 @@ class MockDataService:
                     operation_spec, response_schema, spec_context, variation
                 )
             except Exception as e:
-                self.logger.warning(f"AI generation failed: {e}, falling back to pattern-based")
+                self.logger.warning(
+                    f"AI generation failed: {e}, falling back to pattern-based"
+                )
                 return await self._generate_pattern_response(response_schema, variation)
         else:
             return await self._generate_pattern_response(response_schema, variation)
@@ -91,14 +130,14 @@ class MockDataService:
         operation_spec: Dict[str, Any],
         response_schema: Dict[str, Any],
         spec_context: Dict[str, Any],
-        variation: int
+        variation: int,
     ) -> Dict[str, Any]:
         """Generate response using AI for maximum realism."""
 
         # Extract operation details
-        operation_summary = operation_spec.get('summary', 'API operation')
-        operation_desc = operation_spec.get('description', '')
-        tags = operation_spec.get('tags', [])
+        operation_summary = operation_spec.get("summary", "API operation")
+        operation_desc = operation_spec.get("description", "")
+        tags = operation_spec.get("tags", [])
 
         # Build context-aware prompt
         prompt = f"""Generate realistic JSON mock data for this API endpoint.
@@ -135,7 +174,7 @@ class MockDataService:
         ai_request = AIRequest(
             spec_text=json.dumps(spec_context, indent=2),
             prompt=prompt,
-            operation_type=OperationType.GENERATE
+            operation_type=OperationType.GENERATE,
         )
 
         result = await self.llm_service.process_ai_request(ai_request)
@@ -147,8 +186,10 @@ class MockDataService:
 
             # Remove markdown code blocks if present
             if response_text.startswith("```"):
-                lines = response_text.split('\n')
-                response_text = '\n'.join(lines[1:-1]) if len(lines) > 2 else response_text
+                lines = response_text.split("\n")
+                response_text = (
+                    "\n".join(lines[1:-1]) if len(lines) > 2 else response_text
+                )
                 if response_text.startswith("json"):
                     response_text = response_text[4:].strip()
 
@@ -162,9 +203,7 @@ class MockDataService:
             raise
 
     async def _generate_pattern_response(
-        self,
-        response_schema: Dict[str, Any],
-        variation: int
+        self, response_schema: Dict[str, Any], variation: int
     ) -> Dict[str, Any]:
         """
         Generate response using deterministic patterns.
@@ -175,10 +214,7 @@ class MockDataService:
         return self._generate_from_schema(response_schema, variation)
 
     def _generate_from_schema(
-        self,
-        schema: Dict[str, Any],
-        variation: int,
-        depth: int = 0
+        self, schema: Dict[str, Any], variation: int, depth: int = 0
     ) -> Any:
         """
         Recursively generate data from a JSON schema.
@@ -193,48 +229,54 @@ class MockDataService:
             return None
 
         # Handle $ref references
-        if '$ref' in schema:
+        if "$ref" in schema:
             # For now, return a placeholder - in production, resolve refs
-            return {"$ref": schema['$ref']}
+            return {"$ref": schema["$ref"]}
 
-        schema_type = schema.get('type', 'object')
+        schema_type = schema.get("type", "object")
 
         # Handle different schema types
-        if schema_type == 'object':
+        if schema_type == "object":
             return self._generate_object(schema, variation, depth)
-        elif schema_type == 'array':
+        elif schema_type == "array":
             return self._generate_array(schema, variation, depth)
-        elif schema_type == 'string':
+        elif schema_type == "string":
             return self._generate_string(schema, variation)
-        elif schema_type == 'integer':
+        elif schema_type == "integer":
             return self._generate_integer(schema, variation)
-        elif schema_type == 'number':
+        elif schema_type == "number":
             return self._generate_number(schema, variation)
-        elif schema_type == 'boolean':
+        elif schema_type == "boolean":
             return variation % 2 == 0
-        elif schema_type == 'null':
+        elif schema_type == "null":
             return None
         else:
             return None
 
-    def _generate_object(self, schema: Dict[str, Any], variation: int, depth: int) -> Dict[str, Any]:
+    def _generate_object(
+        self, schema: Dict[str, Any], variation: int, depth: int
+    ) -> Dict[str, Any]:
         """Generate an object from schema."""
         result = {}
-        properties = schema.get('properties', {})
-        required = schema.get('required', [])
+        properties = schema.get("properties", {})
+        required = schema.get("required", [])
 
         for prop_name, prop_schema in properties.items():
             # Generate required fields and some optional ones
             if prop_name in required or random.random() > 0.3:
-                result[prop_name] = self._generate_from_schema(prop_schema, variation, depth + 1)
+                result[prop_name] = self._generate_from_schema(
+                    prop_schema, variation, depth + 1
+                )
 
         return result
 
-    def _generate_array(self, schema: Dict[str, Any], variation: int, depth: int) -> List[Any]:
+    def _generate_array(
+        self, schema: Dict[str, Any], variation: int, depth: int
+    ) -> List[Any]:
         """Generate an array from schema."""
-        items_schema = schema.get('items', {})
-        min_items = schema.get('minItems', 2)
-        max_items = schema.get('maxItems', 5)
+        items_schema = schema.get("items", {})
+        min_items = schema.get("minItems", 2)
+        max_items = schema.get("maxItems", 5)
 
         # Generate 2-5 items with some variation
         count = min(max_items, max(min_items, 2 + (variation % 4)))
@@ -246,35 +288,36 @@ class MockDataService:
 
     def _generate_string(self, schema: Dict[str, Any], variation: int) -> str:
         """Generate a string value based on format and pattern."""
-        format_type = schema.get('format')
-        pattern = schema.get('pattern')
-        enum_values = schema.get('enum')
+        format_type = schema.get("format")
+        pattern = schema.get("pattern")
+        enum_values = schema.get("enum")
 
         # Handle enum
         if enum_values:
             return enum_values[variation % len(enum_values)]
 
         # Handle specific formats
-        if format_type == 'email':
-            names = self.data_patterns['name']['first']
+        if format_type == "email":
+            names = self.data_patterns["name"]["first"]
             name = names[variation % len(names)].lower()
-            domains = ['example.com', 'test.io', 'demo.org', 'company.com']
+            domains = ["example.com", "test.io", "demo.org", "company.com"]
             return f"{name}.user{variation}@{domains[variation % len(domains)]}"
 
-        elif format_type == 'date-time':
+        elif format_type == "date-time":
             base_date = datetime.now() - timedelta(days=variation * 7)
-            return base_date.isoformat() + 'Z'
+            return base_date.isoformat() + "Z"
 
-        elif format_type == 'date':
+        elif format_type == "date":
             base_date = datetime.now() - timedelta(days=variation * 7)
-            return base_date.strftime('%Y-%m-%d')
+            return base_date.strftime("%Y-%m-%d")
 
-        elif format_type == 'uuid':
+        elif format_type == "uuid":
             import uuid
-            # Generate deterministic UUID based on variation
-            return str(uuid.uuid5(uuid.NAMESPACE_DNS, f'test-{variation}'))
 
-        elif format_type == 'uri' or format_type == 'url':
+            # Generate deterministic UUID based on variation
+            return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"test-{variation}"))
+
+        elif format_type == "uri" or format_type == "url":
             return f"https://api.example.com/resource/{variation}"
 
         # Handle patterns (simplified)
@@ -283,44 +326,44 @@ class MockDataService:
             return f"matches-pattern-{variation}"
 
         # Check field name for hints
-        field_name = schema.get('title', '').lower()
+        field_name = schema.get("title", "").lower()
 
-        if 'email' in field_name:
-            return self._generate_string({'format': 'email'}, variation)
-        elif 'phone' in field_name:
+        if "email" in field_name:
+            return self._generate_string({"format": "email"}, variation)
+        elif "phone" in field_name:
             return f"+1-555-0{(100 + variation):03d}-{(1000 + variation):04d}"
-        elif 'name' in field_name:
-            first_names = self.data_patterns['name']['first']
-            last_names = self.data_patterns['name']['last']
+        elif "name" in field_name:
+            first_names = self.data_patterns["name"]["first"]
+            last_names = self.data_patterns["name"]["last"]
             return f"{first_names[variation % len(first_names)]} {last_names[variation % len(last_names)]}"
-        elif 'company' in field_name or 'organization' in field_name:
-            companies = self.data_patterns['company']
+        elif "company" in field_name or "organization" in field_name:
+            companies = self.data_patterns["company"]
             return companies[variation % len(companies)]
-        elif 'city' in field_name:
-            cities = self.data_patterns['address']['city']
+        elif "city" in field_name:
+            cities = self.data_patterns["address"]["city"]
             return cities[variation % len(cities)]
-        elif 'country' in field_name:
+        elif "country" in field_name:
             return "United States"
-        elif 'description' in field_name or 'text' in field_name:
+        elif "description" in field_name or "text" in field_name:
             return f"This is a sample {field_name} for testing purposes (variation {variation})"
-        elif 'id' in field_name:
+        elif "id" in field_name:
             return f"id-{1000 + variation}"
-        elif 'status' in field_name:
-            statuses = ['active', 'pending', 'completed', 'cancelled']
+        elif "status" in field_name:
+            statuses = ["active", "pending", "completed", "cancelled"]
             return statuses[variation % len(statuses)]
 
         # Default string
-        min_length = schema.get('minLength', 5)
-        max_length = schema.get('maxLength', 50)
+        min_length = schema.get("minLength", 5)
+        max_length = schema.get("maxLength", 50)
         target_length = min(max_length, max(min_length, 20))
 
-        return f"sample-string-{variation}".ljust(target_length, '-')[:target_length]
+        return f"sample-string-{variation}".ljust(target_length, "-")[:target_length]
 
     def _generate_integer(self, schema: Dict[str, Any], variation: int) -> int:
         """Generate an integer value."""
-        minimum = schema.get('minimum', 0)
-        maximum = schema.get('maximum', 1000)
-        multiple_of = schema.get('multipleOf')
+        minimum = schema.get("minimum", 0)
+        maximum = schema.get("maximum", 1000)
+        multiple_of = schema.get("multipleOf")
 
         value = minimum + (variation * 7) % (maximum - minimum + 1)
 
@@ -331,8 +374,8 @@ class MockDataService:
 
     def _generate_number(self, schema: Dict[str, Any], variation: int) -> float:
         """Generate a number (float) value."""
-        minimum = schema.get('minimum', 0.0)
-        maximum = schema.get('maximum', 1000.0)
+        minimum = schema.get("minimum", 0.0)
+        maximum = schema.get("maximum", 1000.0)
 
         range_size = maximum - minimum
         value = minimum + (variation * 7.3) % range_size
@@ -344,7 +387,7 @@ class MockDataService:
         operation_spec: Dict[str, Any],
         response_schema: Dict[str, Any],
         spec_context: Dict[str, Any],
-        count: int = 3
+        count: int = 3,
     ) -> List[Dict[str, Any]]:
         """
         Generate multiple variations of mock data for testing.
@@ -367,7 +410,7 @@ class MockDataService:
                     response_schema,
                     spec_context,
                     variation=i,
-                    use_ai=(i == 1)  # Use AI for first variation, patterns for rest
+                    use_ai=(i == 1),  # Use AI for first variation, patterns for rest
                 )
                 variations.append(data)
             except Exception as e:

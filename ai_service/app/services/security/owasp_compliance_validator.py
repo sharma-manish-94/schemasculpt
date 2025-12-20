@@ -3,12 +3,17 @@ OWASP API Security Top 10 compliance validator.
 Aggregates findings from other analyzers and maps them to OWASP categories.
 """
 
-from typing import Dict, Any, List
-from ...schemas.security_schemas import (
-    OWASPComplianceAnalysis, SecurityIssue, OWASPCategory,
-    AuthenticationAnalysis, AuthorizationAnalysis, DataExposureAnalysis
-)
+from typing import Any, Dict, List
+
 from ...core.logging import get_logger
+from ...schemas.security_schemas import (
+    AuthenticationAnalysis,
+    AuthorizationAnalysis,
+    DataExposureAnalysis,
+    OWASPCategory,
+    OWASPComplianceAnalysis,
+    SecurityIssue,
+)
 
 logger = get_logger("security.owasp_compliance_validator")
 
@@ -27,7 +32,7 @@ class OWASPComplianceValidator:
         spec: Dict[str, Any],
         auth_analysis: AuthenticationAnalysis,
         authz_analysis: AuthorizationAnalysis,
-        data_analysis: DataExposureAnalysis
+        data_analysis: DataExposureAnalysis,
     ) -> OWASPComplianceAnalysis:
         """
         Validate OWASP API Security Top 10 compliance.
@@ -78,8 +83,7 @@ class OWASPComplianceValidator:
 
         # Generate recommendations
         recommendations = self._generate_recommendations(
-            non_compliant_categories,
-            category_issues
+            non_compliant_categories, category_issues
         )
 
         return OWASPComplianceAnalysis(
@@ -87,12 +91,11 @@ class OWASPComplianceValidator:
             non_compliant_categories=non_compliant_categories,
             issues=all_issues,
             compliance_percentage=compliance_percentage,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
     def _categorize_issues(
-        self,
-        issues: List[SecurityIssue]
+        self, issues: List[SecurityIssue]
     ) -> Dict[OWASPCategory, List[SecurityIssue]]:
         """Categorize issues by OWASP category."""
         categorized = {}
@@ -104,8 +107,7 @@ class OWASPComplianceValidator:
         return categorized
 
     async def _perform_additional_checks(
-        self,
-        spec: Dict[str, Any]
+        self, spec: Dict[str, Any]
     ) -> List[SecurityIssue]:
         """
         Perform additional OWASP checks not covered by other analyzers.
@@ -154,19 +156,21 @@ class OWASPComplianceValidator:
                         break
 
         if not has_rate_limit_response:
-            issues.append(SecurityIssue(
-                id="owasp-api4-no-rate-limiting",
-                title="No Rate Limiting Documented",
-                description="API does not document rate limiting (HTTP 429 responses)",
-                severity="medium",
-                owasp_category=OWASPCategory.UNRESTRICTED_RESOURCE,
-                location={"paths": "all"},
-                recommendation="Implement and document rate limiting to prevent resource exhaustion attacks",
-                cwe_id="CWE-770",
-                references=[
-                    "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
-                ]
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="owasp-api4-no-rate-limiting",
+                    title="No Rate Limiting Documented",
+                    description="API does not document rate limiting (HTTP 429 responses)",
+                    severity="medium",
+                    owasp_category=OWASPCategory.UNRESTRICTED_RESOURCE,
+                    location={"paths": "all"},
+                    recommendation="Implement and document rate limiting to prevent resource exhaustion attacks",
+                    cwe_id="CWE-770",
+                    references=[
+                        "https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/"
+                    ],
+                )
+            )
 
         return issues
 
@@ -189,24 +193,35 @@ class OWASPComplianceValidator:
                 # Check parameters
                 for param in parameters:
                     param_name = param.get("name", "").lower()
-                    if any(keyword in param_name for keyword in ["url", "uri", "link", "callback"]):
-                        issues.append(SecurityIssue(
-                            id=f"owasp-api7-ssrf-param-{path}-{param_name}",
-                            title="Potential SSRF Vulnerability",
-                            description=f"Parameter '{param_name}' in {method.upper()} {path} accepts URLs - ensure proper validation",
-                            severity="high",
-                            owasp_category=OWASPCategory.SERVER_SIDE_REQUEST_FORGERY,
-                            location={"path": path, "method": method, "parameter": param_name},
-                            recommendation="Validate and sanitize URL parameters, use allowlists, and avoid direct URL fetching",
-                            cwe_id="CWE-918",
-                            references=[
-                                "https://owasp.org/API-Security/editions/2023/en/0xa7-server-side-request-forgery/"
-                            ]
-                        ))
+                    if any(
+                        keyword in param_name
+                        for keyword in ["url", "uri", "link", "callback"]
+                    ):
+                        issues.append(
+                            SecurityIssue(
+                                id=f"owasp-api7-ssrf-param-{path}-{param_name}",
+                                title="Potential SSRF Vulnerability",
+                                description=f"Parameter '{param_name}' in {method.upper()} {path} accepts URLs - ensure proper validation",
+                                severity="high",
+                                owasp_category=OWASPCategory.SERVER_SIDE_REQUEST_FORGERY,
+                                location={
+                                    "path": path,
+                                    "method": method,
+                                    "parameter": param_name,
+                                },
+                                recommendation="Validate and sanitize URL parameters, use allowlists, and avoid direct URL fetching",
+                                cwe_id="CWE-918",
+                                references=[
+                                    "https://owasp.org/API-Security/editions/2023/en/0xa7-server-side-request-forgery/"
+                                ],
+                            )
+                        )
 
         return issues
 
-    def _check_security_configuration(self, spec: Dict[str, Any]) -> List[SecurityIssue]:
+    def _check_security_configuration(
+        self, spec: Dict[str, Any]
+    ) -> List[SecurityIssue]:
         """Check for security misconfigurations (API8)."""
         issues = []
 
@@ -226,7 +241,7 @@ class OWASPComplianceValidator:
                             "X-Content-Type-Options",
                             "X-Frame-Options",
                             "Content-Security-Policy",
-                            "Strict-Transport-Security"
+                            "Strict-Transport-Security",
                         ]
 
                         if any(h in headers for h in security_headers):
@@ -234,33 +249,37 @@ class OWASPComplianceValidator:
                             break
 
         if not documents_security_headers:
-            issues.append(SecurityIssue(
-                id="owasp-api8-no-security-headers",
-                title="Security Headers Not Documented",
-                description="API does not document security headers (X-Content-Type-Options, CSP, etc.)",
-                severity="medium",
-                owasp_category=OWASPCategory.SECURITY_MISCONFIGURATION,
-                location={"responses": "all"},
-                recommendation="Document and implement security headers to prevent common web attacks",
-                cwe_id="CWE-16",
-                references=[
-                    "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
-                ]
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="owasp-api8-no-security-headers",
+                    title="Security Headers Not Documented",
+                    description="API does not document security headers (X-Content-Type-Options, CSP, etc.)",
+                    severity="medium",
+                    owasp_category=OWASPCategory.SECURITY_MISCONFIGURATION,
+                    location={"responses": "all"},
+                    recommendation="Document and implement security headers to prevent common web attacks",
+                    cwe_id="CWE-16",
+                    references=[
+                        "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+                    ],
+                )
+            )
 
         # Check OpenAPI version
         openapi_version = spec.get("openapi", "")
         if not openapi_version.startswith("3."):
-            issues.append(SecurityIssue(
-                id="owasp-api8-old-openapi-version",
-                title="Outdated OpenAPI Version",
-                description=f"Using OpenAPI version {openapi_version} - consider upgrading to 3.x",
-                severity="low",
-                owasp_category=OWASPCategory.SECURITY_MISCONFIGURATION,
-                location={"openapi": openapi_version},
-                recommendation="Use the latest OpenAPI 3.x specification for better security features",
-                cwe_id="CWE-1104"
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="owasp-api8-old-openapi-version",
+                    title="Outdated OpenAPI Version",
+                    description=f"Using OpenAPI version {openapi_version} - consider upgrading to 3.x",
+                    severity="low",
+                    owasp_category=OWASPCategory.SECURITY_MISCONFIGURATION,
+                    location={"openapi": openapi_version},
+                    recommendation="Use the latest OpenAPI 3.x specification for better security features",
+                    cwe_id="CWE-1104",
+                )
+            )
 
         return issues
 
@@ -272,35 +291,41 @@ class OWASPComplianceValidator:
         info = spec.get("info", {})
 
         if not info.get("version"):
-            issues.append(SecurityIssue(
-                id="owasp-api9-no-version",
-                title="API Version Not Specified",
-                description="API specification does not include version information",
-                severity="medium",
-                owasp_category=OWASPCategory.IMPROPER_INVENTORY,
-                location={"info": info},
-                recommendation="Add version information to track API changes and manage inventory",
-                cwe_id="CWE-1059",
-                references=[
-                    "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
-                ]
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="owasp-api9-no-version",
+                    title="API Version Not Specified",
+                    description="API specification does not include version information",
+                    severity="medium",
+                    owasp_category=OWASPCategory.IMPROPER_INVENTORY,
+                    location={"info": info},
+                    recommendation="Add version information to track API changes and manage inventory",
+                    cwe_id="CWE-1059",
+                    references=[
+                        "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/"
+                    ],
+                )
+            )
 
         if not info.get("description"):
-            issues.append(SecurityIssue(
-                id="owasp-api9-no-description",
-                title="API Description Missing",
-                description="API specification lacks a description for proper documentation",
-                severity="low",
-                owasp_category=OWASPCategory.IMPROPER_INVENTORY,
-                location={"info": info},
-                recommendation="Add comprehensive API description for better inventory management",
-                cwe_id="CWE-1059"
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="owasp-api9-no-description",
+                    title="API Description Missing",
+                    description="API specification lacks a description for proper documentation",
+                    severity="low",
+                    owasp_category=OWASPCategory.IMPROPER_INVENTORY,
+                    location={"info": info},
+                    recommendation="Add comprehensive API description for better inventory management",
+                    cwe_id="CWE-1059",
+                )
+            )
 
         return issues
 
-    def _check_unsafe_api_consumption(self, spec: Dict[str, Any]) -> List[SecurityIssue]:
+    def _check_unsafe_api_consumption(
+        self, spec: Dict[str, Any]
+    ) -> List[SecurityIssue]:
         """Check for unsafe consumption of external APIs (API10)."""
         issues = []
 
@@ -320,49 +345,63 @@ class OWASPComplianceValidator:
                 external_indicators = ["external", "third-party", "webhook", "callback"]
 
                 if any(indicator in description for indicator in external_indicators):
-                    issues.append(SecurityIssue(
-                        id=f"owasp-api10-external-api-{path}-{method}",
-                        title="External API Consumption Detected",
-                        description=f"Endpoint {method.upper()} {path} appears to consume external APIs",
-                        severity="medium",
-                        owasp_category=OWASPCategory.UNSAFE_API_CONSUMPTION,
-                        location={"path": path, "method": method},
-                        recommendation="Validate external API responses, implement timeouts, and handle errors securely",
-                        cwe_id="CWE-20",
-                        references=[
-                            "https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/"
-                        ]
-                    ))
+                    issues.append(
+                        SecurityIssue(
+                            id=f"owasp-api10-external-api-{path}-{method}",
+                            title="External API Consumption Detected",
+                            description=f"Endpoint {method.upper()} {path} appears to consume external APIs",
+                            severity="medium",
+                            owasp_category=OWASPCategory.UNSAFE_API_CONSUMPTION,
+                            location={"path": path, "method": method},
+                            recommendation="Validate external API responses, implement timeouts, and handle errors securely",
+                            cwe_id="CWE-20",
+                            references=[
+                                "https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/"
+                            ],
+                        )
+                    )
 
         return issues
 
     def _generate_recommendations(
         self,
         non_compliant: List[OWASPCategory],
-        category_issues: Dict[OWASPCategory, List[SecurityIssue]]
+        category_issues: Dict[OWASPCategory, List[SecurityIssue]],
     ) -> List[str]:
         """Generate high-level recommendations based on compliance gaps."""
         recommendations = []
 
         if OWASPCategory.BROKEN_OBJECT_LEVEL_AUTH in non_compliant:
-            recommendations.append("Implement object-level authorization checks in your business logic")
+            recommendations.append(
+                "Implement object-level authorization checks in your business logic"
+            )
 
         if OWASPCategory.BROKEN_AUTHENTICATION in non_compliant:
-            recommendations.append("Upgrade to OAuth2 or OpenID Connect for stronger authentication")
+            recommendations.append(
+                "Upgrade to OAuth2 or OpenID Connect for stronger authentication"
+            )
 
         if OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH in non_compliant:
-            recommendations.append("Implement field-level access control and mark sensitive fields as writeOnly")
+            recommendations.append(
+                "Implement field-level access control and mark sensitive fields as writeOnly"
+            )
 
         if OWASPCategory.UNRESTRICTED_RESOURCE in non_compliant:
             recommendations.append("Implement rate limiting and resource quotas")
 
         if OWASPCategory.BROKEN_FUNCTION_AUTH in non_compliant:
-            recommendations.append("Apply role-based access control (RBAC) to all administrative functions")
+            recommendations.append(
+                "Apply role-based access control (RBAC) to all administrative functions"
+            )
 
         if OWASPCategory.SECURITY_MISCONFIGURATION in non_compliant:
-            recommendations.append("Configure security headers and keep dependencies up to date")
+            recommendations.append(
+                "Configure security headers and keep dependencies up to date"
+            )
 
         if len(non_compliant) > 5:
-            recommendations.append("Consider a comprehensive security review and penetration testing")
+            recommendations.append(
+                "Consider a comprehensive security review and penetration testing"
+            )
 
         return recommendations

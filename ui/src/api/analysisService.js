@@ -7,10 +7,11 @@
  * - Zombie API Detection
  */
 
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const AI_SERVICE_URL =
+  process.env.REACT_APP_AI_SERVICE_URL || "http://localhost:8000";
 
 /**
  * Run Taint Analysis - Track sensitive data flow
@@ -18,22 +19,25 @@ const AI_SERVICE_URL = process.env.REACT_APP_AI_SERVICE_URL || 'http://localhost
  * @returns {Promise<Object>} Taint analysis results
  */
 export const runTaintAnalysis = async (sessionId) => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/taint-analysis`, {
-            timeout: 30000
-        });
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/taint-analysis`,
+      {
+        timeout: 30000,
+      },
+    );
 
-        return {
-            success: true,
-            data: response.data
-        };
-    } catch (error) {
-        console.error('Taint analysis failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Taint analysis failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -43,25 +47,29 @@ export const runTaintAnalysis = async (sessionId) => {
  * @returns {Promise<Object>} AI interpretation
  */
 export const interpretTaintAnalysis = async (taintResults, specText) => {
-    try {
-        const response = await axios.post(`${AI_SERVICE_URL}/ai/analyze/taint-analysis`, {
-            vulnerabilities: taintResults.vulnerabilities || [],
-            spec_text: specText
-        }, {
-            timeout: 60000
-        });
+  try {
+    const response = await axios.post(
+      `${AI_SERVICE_URL}/ai/analyze/taint-analysis`,
+      {
+        vulnerabilities: taintResults.vulnerabilities || [],
+        spec_text: specText,
+      },
+      {
+        timeout: 60000,
+      },
+    );
 
-        return {
-            success: true,
-            interpretation: response.data
-        };
-    } catch (error) {
-        console.error('Taint analysis interpretation failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.detail?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      interpretation: response.data,
+    };
+  } catch (error) {
+    console.error("Taint analysis interpretation failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.detail?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -70,22 +78,25 @@ export const interpretTaintAnalysis = async (taintResults, specText) => {
  * @returns {Promise<Object>} Authorization matrix results
  */
 export const runAuthzMatrixAnalysis = async (sessionId) => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/authz-matrix`, {
-            timeout: 30000
-        });
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/authz-matrix`,
+      {
+        timeout: 30000,
+      },
+    );
 
-        return {
-            success: true,
-            data: response.data
-        };
-    } catch (error) {
-        console.error('Authz matrix analysis failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Authz matrix analysis failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -95,26 +106,30 @@ export const runAuthzMatrixAnalysis = async (sessionId) => {
  * @returns {Promise<Object>} AI interpretation
  */
 export const interpretAuthzMatrix = async (authzResults, specText) => {
-    try {
-        const response = await axios.post(`${AI_SERVICE_URL}/ai/analyze/authz-matrix`, {
-            scopes: authzResults.scopes || [],
-            matrix: authzResults.matrix || {},
-            spec_text: specText
-        }, {
-            timeout: 60000
-        });
+  try {
+    const response = await axios.post(
+      `${AI_SERVICE_URL}/ai/analyze/authz-matrix`,
+      {
+        scopes: authzResults.scopes || [],
+        matrix: authzResults.matrix || {},
+        spec_text: specText,
+      },
+      {
+        timeout: 60000,
+      },
+    );
 
-        return {
-            success: true,
-            interpretation: response.data
-        };
-    } catch (error) {
-        console.error('Authz matrix interpretation failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.detail?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      interpretation: response.data,
+    };
+  } catch (error) {
+    console.error("Authz matrix interpretation failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.detail?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -123,22 +138,25 @@ export const interpretAuthzMatrix = async (authzResults, specText) => {
  * @returns {Promise<Object>} Schema similarity results
  */
 export const runSchemaSimilarityAnalysis = async (sessionId) => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/schema-similarity`, {
-            timeout: 30000
-        });
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/schema-similarity`,
+      {
+        timeout: 30000,
+      },
+    );
 
-        return {
-            success: true,
-            data: response.data
-        };
-    } catch (error) {
-        console.error('Schema similarity analysis failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Schema similarity analysis failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -147,26 +165,33 @@ export const runSchemaSimilarityAnalysis = async (sessionId) => {
  * @param {string} specText - OpenAPI specification
  * @returns {Promise<Object>} AI interpretation
  */
-export const interpretSchemaSimilarity = async (similarityResults, specText) => {
-    try {
-        const response = await axios.post(`${AI_SERVICE_URL}/ai/analyze/schema-similarity`, {
-            clusters: similarityResults.clusters || [],
-            spec_text: specText
-        }, {
-            timeout: 60000
-        });
+export const interpretSchemaSimilarity = async (
+  similarityResults,
+  specText,
+) => {
+  try {
+    const response = await axios.post(
+      `${AI_SERVICE_URL}/ai/analyze/schema-similarity`,
+      {
+        clusters: similarityResults.clusters || [],
+        spec_text: specText,
+      },
+      {
+        timeout: 60000,
+      },
+    );
 
-        return {
-            success: true,
-            interpretation: response.data
-        };
-    } catch (error) {
-        console.error('Schema similarity interpretation failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.detail?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      interpretation: response.data,
+    };
+  } catch (error) {
+    console.error("Schema similarity interpretation failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.detail?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -175,22 +200,25 @@ export const interpretSchemaSimilarity = async (similarityResults, specText) => 
  * @returns {Promise<Object>} Zombie API detection results
  */
 export const runZombieApiDetection = async (sessionId) => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/zombie-apis`, {
-            timeout: 30000
-        });
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/zombie-apis`,
+      {
+        timeout: 30000,
+      },
+    );
 
-        return {
-            success: true,
-            data: response.data
-        };
-    } catch (error) {
-        console.error('Zombie API detection failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Zombie API detection failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -200,26 +228,30 @@ export const runZombieApiDetection = async (sessionId) => {
  * @returns {Promise<Object>} AI interpretation
  */
 export const interpretZombieApis = async (zombieResults, specText) => {
-    try {
-        const response = await axios.post(`${AI_SERVICE_URL}/ai/analyze/zombie-apis`, {
-            shadowedEndpoints: zombieResults.shadowedEndpoints || [],
-            orphanedOperations: zombieResults.orphanedOperations || [],
-            spec_text: specText
-        }, {
-            timeout: 60000
-        });
+  try {
+    const response = await axios.post(
+      `${AI_SERVICE_URL}/ai/analyze/zombie-apis`,
+      {
+        shadowedEndpoints: zombieResults.shadowedEndpoints || [],
+        orphanedOperations: zombieResults.orphanedOperations || [],
+        spec_text: specText,
+      },
+      {
+        timeout: 60000,
+      },
+    );
 
-        return {
-            success: true,
-            interpretation: response.data
-        };
-    } catch (error) {
-        console.error('Zombie API interpretation failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.detail?.message || error.message
-        };
-    }
+    return {
+      success: true,
+      interpretation: response.data,
+    };
+  } catch (error) {
+    console.error("Zombie API interpretation failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.detail?.message || error.message,
+    };
+  }
 };
 
 /**
@@ -229,49 +261,58 @@ export const interpretZombieApis = async (zombieResults, specText) => {
  * @returns {Promise<Object>} Comprehensive analysis results
  */
 export const runComprehensiveAnalysis = async (sessionId, specText) => {
-    try {
-        // Run all 4 analyzers in parallel
-        const [taintRes, authzRes, similarityRes, zombieRes] = await Promise.all([
-            runTaintAnalysis(sessionId),
-            runAuthzMatrixAnalysis(sessionId),
-            runSchemaSimilarityAnalysis(sessionId),
-            runZombieApiDetection(sessionId)
-        ]);
+  try {
+    // Run all 4 analyzers in parallel
+    const [taintRes, authzRes, similarityRes, zombieRes] = await Promise.all([
+      runTaintAnalysis(sessionId),
+      runAuthzMatrixAnalysis(sessionId),
+      runSchemaSimilarityAnalysis(sessionId),
+      runZombieApiDetection(sessionId),
+    ]);
 
-        // Check if any failed
-        if (!taintRes.success || !authzRes.success || !similarityRes.success || !zombieRes.success) {
-            return {
-                success: false,
-                error: 'One or more analyzers failed'
-            };
-        }
-
-        // Get comprehensive AI interpretation
-        const response = await axios.post(`${AI_SERVICE_URL}/ai/analyze/comprehensive-architecture`, {
-            taint_analysis: taintRes.data,
-            authz_matrix: authzRes.data,
-            schema_similarity: similarityRes.data,
-            zombie_apis: zombieRes.data,
-            spec_text: specText
-        }, {
-            timeout: 120000 // 2 minutes for comprehensive analysis
-        });
-
-        return {
-            success: true,
-            raw_results: {
-                taint: taintRes.data,
-                authz: authzRes.data,
-                similarity: similarityRes.data,
-                zombie: zombieRes.data
-            },
-            interpretation: response.data
-        };
-    } catch (error) {
-        console.error('Comprehensive analysis failed:', error);
-        return {
-            success: false,
-            error: error.response?.data?.detail?.message || error.message
-        };
+    // Check if any failed
+    if (
+      !taintRes.success ||
+      !authzRes.success ||
+      !similarityRes.success ||
+      !zombieRes.success
+    ) {
+      return {
+        success: false,
+        error: "One or more analyzers failed",
+      };
     }
+
+    // Get comprehensive AI interpretation
+    const response = await axios.post(
+      `${AI_SERVICE_URL}/ai/analyze/comprehensive-architecture`,
+      {
+        taint_analysis: taintRes.data,
+        authz_matrix: authzRes.data,
+        schema_similarity: similarityRes.data,
+        zombie_apis: zombieRes.data,
+        spec_text: specText,
+      },
+      {
+        timeout: 120000, // 2 minutes for comprehensive analysis
+      },
+    );
+
+    return {
+      success: true,
+      raw_results: {
+        taint: taintRes.data,
+        authz: authzRes.data,
+        similarity: similarityRes.data,
+        zombie: zombieRes.data,
+      },
+      interpretation: response.data,
+    };
+  } catch (error) {
+    console.error("Comprehensive analysis failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.detail?.message || error.message,
+    };
+  }
 };

@@ -1,7 +1,5 @@
 package io.github.sharmanish.schemasculpt.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
@@ -29,6 +27,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Service
@@ -41,10 +41,10 @@ public class AnalysisService {
       "password", "secret", "token", "key", "ssn", "socialsecurity",
       "creditcard", "cardnumber", "cvv", "pii", "salary", "internal"
   );
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
-  public AnalysisService(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public AnalysisService(JsonMapper jsonMapper) {
+    this.jsonMapper = jsonMapper;
   }
 
   /**
@@ -263,7 +263,7 @@ public class AnalysisService {
                         (method, operation) -> {
                           String operationKey = method.toString() + " " + pathKey;
                           log.debug("Calculating depth for operation: " + operationKey);
-                          JsonNode operationNode = objectMapper.valueToTree(operation);
+                          JsonNode operationNode = jsonMapper.valueToTree(operation);
                           int maxDepth =
                               calculateMaxDepth(operationNode, new HashSet<>(), allSchemas, memo);
                           allDepths.put(operationKey, maxDepth);
@@ -277,7 +277,7 @@ public class AnalysisService {
       Set<String> visited,
       Map<String, Schema> allSchemas,
       Map<String, Integer> memo) {
-    if (node == null || !node.isContainerNode()) {
+    if (node == null || !node.isContainer()) {
       return 0;
     }
 
@@ -299,7 +299,7 @@ public class AnalysisService {
           }
 
         visited.add(schemaName);
-        JsonNode schemaNode = objectMapper.valueToTree(schema);
+        JsonNode schemaNode = jsonMapper.valueToTree(schema);
 
         int nestedDepth = calculateMaxDepth(schemaNode, visited, allSchemas, memo);
 
@@ -311,7 +311,7 @@ public class AnalysisService {
     }
 
     int maxDepth = 0;
-    Iterator<JsonNode> elements = node.elements();
+    Iterator<JsonNode> elements = node.iterator();
     while (elements.hasNext()) {
       int childDepth = calculateMaxDepth(elements.next(), new HashSet<>(visited), allSchemas, memo);
       maxDepth = Math.max(maxDepth, childDepth);
@@ -329,7 +329,7 @@ public class AnalysisService {
             .map(Components::getSchemas)
             .orElse(Collections.emptyMap());
 
-    JsonNode operationNode = objectMapper.valueToTree(operation);
+    JsonNode operationNode = jsonMapper.valueToTree(operation);
     Map<String, Integer> memo = new HashMap<>();
 
     return calculateMaxDepth(operationNode, new HashSet<>(), allSchemas, memo);

@@ -4,11 +4,11 @@ Specializes in analyzing API domains and extracting business requirements.
 """
 
 import json
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .base_agent import LLMAgent
 from ...schemas.ai_schemas import LLMParameters
+from .base_agent import LLMAgent
 
 
 class DomainAnalyzerAgent(LLMAgent):
@@ -20,7 +20,7 @@ class DomainAnalyzerAgent(LLMAgent):
         super().__init__(
             name="DomainAnalyzer",
             description="Analyzes API domains, business requirements, and extracts entities and relationships",
-            llm_service=llm_service
+            llm_service=llm_service,
         )
 
     def _define_capabilities(self) -> List[str]:
@@ -29,10 +29,12 @@ class DomainAnalyzerAgent(LLMAgent):
             "entity_extraction",
             "relationship_mapping",
             "business_requirement_analysis",
-            "api_pattern_recognition"
+            "api_pattern_recognition",
         ]
 
-    async def execute(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute domain analysis task."""
         try:
             await self._pre_execution_hook(task)
@@ -58,12 +60,15 @@ class DomainAnalyzerAgent(LLMAgent):
             self.logger.error(f"Domain analysis failed: {str(e)}")
             return self._create_error_result(str(e), "DOMAIN_ANALYSIS_ERROR")
 
-    async def _analyze_domain(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _analyze_domain(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Analyze the domain and business requirements."""
         user_prompt = task.get("input_data", {}).get("prompt", "")
         domain = task.get("input_data", {}).get("domain")
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an expert business analyst and API domain specialist. Your task is to analyze user requirements and provide comprehensive domain analysis.
 
 **Analysis Framework:**
@@ -90,7 +95,8 @@ You are an expert business analyst and API domain specialist. Your task is to an
   "complexity_assessment": "simple/medium/complex",
   "recommended_patterns": ["list of recommended API patterns"]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Analyze the following API requirements:
@@ -103,18 +109,20 @@ Provide a comprehensive domain analysis following the specified format.
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.3))
         analysis_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(analysis_data, {
-            "analysis_type": "domain_analysis",
-            "tokens_used": len(response.split())
-        })
+        return self._create_success_result(
+            analysis_data,
+            {"analysis_type": "domain_analysis", "tokens_used": len(response.split())},
+        )
 
-    async def _extract_entities(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _extract_entities(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Extract entities and their properties from the domain analysis."""
         user_prompt = task.get("input_data", {}).get("prompt", "")
         domain_analysis = context.get("previous_results", [])
@@ -125,10 +133,11 @@ Provide a comprehensive domain analysis following the specified format.
             for result in domain_analysis:
                 if result.get("data", {}).get("domain"):
                     domain_context = f"Domain: {result['data']['domain']}\n"
-                    if result['data'].get('business_processes'):
+                    if result["data"].get("business_processes"):
                         domain_context += f"Business Processes: {', '.join([p['name'] for p in result['data']['business_processes']])}\n"
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an expert data modeler and entity relationship specialist. Your task is to extract entities and their properties from business requirements.
 
 {domain_context}
@@ -165,7 +174,8 @@ You are an expert data modeler and entity relationship specialist. Your task is 
   "complexity_score": "1-10",
   "suggested_patterns": ["list of recommended patterns"]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Extract entities and their properties from the following requirements:
@@ -181,19 +191,24 @@ Focus on identifying:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         entities_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(entities_data, {
-            "analysis_type": "entity_extraction",
-            "tokens_used": len(response.split()),
-            "entity_count": len(entities_data.get("entities", []))
-        })
+        return self._create_success_result(
+            entities_data,
+            {
+                "analysis_type": "entity_extraction",
+                "tokens_used": len(response.split()),
+                "entity_count": len(entities_data.get("entities", [])),
+            },
+        )
 
-    async def _map_relationships(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _map_relationships(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Map relationships between entities and create dependency graph."""
         entities_data = task.get("input_data", {}).get("entities", [])
 
@@ -205,9 +220,12 @@ Focus on identifying:
                     break
 
         if not entities_data:
-            return self._create_error_result("No entities data provided for relationship mapping")
+            return self._create_error_result(
+                "No entities data provided for relationship mapping"
+            )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an expert system architect specializing in entity relationship modeling and dependency analysis.
 
 **Relationship Mapping Tasks:**
@@ -234,13 +252,16 @@ You are an expert system architect specializing in entity relationship modeling 
   ],
   "complexity_warnings": ["list of potential complexity issues"]
 }}
-""")
+"""
+        )
 
         entity_list = [entity["name"] for entity in entities_data]
-        entity_descriptions = "\n".join([
-            f"- {entity['name']}: {entity.get('description', 'No description')}"
-            for entity in entities_data
-        ])
+        entity_descriptions = "\n".join(
+            [
+                f"- {entity['name']}: {entity.get('description', 'No description')}"
+                for entity in entities_data
+            ]
+        )
 
         user_message = f"""
 Map relationships between the following entities:
@@ -256,17 +277,20 @@ Provide comprehensive relationship mapping and dependency analysis.
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         relationship_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(relationship_data, {
-            "analysis_type": "relationship_mapping",
-            "tokens_used": len(response.split()),
-            "entities_analyzed": len(entity_list)
-        })
+        return self._create_success_result(
+            relationship_data,
+            {
+                "analysis_type": "relationship_mapping",
+                "tokens_used": len(response.split()),
+                "entities_analyzed": len(entity_list),
+            },
+        )
 
     def _get_required_task_fields(self) -> List[str]:
         """Get required fields for domain analysis tasks."""

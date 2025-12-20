@@ -17,7 +17,7 @@ function SpecEditor({ project }) {
           connectWebSocket();
         }
       } catch (error) {
-        console.error('Failed to initialize session:', error);
+        console.error("Failed to initialize session:", error);
       }
     };
 

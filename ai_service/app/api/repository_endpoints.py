@@ -6,29 +6,30 @@ FastAPI endpoints for repository operations via MCP.
 
 import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Header, status
 
+from fastapi import APIRouter, Header, HTTPException, status
+
+from app.mcp.client import MCP_AVAILABLE
 from app.schemas.repository import (
-    RepositoryConnectionRequest,
-    RepositoryConnectionResponse,
-    RepositoryListRequest,
-    RepositoryListResponse,
-    RepositoryInfoResponse,
-    BranchListResponse,
     BranchInfoResponse,
+    BranchListResponse,
     BrowseTreeRequest,
     BrowseTreeResponse,
     FileInfoResponse,
-    ReadFileRequest,
-    ReadFileResponse,
-    SearchFilesRequest,
-    SearchFilesResponse,
     FindOpenAPISpecsRequest,
     FindOpenAPISpecsResponse,
+    ReadFileRequest,
+    ReadFileResponse,
+    RepositoryConnectionRequest,
+    RepositoryConnectionResponse,
     RepositoryHealthResponse,
+    RepositoryInfoResponse,
+    RepositoryListRequest,
+    RepositoryListResponse,
+    SearchFilesRequest,
+    SearchFilesResponse,
 )
 from app.services.repository_service import RepositoryService, RepositoryServiceError
-from app.mcp.client import MCP_AVAILABLE
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ def get_session_id(x_session_id: Optional[str] = Header(None)) -> str:
     if not x_session_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="X-Session-ID header is required"
+            detail="X-Session-ID header is required",
         )
     return x_session_id
 
@@ -64,14 +65,14 @@ async def health_check(x_session_id: Optional[str] = Header(None)):
         status="healthy" if MCP_AVAILABLE else "degraded",
         mcp_available=MCP_AVAILABLE,
         connected=session_info is not None if session_info else False,
-        provider=session_info.get("provider") if session_info else None
+        provider=session_info.get("provider") if session_info else None,
     )
 
 
 @router.post("/connect", response_model=RepositoryConnectionResponse)
 async def connect_repository(
     request: RepositoryConnectionRequest,
-    session_id: str = Header(..., alias="X-Session-ID")
+    session_id: str = Header(..., alias="X-Session-ID"),
 ):
     """
     Connect to a repository provider (GitHub, GitLab, etc.).
@@ -86,33 +87,30 @@ async def connect_repository(
     if not MCP_AVAILABLE:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="MCP SDK is not available. Repository features are disabled."
+            detail="MCP SDK is not available. Repository features are disabled.",
         )
 
     try:
         result = await repository_service.connect(
             session_id=session_id,
             provider_name=request.provider,
-            access_token=request.access_token
+            access_token=request.access_token,
         )
 
         return RepositoryConnectionResponse(
             success=True,
             message=f"Successfully connected to {request.provider}",
-            provider=request.provider
+            provider=request.provider,
         )
 
     except RepositoryServiceError as e:
         logger.error(f"Connection error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Unexpected error during connection: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error during connection"
+            detail="Internal server error during connection",
         )
 
 
@@ -131,14 +129,13 @@ async def disconnect_repository(session_id: str = Header(..., alias="X-Session-I
         logger.error(f"Error during disconnect: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error during disconnect"
+            detail="Error during disconnect",
         )
 
 
 @router.post("/list", response_model=RepositoryListResponse)
 async def list_repositories(
-    request: RepositoryListRequest,
-    session_id: str = Header(..., alias="X-Session-ID")
+    request: RepositoryListRequest, session_id: str = Header(..., alias="X-Session-ID")
 ):
     """
     List repositories accessible to the authenticated user.
@@ -148,8 +145,7 @@ async def list_repositories(
     """
     try:
         repos = await repository_service.list_repositories(
-            session_id=session_id,
-            username=request.username
+            session_id=session_id, username=request.username
         )
 
         return RepositoryListResponse(
@@ -163,31 +159,26 @@ async def list_repositories(
                     default_branch=repo.default_branch,
                     private=repo.private,
                     created_at=repo.created_at,
-                    updated_at=repo.updated_at
+                    updated_at=repo.updated_at,
                 )
                 for repo in repos
             ],
-            count=len(repos)
+            count=len(repos),
         )
 
     except RepositoryServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Error listing repositories: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error listing repositories"
+            detail="Error listing repositories",
         )
 
 
 @router.get("/{owner}/{repo}/branches", response_model=BranchListResponse)
 async def list_branches(
-    owner: str,
-    repo: str,
-    session_id: str = Header(..., alias="X-Session-ID")
+    owner: str, repo: str, session_id: str = Header(..., alias="X-Session-ID")
 ):
     """
     List branches in a repository.
@@ -196,9 +187,7 @@ async def list_branches(
     """
     try:
         branches = await repository_service.list_branches(
-            session_id=session_id,
-            owner=owner,
-            repo=repo
+            session_id=session_id, owner=owner, repo=repo
         )
 
         return BranchListResponse(
@@ -206,30 +195,26 @@ async def list_branches(
                 BranchInfoResponse(
                     name=branch.name,
                     commit_sha=branch.commit_sha,
-                    protected=branch.protected
+                    protected=branch.protected,
                 )
                 for branch in branches
             ],
-            count=len(branches)
+            count=len(branches),
         )
 
     except RepositoryServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Error listing branches: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error listing branches"
+            detail="Error listing branches",
         )
 
 
 @router.post("/browse", response_model=BrowseTreeResponse)
 async def browse_tree(
-    request: BrowseTreeRequest,
-    session_id: str = Header(..., alias="X-Session-ID")
+    request: BrowseTreeRequest, session_id: str = Header(..., alias="X-Session-ID")
 ):
     """
     Browse repository tree at a specific path.
@@ -243,7 +228,7 @@ async def browse_tree(
             owner=request.owner,
             repo=request.repo,
             path=request.path,
-            branch=request.branch
+            branch=request.branch,
         )
 
         return BrowseTreeResponse(
@@ -255,31 +240,27 @@ async def browse_tree(
                     size=file.size,
                     sha=file.sha,
                     url=file.url,
-                    is_openapi_spec=getattr(file, 'is_openapi_spec', False)
+                    is_openapi_spec=getattr(file, "is_openapi_spec", False),
                 )
                 for file in files
             ],
             path=request.path,
-            branch=request.branch
+            branch=request.branch,
         )
 
     except RepositoryServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Error browsing tree: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error browsing repository tree"
+            detail="Error browsing repository tree",
         )
 
 
 @router.post("/file", response_model=ReadFileResponse)
 async def read_file(
-    request: ReadFileRequest,
-    session_id: str = Header(..., alias="X-Session-ID")
+    request: ReadFileRequest, session_id: str = Header(..., alias="X-Session-ID")
 ):
     """
     Read file content from repository.
@@ -293,7 +274,7 @@ async def read_file(
             owner=request.owner,
             repo=request.repo,
             path=request.path,
-            ref=request.ref
+            ref=request.ref,
         )
 
         return ReadFileResponse(
@@ -302,26 +283,22 @@ async def read_file(
             encoding=content.encoding,
             size=content.size,
             sha=content.sha,
-            url=content.url
+            url=content.url,
         )
 
     except RepositoryServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Error reading file: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error reading file"
+            detail="Error reading file",
         )
 
 
 @router.post("/search", response_model=SearchFilesResponse)
 async def search_files(
-    request: SearchFilesRequest,
-    session_id: str = Header(..., alias="X-Session-ID")
+    request: SearchFilesRequest, session_id: str = Header(..., alias="X-Session-ID")
 ):
     """
     Search for files matching a pattern.
@@ -335,7 +312,7 @@ async def search_files(
             owner=request.owner,
             repo=request.repo,
             pattern=request.pattern,
-            branch=request.branch
+            branch=request.branch,
         )
 
         return SearchFilesResponse(
@@ -346,31 +323,28 @@ async def search_files(
                     type=file.type,
                     size=file.size,
                     sha=file.sha,
-                    url=file.url
+                    url=file.url,
                 )
                 for file in files
             ],
             count=len(files),
-            pattern=request.pattern
+            pattern=request.pattern,
         )
 
     except RepositoryServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Error searching files: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error searching files"
+            detail="Error searching files",
         )
 
 
 @router.post("/find-specs", response_model=FindOpenAPISpecsResponse)
 async def find_openapi_specs(
     request: FindOpenAPISpecsRequest,
-    session_id: str = Header(..., alias="X-Session-ID")
+    session_id: str = Header(..., alias="X-Session-ID"),
 ):
     """
     Find OpenAPI specification files in a repository.
@@ -383,7 +357,7 @@ async def find_openapi_specs(
             session_id=session_id,
             owner=request.owner,
             repo=request.repo,
-            branch=request.branch
+            branch=request.branch,
         )
 
         return FindOpenAPISpecsResponse(
@@ -395,21 +369,18 @@ async def find_openapi_specs(
                     size=spec.size,
                     sha=spec.sha,
                     url=spec.url,
-                    is_openapi_spec=True
+                    is_openapi_spec=True,
                 )
                 for spec in specs
             ],
-            count=len(specs)
+            count=len(specs),
         )
 
     except RepositoryServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Error finding OpenAPI specs: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error finding OpenAPI specifications"
+            detail="Error finding OpenAPI specifications",
         )

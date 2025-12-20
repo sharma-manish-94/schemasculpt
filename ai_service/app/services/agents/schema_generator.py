@@ -4,11 +4,11 @@ Specializes in generating OpenAPI schemas from entity definitions.
 """
 
 import json
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .base_agent import LLMAgent
 from ...schemas.ai_schemas import LLMParameters
+from .base_agent import LLMAgent
 
 
 class SchemaGeneratorAgent(LLMAgent):
@@ -20,7 +20,7 @@ class SchemaGeneratorAgent(LLMAgent):
         super().__init__(
             name="SchemaGenerator",
             description="Generates comprehensive OpenAPI schemas with validation, examples, and documentation",
-            llm_service=llm_service
+            llm_service=llm_service,
         )
 
     def _define_capabilities(self) -> List[str]:
@@ -30,10 +30,12 @@ class SchemaGeneratorAgent(LLMAgent):
             "example_generation",
             "schema_optimization",
             "inheritance_modeling",
-            "polymorphism_support"
+            "polymorphism_support",
         ]
 
-    async def execute(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute schema generation task."""
         try:
             await self._pre_execution_hook(task)
@@ -61,7 +63,9 @@ class SchemaGeneratorAgent(LLMAgent):
             self.logger.error(f"Schema generation failed: {str(e)}")
             return self._create_error_result(str(e), "SCHEMA_GENERATION_ERROR")
 
-    async def _generate_schemas(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_schemas(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate OpenAPI schemas from entity definitions."""
         entities = task.get("input_data", {}).get("entities", [])
         generation_options = task.get("input_data", {}).get("options", {})
@@ -74,9 +78,12 @@ class SchemaGeneratorAgent(LLMAgent):
                     break
 
         if not entities:
-            return self._create_error_result("No entities data provided for schema generation")
+            return self._create_error_result(
+                "No entities data provided for schema generation"
+            )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an expert OpenAPI schema architect specializing in creating comprehensive, production-ready schemas.
 
 **Schema Generation Principles:**
@@ -122,7 +129,8 @@ You are an expert OpenAPI schema architect specializing in creating comprehensiv
   }},
   "recommendations": ["list of optimization recommendations"]
 }}
-""")
+"""
+        )
 
         options_text = f"""
 **Generation Options:**
@@ -132,13 +140,15 @@ You are an expert OpenAPI schema architect specializing in creating comprehensiv
 - Schema Format: {generation_options.get('format', 'OpenAPI 3.0')}
 """
 
-        entities_text = "\n".join([
-            f"**{entity['name']}:**\n" +
-            f"Description: {entity.get('description', 'No description')}\n" +
-            f"Attributes: {json.dumps(entity.get('attributes', []), indent=2)}\n" +
-            f"Relationships: {json.dumps(entity.get('relationships', []), indent=2)}\n"
-            for entity in entities
-        ])
+        entities_text = "\n".join(
+            [
+                f"**{entity['name']}:**\n"
+                + f"Description: {entity.get('description', 'No description')}\n"
+                + f"Attributes: {json.dumps(entity.get('attributes', []), indent=2)}\n"
+                + f"Relationships: {json.dumps(entity.get('relationships', []), indent=2)}\n"
+                for entity in entities
+            ]
+        )
 
         user_message = f"""
 Generate comprehensive OpenAPI schemas for the following entities:
@@ -158,28 +168,36 @@ Create production-ready schemas with:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         schema_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(schema_data, {
-            "generation_type": "comprehensive_schemas",
-            "tokens_used": len(response.split()),
-            "entities_processed": len(entities),
-            "schemas_generated": len(schema_data.get("schemas", {}))
-        })
+        return self._create_success_result(
+            schema_data,
+            {
+                "generation_type": "comprehensive_schemas",
+                "tokens_used": len(response.split()),
+                "entities_processed": len(entities),
+                "schemas_generated": len(schema_data.get("schemas", {})),
+            },
+        )
 
-    async def _optimize_schemas(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _optimize_schemas(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Optimize existing schemas for performance and maintainability."""
         existing_schemas = task.get("input_data", {}).get("schemas", {})
-        optimization_goals = task.get("input_data", {}).get("goals", ["performance", "maintainability"])
+        optimization_goals = task.get("input_data", {}).get(
+            "goals", ["performance", "maintainability"]
+        )
 
         if not existing_schemas:
             return self._create_error_result("No schemas provided for optimization")
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are a schema optimization expert focusing on performance, maintainability, and best practices.
 
 **Optimization Areas:**
@@ -205,7 +223,8 @@ You are a schema optimization expert focusing on performance, maintainability, a
   }},
   "recommendations": ["additional optimization suggestions"]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Optimize the following OpenAPI schemas:
@@ -225,28 +244,38 @@ Focus on:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.1))
         optimization_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(optimization_data, {
-            "optimization_type": "schema_optimization",
-            "tokens_used": len(response.split()),
-            "schemas_optimized": len(existing_schemas),
-            "optimizations_count": len(optimization_data.get("optimizations_applied", []))
-        })
+        return self._create_success_result(
+            optimization_data,
+            {
+                "optimization_type": "schema_optimization",
+                "tokens_used": len(response.split()),
+                "schemas_optimized": len(existing_schemas),
+                "optimizations_count": len(
+                    optimization_data.get("optimizations_applied", [])
+                ),
+            },
+        )
 
-    async def _add_validation_rules(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _add_validation_rules(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Add comprehensive validation rules to schemas."""
         schemas = task.get("input_data", {}).get("schemas", {})
         business_rules = task.get("input_data", {}).get("business_rules", [])
 
         if not schemas:
-            return self._create_error_result("No schemas provided for validation enhancement")
+            return self._create_error_result(
+                "No schemas provided for validation enhancement"
+            )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are a validation specialist expert in JSON Schema validation and business rule implementation.
 
 **Validation Categories:**
@@ -275,7 +304,8 @@ You are a validation specialist expert in JSON Schema validation and business ru
     {{"schema": "schema_name", "valid_example": {{}}, "invalid_example": {{}}, "error_message": "expected error"}}
   ]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Add comprehensive validation rules to the following schemas:
@@ -295,28 +325,38 @@ Focus on creating robust validation that catches common errors while maintaining
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         validation_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(validation_data, {
-            "enhancement_type": "validation_rules",
-            "tokens_used": len(response.split()),
-            "schemas_enhanced": len(schemas),
-            "business_rules_processed": len(business_rules)
-        })
+        return self._create_success_result(
+            validation_data,
+            {
+                "enhancement_type": "validation_rules",
+                "tokens_used": len(response.split()),
+                "schemas_enhanced": len(schemas),
+                "business_rules_processed": len(business_rules),
+            },
+        )
 
-    async def _generate_examples(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_examples(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate comprehensive examples for schemas."""
         schemas = task.get("input_data", {}).get("schemas", {})
-        example_types = task.get("input_data", {}).get("types", ["valid", "invalid", "edge_cases"])
+        example_types = task.get("input_data", {}).get(
+            "types", ["valid", "invalid", "edge_cases"]
+        )
 
         if not schemas:
-            return self._create_error_result("No schemas provided for example generation")
+            return self._create_error_result(
+                "No schemas provided for example generation"
+            )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an example generation specialist creating realistic, comprehensive examples for API schemas.
 
 **Example Categories:**
@@ -355,7 +395,8 @@ You are an example generation specialist creating realistic, comprehensive examp
     "coverage_score": "1-10"
   }}
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Generate comprehensive examples for the following schemas:
@@ -375,18 +416,21 @@ Generate examples that help developers understand proper schema usage.
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.4))
         examples_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(examples_data, {
-            "generation_type": "schema_examples",
-            "tokens_used": len(response.split()),
-            "schemas_processed": len(schemas),
-            "example_types": example_types
-        })
+        return self._create_success_result(
+            examples_data,
+            {
+                "generation_type": "schema_examples",
+                "tokens_used": len(response.split()),
+                "schemas_processed": len(schemas),
+                "example_types": example_types,
+            },
+        )
 
     def _get_required_task_fields(self) -> List[str]:
         """Get required fields for schema generation tasks."""

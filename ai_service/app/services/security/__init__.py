@@ -13,5 +13,5 @@ __all__ = [
     "AuthorizationAnalyzer",
     "DataExposureAnalyzer",
     "OWASPComplianceValidator",
-    "SecurityAnalysisWorkflow"
+    "SecurityAnalysisWorkflow",
 ]

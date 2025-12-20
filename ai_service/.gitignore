@@ -108,3 +108,12 @@ build/
 dist/
 *.egg-info/
 
+# Log files
+*.log
+logs/
+
+# Data directories (vector stores are project-specific)
+data/
+
+# Mypy cache
+.mypy_cache/

@@ -3,17 +3,13 @@ HuggingFace LLM Provider implementation for SchemaSculpt AI Service.
 Supports HuggingFace Inference API and local transformers.
 """
 
-from typing import Dict, Any, AsyncGenerator, Optional, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
+
 import httpx
 
-from .base_provider import (
-    BaseLLMProvider,
-    LLMResponse,
-    LLMStreamResponse,
-    ProviderType
-)
-from ..core.logging import get_logger
 from ..core.exceptions import LLMError
+from ..core.logging import get_logger
+from .base_provider import BaseLLMProvider, LLMResponse, LLMStreamResponse, ProviderType
 
 
 class HuggingFaceProvider(BaseLLMProvider):
@@ -27,17 +23,23 @@ class HuggingFaceProvider(BaseLLMProvider):
         self.logger = get_logger("huggingface_provider")
 
         self.api_key = config.get("api_key")
-        self.api_url = config.get("api_url", "https://api-inference.huggingface.co/models")
-        self.default_model = config.get("default_model", "mistralai/Mistral-7B-Instruct-v0.2")
+        self.api_url = config.get(
+            "api_url", "https://api-inference.huggingface.co/models"
+        )
+        self.default_model = config.get(
+            "default_model", "mistralai/Mistral-7B-Instruct-v0.2"
+        )
         self.timeout = config.get("timeout", 120)
         self.use_local = config.get("use_local", False)
 
         if not self.use_local and not self.api_key:
-            self.logger.warning("No HuggingFace API key provided. Some features may be limited.")
+            self.logger.warning(
+                "No HuggingFace API key provided. Some features may be limited."
+            )
 
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(self.timeout),
-            headers={"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+            headers={"Authorization": f"Bearer {self.api_key}"} if self.api_key else {},
         )
 
         # Initialize local model if configured
@@ -51,22 +53,26 @@ class HuggingFaceProvider(BaseLLMProvider):
     def _initialize_local_model(self):
         """Initialize local HuggingFace model using transformers."""
         try:
-            from transformers import pipeline
             import torch
+            from transformers import pipeline
 
             device = 0 if torch.cuda.is_available() else -1
-            self.logger.info(f"Initializing local HuggingFace model on {'GPU' if device >= 0 else 'CPU'}")
+            self.logger.info(
+                f"Initializing local HuggingFace model on {'GPU' if device >= 0 else 'CPU'}"
+            )
 
             self.local_pipeline = pipeline(
                 "text-generation",
                 model=self.default_model,
                 device=device,
-                torch_dtype=torch.float16 if device >= 0 else torch.float32
+                torch_dtype=torch.float16 if device >= 0 else torch.float32,
             )
             self.logger.info("Local HuggingFace model initialized successfully")
 
         except ImportError:
-            self.logger.error("transformers library not installed. Install with: pip install transformers torch")
+            self.logger.error(
+                "transformers library not installed. Install with: pip install transformers torch"
+            )
             raise LLMError("transformers library required for local HuggingFace models")
         except Exception as e:
             self.logger.error(f"Failed to initialize local model: {str(e)}")
@@ -95,7 +101,7 @@ class HuggingFaceProvider(BaseLLMProvider):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         stream: bool = False,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Send chat completion request to HuggingFace."""
         model = model or self.default_model
@@ -103,14 +109,16 @@ class HuggingFaceProvider(BaseLLMProvider):
         if self.use_local and self.local_pipeline:
             return await self._chat_local(messages, temperature, max_tokens, **kwargs)
         else:
-            return await self._chat_api(messages, model, temperature, max_tokens, **kwargs)
+            return await self._chat_api(
+                messages, model, temperature, max_tokens, **kwargs
+            )
 
     async def _chat_local(
         self,
         messages: List[Dict[str, str]],
         temperature: float,
         max_tokens: Optional[int],
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Use local transformers pipeline for chat."""
         try:
@@ -118,6 +126,7 @@ class HuggingFaceProvider(BaseLLMProvider):
 
             # Run in thread pool to avoid blocking
             import asyncio
+
             loop = asyncio.get_event_loop()
 
             result = await loop.run_in_executor(
@@ -127,8 +136,8 @@ class HuggingFaceProvider(BaseLLMProvider):
                     max_new_tokens=max_tokens or 2048,
                     temperature=temperature,
                     do_sample=True,
-                    **kwargs
-                )
+                    **kwargs,
+                ),
             )
 
             content = result[0]["generated_text"]
@@ -140,7 +149,7 @@ class HuggingFaceProvider(BaseLLMProvider):
                 content=content,
                 model=self.default_model,
                 provider="huggingface_local",
-                metadata={"method": "local_pipeline"}
+                metadata={"method": "local_pipeline"},
             )
 
         except Exception as e:
@@ -154,7 +163,7 @@ class HuggingFaceProvider(BaseLLMProvider):
         model: str,
         temperature: float,
         max_tokens: Optional[int],
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Use HuggingFace Inference API for chat."""
         try:
@@ -166,8 +175,8 @@ class HuggingFaceProvider(BaseLLMProvider):
                 "parameters": {
                     "temperature": temperature,
                     "max_new_tokens": max_tokens or 2048,
-                    "return_full_text": False
-                }
+                    "return_full_text": False,
+                },
             }
 
             url = f"{self.api_url}/{model}"
@@ -176,7 +185,9 @@ class HuggingFaceProvider(BaseLLMProvider):
             response = await self.client.post(url, json=payload)
 
             if response.status_code != 200:
-                error_msg = f"HuggingFace API error: {response.status_code} - {response.text}"
+                error_msg = (
+                    f"HuggingFace API error: {response.status_code} - {response.text}"
+                )
                 self.logger.error(error_msg)
                 raise LLMError(error_msg)
 
@@ -194,7 +205,7 @@ class HuggingFaceProvider(BaseLLMProvider):
                 content=content,
                 model=model,
                 provider="huggingface_api",
-                metadata={"api_url": url}
+                metadata={"api_url": url},
             )
 
         except httpx.RequestError as e:
@@ -208,7 +219,7 @@ class HuggingFaceProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[LLMStreamResponse, None]:
         """
         Stream chat completion response.
@@ -221,14 +232,14 @@ class HuggingFaceProvider(BaseLLMProvider):
         chunk_size = 50
         content = response.content
         for i in range(0, len(content), chunk_size):
-            chunk = content[i:i + chunk_size]
+            chunk = content[i : i + chunk_size]
             is_final = i + chunk_size >= len(content)
 
             yield LLMStreamResponse(
                 content=chunk,
                 is_final=is_final,
                 model=response.model,
-                provider=response.provider
+                provider=response.provider,
             )
 
     async def generate(
@@ -237,7 +248,7 @@ class HuggingFaceProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Generate completion for a prompt."""
         # Convert to messages format
@@ -264,7 +275,7 @@ class HuggingFaceProvider(BaseLLMProvider):
             "meta-llama/Llama-2-7b-chat-hf",
             "google/flan-t5-xxl",
             "bigcode/starcoder",
-            "tiiuae/falcon-7b-instruct"
+            "tiiuae/falcon-7b-instruct",
         ]
 
     async def close(self):

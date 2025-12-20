@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { authAPI } from '../api/authAPI';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { authAPI } from "../api/authAPI";
 
 function OAuth2RedirectHandler() {
   const navigate = useNavigate();
@@ -18,14 +18,14 @@ function OAuth2RedirectHandler() {
           id: data.userId,
           username: data.username,
           email: data.email,
-          avatarUrl: data.avatarUrl
+          avatarUrl: data.avatarUrl,
         });
 
         // Redirect to home page
-        navigate('/');
+        navigate("/");
       } catch (error) {
-        console.error('OAuth redirect error:', error);
-        navigate('/login?error=true');
+        console.error("OAuth redirect error:", error);
+        navigate("/login?error=true");
       }
     };
 
@@ -33,12 +33,14 @@ function OAuth2RedirectHandler() {
   }, [navigate, login]);
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh'
-    }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+      }}
+    >
       <div>Completing login...</div>
     </div>
   );

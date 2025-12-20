@@ -13,11 +13,11 @@ function ThreePanelLayout({ project }) {
 
   const handleSave = async () => {
     if (!project) {
-      alert('No project selected');
+      alert("No project selected");
       return;
     }
 
-    const commitMessage = prompt('Enter a commit message for this version:');
+    const commitMessage = prompt("Enter a commit message for this version:");
     if (!commitMessage) {
       return; // User cancelled
     }
@@ -26,15 +26,15 @@ function ThreePanelLayout({ project }) {
     try {
       const specData = {
         specContent: specText,
-        specFormat: 'yaml',
-        commitMessage
+        specFormat: "yaml",
+        commitMessage,
       };
 
       await projectAPI.saveSpecification(project.id, specData);
-      alert('Specification saved successfully!');
+      alert("Specification saved successfully!");
     } catch (error) {
-      console.error('Failed to save specification:', error);
-      alert(error.response?.data?.message || 'Failed to save specification');
+      console.error("Failed to save specification:", error);
+      alert(error.response?.data?.message || "Failed to save specification");
     } finally {
       setSaving(false);
     }

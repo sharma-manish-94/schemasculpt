@@ -1,7 +1,5 @@
 package io.github.sharmanish.schemasculpt.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.dto.request.UpdateOperationRequest;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.SpecUpdateService;
@@ -17,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/spec")
@@ -25,17 +25,17 @@ public class SpecUpdateController {
   private final SpecUpdateService specUpdateService;
   private final TreeShakingService treeShakingService;
   private final SessionService sessionService;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
   public SpecUpdateController(
       final SpecUpdateService specUpdateService,
       final SessionService sessionService,
       final TreeShakingService treeShakingService,
-      final ObjectMapper objectMapper) {
+      final JsonMapper jsonMapper) {
     this.specUpdateService = specUpdateService;
     this.sessionService = sessionService;
     this.treeShakingService = treeShakingService;
-    this.objectMapper = objectMapper;
+    this.jsonMapper = jsonMapper;
   }
 
   @PatchMapping("/operations")
@@ -57,7 +57,7 @@ public class SpecUpdateController {
       }
 
       // Convert to JsonNode to ensure clean serialization without null fields
-      JsonNode cleanJson = objectMapper.valueToTree(miniSpec);
+      JsonNode cleanJson = jsonMapper.valueToTree(miniSpec);
       return ResponseEntity.ok(cleanJson);
     } catch (Exception e) {
       log.error(

@@ -1,7 +1,7 @@
 package io.github.sharmanish.schemasculpt.util;
 
 
-@SuppressWarnings("checkstyle:SummaryJavadoc")
+@SuppressWarnings({"checkstyle:SummaryJavadoc", "checkstyle:MissingJavadocType"})
 public class LogSanitizer {
   private LogSanitizer() {}
 

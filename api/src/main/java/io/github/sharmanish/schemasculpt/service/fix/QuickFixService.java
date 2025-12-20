@@ -1,13 +1,12 @@
 package io.github.sharmanish.schemasculpt.service.fix;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.google.common.base.CaseFormat;
 import io.github.sharmanish.schemasculpt.dto.QuickFixRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationResponse;
 import io.github.sharmanish.schemasculpt.service.SessionService;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -26,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class QuickFixService {
@@ -52,17 +52,17 @@ public class QuickFixService {
 
   private final SessionService sessionService;
   private final JsonPatchService jsonPatchService;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
   private final WebClient aiServiceClient;
 
   public QuickFixService(
       SessionService sessionService,
       JsonPatchService jsonPatchService,
-      ObjectMapper objectMapper,
+      JsonMapper jsonMapper,
       @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl) {
     this.sessionService = sessionService;
     this.jsonPatchService = jsonPatchService;
-    this.objectMapper = objectMapper;
+    this.jsonMapper = jsonMapper;
     this.aiServiceClient = WebClient.builder().baseUrl(aiServiceUrl).build();
   }
 
@@ -167,7 +167,7 @@ public class QuickFixService {
       String specJson = Json.pretty(openApi);
 
       // Fix uppercase enums that Swagger parser stores in the model
-      specJson = OpenAPIEnumFixer.fixEnums(specJson);
+      specJson = OpenApiEnumFixer.fixEnums(specJson);
 
       // Create request for AI service
       PatchGenerationRequest patchRequest =

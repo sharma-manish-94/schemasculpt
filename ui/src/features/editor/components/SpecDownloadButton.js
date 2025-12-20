@@ -1,6 +1,6 @@
-import React from 'react';
-import yaml from 'js-yaml';
-import PropTypes from 'prop-types';
+import React from "react";
+import yaml from "js-yaml";
+import PropTypes from "prop-types";
 
 /**
  * SpecDownloadButton - Provides download buttons for OpenAPI spec in JSON/YAML formats
@@ -8,13 +8,13 @@ import PropTypes from 'prop-types';
  * @param {Object} spec - The OpenAPI specification object to download
  * @param {string} filename - Base filename (without extension) for the downloaded file
  */
-function SpecDownloadButton({ spec, filename = 'openapi-spec' }) {
+function SpecDownloadButton({ spec, filename = "openapi-spec" }) {
   const downloadAsJSON = () => {
     try {
       const jsonString = JSON.stringify(spec, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
+      const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `${filename}.json`;
       document.body.appendChild(link);
@@ -22,16 +22,16 @@ function SpecDownloadButton({ spec, filename = 'openapi-spec' }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download JSON:', error);
+      console.error("Failed to download JSON:", error);
     }
   };
 
   const downloadAsYAML = () => {
     try {
       const yamlString = yaml.dump(spec, { indent: 2, noRefs: true });
-      const blob = new Blob([yamlString], { type: 'application/x-yaml' });
+      const blob = new Blob([yamlString], { type: "application/x-yaml" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `${filename}.yaml`;
       document.body.appendChild(link);
@@ -39,7 +39,7 @@ function SpecDownloadButton({ spec, filename = 'openapi-spec' }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download YAML:', error);
+      console.error("Failed to download YAML:", error);
     }
   };
 
@@ -65,7 +65,7 @@ function SpecDownloadButton({ spec, filename = 'openapi-spec' }) {
 
 SpecDownloadButton.propTypes = {
   spec: PropTypes.object.isRequired,
-  filename: PropTypes.string
+  filename: PropTypes.string,
 };
 
 export default SpecDownloadButton;

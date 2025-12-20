@@ -11,7 +11,12 @@
       "Bash(cat:*)",
       "Bash(./mvnw:*)",
       "Bash(source:*)",
-      "Bash(sudo tee:*)"
+      "Bash(sudo tee:*)",
+      "Bash(ls:*)",
+      "Bash(test:*)",
+      "Bash(pre-commit install:*)",
+      "Bash(pre-commit migrate-config:*)",
+      "Bash(pre-commit run:*)"
     ],
     "deny": [],
     "ask": []

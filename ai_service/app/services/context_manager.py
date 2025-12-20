@@ -5,20 +5,21 @@ Provides conversation continuity, session management, and intelligent context ca
 
 import json
 import time
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
-from uuid import UUID, uuid4
-from dataclasses import dataclass, asdict
 from collections import defaultdict, deque
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID, uuid4
 
-from ..core.logging import get_logger
 from ..core.config import settings
+from ..core.logging import get_logger
 from ..schemas.ai_schemas import AIRequest, AIResponse, ContextWindow
 
 
 @dataclass
 class ConversationTurn:
     """Represents a single conversation turn."""
+
     turn_id: str
     timestamp: datetime
     request: Dict[str, Any]  # Serialized AIRequest
@@ -32,6 +33,7 @@ class ConversationTurn:
 @dataclass
 class SessionMetrics:
     """Metrics for a conversation session."""
+
     total_turns: int
     total_tokens: int
     total_processing_time_ms: float
@@ -50,7 +52,9 @@ class ContextManager:
         self.logger = get_logger("context_manager")
 
         # Active conversations
-        self._conversations: Dict[str, deque] = defaultdict(lambda: deque(maxlen=settings.cache_ttl))
+        self._conversations: Dict[str, deque] = defaultdict(
+            lambda: deque(maxlen=settings.cache_ttl)
+        )
 
         # Session summaries for long-term context
         self._session_summaries: Dict[str, Dict[str, Any]] = {}
@@ -67,10 +71,10 @@ class ContextManager:
         """Create a new conversation session."""
         session_id = str(uuid4())
 
-        self.logger.info(f"Created new session: {session_id}", extra={
-            "session_id": session_id,
-            "user_id": user_id
-        })
+        self.logger.info(
+            f"Created new session: {session_id}",
+            extra={"session_id": session_id, "user_id": user_id},
+        )
 
         # Initialize session metrics
         self._performance_metrics[session_id] = SessionMetrics(
@@ -79,7 +83,7 @@ class ContextManager:
             total_processing_time_ms=0,
             success_rate=0.0,
             common_operations=[],
-            average_response_time_ms=0.0
+            average_response_time_ms=0.0,
         )
 
         return session_id
@@ -89,7 +93,7 @@ class ContextManager:
         session_id: str,
         request: AIRequest,
         response: AIResponse,
-        success: bool = True
+        success: bool = True,
     ) -> None:
         """Add a conversation turn to the session context."""
         turn = ConversationTurn(
@@ -100,7 +104,7 @@ class ContextManager:
             operation_type=request.operation_type.value,
             success=success,
             processing_time_ms=response.performance.processing_time_ms,
-            tokens_used=response.performance.token_count
+            tokens_used=response.performance.token_count,
         )
 
         # Add to conversation history
@@ -112,17 +116,18 @@ class ContextManager:
         # Learn patterns
         self._learn_from_turn(turn)
 
-        self.logger.info(f"Added conversation turn to session {session_id}", extra={
-            "turn_id": turn.turn_id,
-            "operation_type": turn.operation_type,
-            "success": success,
-            "tokens": turn.tokens_used
-        })
+        self.logger.info(
+            f"Added conversation turn to session {session_id}",
+            extra={
+                "turn_id": turn.turn_id,
+                "operation_type": turn.operation_type,
+                "success": success,
+                "tokens": turn.tokens_used,
+            },
+        )
 
     def get_context_for_request(
-        self,
-        session_id: str,
-        current_request: AIRequest
+        self, session_id: str, current_request: AIRequest
     ) -> ContextWindow:
         """Get intelligent context for the current request."""
         if session_id not in self._conversations:
@@ -130,12 +135,18 @@ class ContextManager:
             return ContextWindow(
                 conversation_id=UUID(session_id) if session_id else uuid4(),
                 previous_operations=[],
-                context_size=current_request.context.context_size if current_request.context else 10,
-                preserve_context=True
+                context_size=(
+                    current_request.context.context_size
+                    if current_request.context
+                    else 10
+                ),
+                preserve_context=True,
             )
 
         conversation = self._conversations[session_id]
-        context_size = current_request.context.context_size if current_request.context else 10
+        context_size = (
+            current_request.context.context_size if current_request.context else 10
+        )
 
         # Get relevant previous operations
         previous_operations = self._extract_relevant_operations(
@@ -146,14 +157,11 @@ class ContextManager:
             conversation_id=UUID(session_id),
             previous_operations=previous_operations,
             context_size=context_size,
-            preserve_context=True
+            preserve_context=True,
         )
 
     def _extract_relevant_operations(
-        self,
-        conversation: deque,
-        current_request: AIRequest,
-        context_size: int
+        self, conversation: deque, current_request: AIRequest, context_size: int
     ) -> List[str]:
         """Extract the most relevant previous operations for context."""
         # Simple strategy: return recent operations of similar type
@@ -207,11 +215,17 @@ class ContextManager:
             "success_rate": success_count / total_turns if total_turns > 0 else 0,
             "total_tokens": total_tokens,
             "total_processing_time_ms": total_time,
-            "average_time_per_turn_ms": total_time / total_turns if total_turns > 0 else 0,
+            "average_time_per_turn_ms": (
+                total_time / total_turns if total_turns > 0 else 0
+            ),
             "operation_distribution": dict(operation_counts),
-            "most_common_operation": max(operation_counts, key=operation_counts.get) if operation_counts else None,
+            "most_common_operation": (
+                max(operation_counts, key=operation_counts.get)
+                if operation_counts
+                else None
+            ),
             "session_duration_minutes": self._calculate_session_duration(conversation),
-            "conversation_flow": self._analyze_conversation_flow(conversation)
+            "conversation_flow": self._analyze_conversation_flow(conversation),
         }
 
     def _calculate_session_duration(self, conversation: deque) -> float:
@@ -235,9 +249,7 @@ class ContextManager:
         return flow
 
     def get_intelligent_suggestions(
-        self,
-        session_id: str,
-        current_request: AIRequest
+        self, session_id: str, current_request: AIRequest
     ) -> List[str]:
         """Get intelligent suggestions based on session context and patterns."""
         suggestions = []
@@ -247,24 +259,35 @@ class ContextManager:
 
             # Analyze recent failures for suggestions
             recent_failures = [
-                turn for turn in list(conversation)[-5:]  # Last 5 turns
+                turn
+                for turn in list(conversation)[-5:]  # Last 5 turns
                 if not turn.success
             ]
 
             if recent_failures:
-                suggestions.append("Consider enabling auto_fix for better error recovery")
+                suggestions.append(
+                    "Consider enabling auto_fix for better error recovery"
+                )
 
             # Suggest based on operation patterns
             if current_request.operation_type.value in self._operation_patterns:
-                common_next_ops = self._operation_patterns[current_request.operation_type.value][-3:]
+                common_next_ops = self._operation_patterns[
+                    current_request.operation_type.value
+                ][-3:]
                 if common_next_ops:
-                    suggestions.append(f"Users often follow this with: {', '.join(set(common_next_ops))}")
+                    suggestions.append(
+                        f"Users often follow this with: {', '.join(set(common_next_ops))}"
+                    )
 
             # Performance suggestions
             if len(conversation) > 0:
-                avg_tokens = sum(turn.tokens_used for turn in conversation) / len(conversation)
+                avg_tokens = sum(turn.tokens_used for turn in conversation) / len(
+                    conversation
+                )
                 if avg_tokens > 2000:
-                    suggestions.append("Consider using streaming for better responsiveness")
+                    suggestions.append(
+                        "Consider using streaming for better responsiveness"
+                    )
 
         return suggestions
 
@@ -279,7 +302,7 @@ class ContextManager:
             "has_patches": bool(request.json_patches),
             "target_paths": request.target_paths,
             "user_id": request.user_id,
-            "session_id": str(request.session_id) if request.session_id else None
+            "session_id": str(request.session_id) if request.session_id else None,
         }
 
     def _serialize_response(self, response: AIResponse) -> Dict[str, Any]:
@@ -293,7 +316,7 @@ class ContextManager:
             "modified_paths": response.modified_paths,
             "processing_time_ms": response.performance.processing_time_ms,
             "token_count": response.performance.token_count,
-            "model_used": response.performance.model_used
+            "model_used": response.performance.model_used,
         }
 
     def _update_session_metrics(self, session_id: str, turn: ConversationTurn) -> None:
@@ -310,7 +333,9 @@ class ContextManager:
         metrics.success_rate = successful_turns / len(conversation)
 
         # Update average response time
-        metrics.average_response_time_ms = metrics.total_processing_time_ms / metrics.total_turns
+        metrics.average_response_time_ms = (
+            metrics.total_processing_time_ms / metrics.total_turns
+        )
 
         # Update common operations
         operation_counts = defaultdict(int)
@@ -318,10 +343,10 @@ class ContextManager:
             operation_counts[t.operation_type] += 1
 
         metrics.common_operations = sorted(
-            operation_counts.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:3]  # Top 3 operations
+            operation_counts.items(), key=lambda x: x[1], reverse=True
+        )[
+            :3
+        ]  # Top 3 operations
 
     def _learn_from_turn(self, turn: ConversationTurn) -> None:
         """Learn patterns from conversation turns."""
@@ -335,7 +360,9 @@ class ContextManager:
         if session_conversation and len(session_conversation) > 1:
             # Previous operation
             prev_turn = list(session_conversation)[-2]
-            self._operation_patterns[prev_turn.operation_type].append(turn.operation_type)
+            self._operation_patterns[prev_turn.operation_type].append(
+                turn.operation_type
+            )
 
         # Track success/failure patterns
         pattern_key = f"{turn.operation_type}_{turn.success}"
@@ -365,13 +392,15 @@ class ContextManager:
         """Get global patterns across all sessions."""
         return {
             "total_active_sessions": len(self._conversations),
-            "total_conversations": sum(len(conv) for conv in self._conversations.values()),
+            "total_conversations": sum(
+                len(conv) for conv in self._conversations.values()
+            ),
             "success_patterns": dict(self._success_patterns),
             "failure_patterns": dict(self._failure_patterns),
             "operation_sequences": {
                 op: sequences[-10:]  # Last 10 sequences per operation
                 for op, sequences in self._operation_patterns.items()
-            }
+            },
         }
 
     def export_session_data(self, session_id: str) -> Optional[Dict[str, Any]]:
@@ -387,7 +416,7 @@ class ContextManager:
             "conversation_turns": [asdict(turn) for turn in conversation],
             "metrics": asdict(metrics) if metrics else None,
             "summary": self.get_session_summary(session_id),
-            "export_timestamp": datetime.utcnow().isoformat()
+            "export_timestamp": datetime.utcnow().isoformat(),
         }
 
     def get_context_statistics(self) -> Dict[str, Any]:
@@ -412,8 +441,8 @@ class ContextManager:
             "pattern_learning": {
                 "operation_patterns": len(self._operation_patterns),
                 "success_patterns": len(self._success_patterns),
-                "failure_patterns": len(self._failure_patterns)
-            }
+                "failure_patterns": len(self._failure_patterns),
+            },
         }
 
     def _estimate_memory_usage(self) -> float:

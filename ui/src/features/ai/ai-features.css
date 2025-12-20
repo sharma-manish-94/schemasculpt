@@ -94,7 +94,7 @@
 }
 
 .ai-response-section h4::before {
-  content: '✨';
+  content: "✨";
   font-size: 16px;
 }
 
@@ -105,7 +105,7 @@
   border-radius: 6px;
   padding: 16px;
   background: #ffffff;
-  font-family: 'Monaco', 'Consolas', monospace;
+  font-family: "Monaco", "Consolas", monospace;
   font-size: 12px;
   line-height: 1.5;
   margin-bottom: 12px;
@@ -1150,7 +1150,7 @@
 
 .pii-field {
   color: #78350f;
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: "Monaco", "Courier New", monospace;
 }
 
 .pii-more {
@@ -1515,7 +1515,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 11px;
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: "Monaco", "Courier New", monospace;
   color: #334155;
   overflow-x: auto;
   margin: 0;

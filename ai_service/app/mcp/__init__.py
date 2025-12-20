@@ -5,8 +5,8 @@ This module provides integration with MCP servers for repository access.
 """
 
 from .client import MCPClient
-from .repository_provider import RepositoryProvider
 from .github_provider import GitHubProvider
+from .repository_provider import RepositoryProvider
 
 __all__ = [
     "MCPClient",

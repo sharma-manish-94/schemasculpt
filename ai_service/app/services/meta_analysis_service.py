@@ -4,14 +4,15 @@ Connects dots between linter findings to detect higher-order patterns.
 """
 
 import json
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from ..core.logging import get_logger
 from ..schemas.meta_analysis_schemas import (
+    AIInsight,
     AIMetaAnalysisRequest,
     AIMetaAnalysisResponse,
-    AIInsight,
     ValidationError,
-    ValidationSuggestion
+    ValidationSuggestion,
 )
 
 logger = get_logger("meta_analysis_service")
@@ -40,8 +41,10 @@ class MetaAnalysisService:
         Returns:
             AIMetaAnalysisResponse with insights, summary, and confidence score
         """
-        self.logger.info(f"Starting meta-analysis with {len(request.errors)} errors, "
-                        f"{len(request.suggestions)} suggestions")
+        self.logger.info(
+            f"Starting meta-analysis with {len(request.errors)} errors, "
+            f"{len(request.suggestions)} suggestions"
+        )
 
         # Build the augmented prompt with linter findings
         prompt = self._build_meta_analysis_prompt(request)
@@ -51,7 +54,7 @@ class MetaAnalysisService:
             response_json = await self.llm_service.generate_json_response(
                 prompt=prompt,
                 schema_description="Return a JSON object with 'insights' (array), 'summary' (string), and 'confidenceScore' (number 0-1)",
-                max_tokens=3072
+                max_tokens=3072,
             )
 
             # Parse the LLM response
@@ -65,7 +68,7 @@ class MetaAnalysisService:
                     severity=insight.get("severity", "info"),
                     category=insight.get("category", "general"),
                     affectedPaths=insight.get("affectedPaths", []),
-                    relatedIssues=insight.get("relatedIssues", [])
+                    relatedIssues=insight.get("relatedIssues", []),
                 )
                 for insight in response_data.get("insights", [])
             ]
@@ -73,7 +76,7 @@ class MetaAnalysisService:
             return AIMetaAnalysisResponse(
                 insights=insights,
                 summary=response_data.get("summary", "Analysis completed."),
-                confidenceScore=response_data.get("confidenceScore", 0.7)
+                confidenceScore=response_data.get("confidenceScore", 0.7),
             )
 
         except Exception as e:
@@ -82,7 +85,7 @@ class MetaAnalysisService:
             return AIMetaAnalysisResponse(
                 insights=[],
                 summary=f"Meta-analysis encountered an error: {str(e)}",
-                confidenceScore=0.0
+                confidenceScore=0.0,
             )
 
     def _build_meta_analysis_prompt(self, request: AIMetaAnalysisRequest) -> str:
@@ -93,8 +96,12 @@ class MetaAnalysisService:
         so it can focus on higher-level reasoning rather than finding basic issues.
         """
         # Format errors and suggestions for the prompt
-        errors_text = self._format_issues_for_prompt(request.errors, "Validation Errors")
-        suggestions_text = self._format_issues_for_prompt(request.suggestions, "Linter Suggestions")
+        errors_text = self._format_issues_for_prompt(
+            request.errors, "Validation Errors"
+        )
+        suggestions_text = self._format_issues_for_prompt(
+            request.suggestions, "Linter Suggestions"
+        )
 
         prompt = f"""You are a senior security architect and API governance expert. Your task is to perform a meta-analysis of an OpenAPI specification that has already been analyzed by automated linters.
 
@@ -148,23 +155,21 @@ Analyze the linter findings in combination with the API specification. Look for:
 
         return prompt
 
-    def _format_issues_for_prompt(
-        self,
-        issues: List[Any],
-        title: str
-    ) -> str:
+    def _format_issues_for_prompt(self, issues: List[Any], title: str) -> str:
         """Format errors or suggestions for inclusion in the prompt."""
         if not issues:
             return f"**{title}:** None found.\n"
 
         formatted = [f"**{title}:**"]
 
-        for i, issue in enumerate(issues[:20], 1):  # Limit to first 20 to avoid token overflow
-            if hasattr(issue, 'message'):
+        for i, issue in enumerate(
+            issues[:20], 1
+        ):  # Limit to first 20 to avoid token overflow
+            if hasattr(issue, "message"):
                 message = issue.message
-                severity = getattr(issue, 'severity', 'unknown')
-                rule_id = getattr(issue, 'ruleId', None)
-                path = getattr(issue, 'path', None)
+                severity = getattr(issue, "severity", "unknown")
+                rule_id = getattr(issue, "ruleId", None)
+                path = getattr(issue, "path", None)
 
                 issue_str = f"{i}. [{severity.upper()}]"
                 if rule_id:

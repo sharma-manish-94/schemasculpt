@@ -3,14 +3,17 @@ LLM Adapter Service - Provides backward compatibility with existing LLMService i
 Uses the new provider abstraction layer while maintaining the same API.
 """
 
-from typing import Dict, List, Any, Optional
 import time
+from typing import Any, Dict, List, Optional
 
-from ..providers.provider_factory import get_llm_provider
-from ..core.logging import get_logger
 from ..core.exceptions import LLMError
+from ..core.logging import get_logger
+from ..providers.provider_factory import get_llm_provider
 from ..schemas.ai_schemas import (
-    AIRequest, AIResponse, OperationType, PerformanceMetrics
+    AIRequest,
+    AIResponse,
+    OperationType,
+    PerformanceMetrics,
 )
 
 logger = get_logger("llm_adapter")
@@ -31,7 +34,7 @@ class LLMAdapter:
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Call the LLM provider and return the response text.
@@ -53,7 +56,7 @@ class LLMAdapter:
                 model=model,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                **kwargs
+                **kwargs,
             )
             return response.content
 
@@ -68,7 +71,7 @@ class LLMAdapter:
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         max_retries: int = 3,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Call LLM with automatic retry on failure.
@@ -93,18 +96,23 @@ class LLMAdapter:
                     model=model,
                     temperature=temperature,
                     max_tokens=max_tokens,
-                    **kwargs
+                    **kwargs,
                 )
             except Exception as e:
                 last_error = e
-                self.logger.warning(f"LLM call attempt {attempt + 1}/{max_retries} failed: {str(e)}")
+                self.logger.warning(
+                    f"LLM call attempt {attempt + 1}/{max_retries} failed: {str(e)}"
+                )
 
                 if attempt < max_retries - 1:
                     # Exponential backoff
                     import asyncio
-                    await asyncio.sleep(2 ** attempt)
 
-        raise LLMError(f"LLM call failed after {max_retries} attempts: {str(last_error)}")
+                    await asyncio.sleep(2**attempt)
+
+        raise LLMError(
+            f"LLM call failed after {max_retries} attempts: {str(last_error)}"
+        )
 
     async def stream_llm(
         self,
@@ -112,7 +120,7 @@ class LLMAdapter:
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Stream LLM responses.
@@ -134,7 +142,7 @@ class LLMAdapter:
                 model=model,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                **kwargs
+                **kwargs,
             ):
                 yield chunk
 
@@ -158,10 +166,7 @@ class LLMAdapter:
             return provider.get_provider_info()
         except Exception as e:
             self.logger.error(f"Failed to get provider info: {str(e)}")
-            return {
-                "error": str(e),
-                "provider_type": "unknown"
-            }
+            return {"error": str(e), "provider_type": "unknown"}
 
 
 # Global adapter instance (backward compatibility)

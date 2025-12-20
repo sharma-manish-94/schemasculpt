@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import io.github.sharmanish.schemasculpt.dto.ai.JsonPatchOperation;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
@@ -13,6 +13,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Service for applying JSON Patch (RFC 6902) operations to OpenAPI specifications.
@@ -21,10 +22,10 @@ import org.springframework.stereotype.Service;
 public class JsonPatchService {
 
   private static final Logger log = LoggerFactory.getLogger(JsonPatchService.class);
-  private final ObjectMapper objectMapper;
+  private final JsonMapper jsonMapper;
 
-  public JsonPatchService(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
+  public JsonPatchService(JsonMapper jsonMapper) {
+    this.jsonMapper = jsonMapper;
   }
 
   /**
@@ -76,7 +77,7 @@ public class JsonPatchService {
       String patchedJson = swaggerMapper.writeValueAsString(patchedNode);
 
       // CRITICAL: Fix uppercase enums that Swagger parser creates
-      patchedJson = OpenAPIEnumFixer.fixEnums(patchedJson);
+      patchedJson = OpenApiEnumFixer.fixEnums(patchedJson);
 
       OpenAPI patchedOpenApi = new OpenAPIV3Parser().readContents(patchedJson).getOpenAPI();
 

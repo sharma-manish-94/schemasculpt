@@ -10,12 +10,17 @@ Desktop.ini
 
 # IDEs
 .idea/
-.vscode/
+# Keep .vscode/settings.json for formatter configuration
 
 # Claude Code configuration
 .claude/
 
-# Root level files - ignore everything except README.md
+# Root level files - ignore everything except specific config files
 /*
 !README.md
+!.editorconfig
+!.pre-commit-config.yaml
+!format-all.sh
+!IDE-SETUP.md
+!FORMATTING-SETUP.md
 !/*/

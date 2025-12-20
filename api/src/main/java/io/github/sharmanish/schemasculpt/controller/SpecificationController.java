@@ -1,7 +1,5 @@
 package io.github.sharmanish.schemasculpt.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.dto.AIMetaAnalysisRequest;
 import io.github.sharmanish.schemasculpt.dto.AIMetaAnalysisResponse;
 import io.github.sharmanish.schemasculpt.dto.AIProxyRequest;
@@ -14,7 +12,7 @@ import io.github.sharmanish.schemasculpt.service.ValidationService;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
 import io.github.sharmanish.schemasculpt.service.fix.QuickFixService;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
-import io.github.sharmanish.schemasculpt.util.OpenAPIEnumFixer;
+import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.Map;
@@ -25,6 +23,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/spec")
@@ -116,14 +116,12 @@ public class SpecificationController {
           json.contains("OAUTH2") || json.contains("APIKEY") || json.contains("HTTP\""));
 
       // Fix all uppercase enums
-      json = OpenAPIEnumFixer.fixEnums(json);
+      json = OpenApiEnumFixer.fixEnums(json);
 
       log.debug("After enum fix - fixed to lowercase");
 
-      // Parse to Map using Jackson (NOT Swagger parser to avoid re-uppercasing)
-      ObjectMapper jacksonMapper = new ObjectMapper();
-      return jacksonMapper.readValue(json, new TypeReference<Map<String, Object>>() {
-      });
+      JsonMapper jsonMapper = new JsonMapper();
+      return jsonMapper.readValue(json, new TypeReference<>() {});
 
     } catch (Exception e) {
       log.error("Failed to convert OpenAPI to Map with fixed enums", e);

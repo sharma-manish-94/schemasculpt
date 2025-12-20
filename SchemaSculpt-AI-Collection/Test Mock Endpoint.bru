@@ -19,16 +19,16 @@ tests {
   test("Status should be 200 or 404", function() {
     expect(res.getStatus()).to.be.oneOf([200, 404, 500]);
   });
-  
+
   test("If successful, should return pet data", function() {
     if (res.getStatus() === 200) {
       const body = res.getBody();
       console.log(body)
-  
+
       if (Array.isArray(body)) {
         // Should be array of pets
         expect(body).to.be.an('array');
-  
+
         if (body.length > 0) {
           // Each pet should have required fields
           const pet = body[0];
@@ -41,7 +41,7 @@ tests {
       }
     }
   });
-  
+
   test("If mock not found, should return proper error", function() {
     if (res.getStatus() === 404) {
       expect(res.getBody().detail).to.have.property('error');
@@ -51,17 +51,17 @@ tests {
 
 docs {
   # Test Mock Server Endpoints
-  
+
   Tests actual mock server responses with AI-generated data.
-  
+
   **Test Scenario:**
   - Call mock endpoint to get AI-generated pet data
   - Test realistic response generation
   - Validate response format and structure
-  
+
   **Prerequisites:**
   - Requires running mock server (run "Start Mock Server" first)
-  
+
   **Expected Behavior:**
   - Returns realistic pet data
   - Follows OpenAPI schema constraints

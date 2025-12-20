@@ -42,20 +42,23 @@ async def test_provider(provider_type: str):
         print(f"{health_status}\n")
 
         if not is_healthy:
-            print(f"⚠ Provider is unhealthy. Check configuration and service availability.")
+            print(
+                f"⚠ Provider is unhealthy. Check configuration and service availability."
+            )
             return
 
         # Test basic chat
         print("Testing basic chat completion...")
         messages = [
             {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Say 'Hello from SchemaSculpt!' and nothing else."}
+            {
+                "role": "user",
+                "content": "Say 'Hello from SchemaSculpt!' and nothing else.",
+            },
         ]
 
         response = await provider.chat(
-            messages=messages,
-            temperature=0.1,
-            max_tokens=50
+            messages=messages, temperature=0.1, max_tokens=50
         )
 
         print(f"✓ Chat completed")
@@ -70,9 +73,7 @@ async def test_provider(provider_type: str):
         try:
             chunks = []
             async for chunk in provider.chat_stream(
-                messages=messages,
-                temperature=0.1,
-                max_tokens=50
+                messages=messages, temperature=0.1, max_tokens=50
             ):
                 chunks.append(chunk.content)
                 if chunk.is_final:
@@ -93,12 +94,13 @@ async def test_provider(provider_type: str):
         print(f"\n✓ All tests passed for {provider_type}!")
 
         # Cleanup
-        if hasattr(provider, 'close'):
+        if hasattr(provider, "close"):
             await provider.close()
 
     except Exception as e:
         print(f"✗ Error testing {provider_type}: {str(e)}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -133,5 +135,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\nTest failed with error: {str(e)}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

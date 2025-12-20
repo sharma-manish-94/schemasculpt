@@ -2,71 +2,56 @@ package io.github.sharmanish.schemasculpt.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 public class JacksonConfig {
 
   @Bean
   @Primary
-  public ObjectMapper objectMapper() {
-    ObjectMapper mapper = new ObjectMapper();
+  public JsonMapper jsonMapper() {
+    return createBaseBuilder().build();
+  }
 
-    // Register JavaTimeModule for Java 8 date/time support
-    mapper.registerModule(new JavaTimeModule());
 
-    // Add mixin to ignore internal Swagger fields
-    mapper.addMixIn(Schema.class, SchemaMixin.class);
-
-    // Exclude null values - most important setting
-    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    mapper.setDefaultPropertyInclusion(
-        JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL));
-
-    // Disable problematic features
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-    // CRITICAL: DO NOT enable WRITE_ENUMS_USING_TO_STRING
-    // This causes OpenAPI enums to serialize as uppercase (OAUTH2, APIKEY, HEADER)
-    // instead of the correct lowercase values (oauth2, apiKey, header)
-    // mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-
-    return mapper;
+  /**
+   * More aggressive configuration for specific use cases
+   */
+  @Bean("cleanJsonMapper")
+  public JsonMapper cleanJsonMapper() {
+    return createBaseBuilder()
+            .build();
   }
 
   /**
-   * Alternative configuration that's more aggressive about excluding nulls
+   * Centralized builder to ensure consistency across both beans.
+   * Jackson 3 modules (JavaTime, JDK8) are auto-registered via findAndAddModules().
    */
-  @Bean("cleanObjectMapper")
-  public ObjectMapper cleanObjectMapper() {
-    ObjectMapper mapper = new ObjectMapper();
+  private JsonMapper.Builder createBaseBuilder() {
+    return JsonMapper.builder()
+            // 1. Module Management (replaces manual new JavaTimeModule())
+            .findAndAddModules()
 
-    // Register JavaTimeModule for Java 8 date/time support
-    mapper.registerModule(new JavaTimeModule());
+            // 2. Mix-ins
+            .addMixIn(Schema.class, SchemaMixin.class)
 
-    // Add mixin to ignore internal Swagger fields
-    mapper.addMixIn(Schema.class, SchemaMixin.class);
+            // 3. Inclusion Logic (The new functional API for Jackson 3)
+            .changeDefaultPropertyInclusion(incl ->
+                    incl.withValueInclusion(JsonInclude.Include.NON_NULL)
+                            .withContentInclusion(JsonInclude.Include.NON_NULL))
 
-    // Most aggressive null exclusion
-    mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    mapper.setDefaultPropertyInclusion(
-        JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL));
-
-    // Disable problematic features
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-    return mapper;
+            // 4. Feature Management
+            .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
   }
 
   /**
