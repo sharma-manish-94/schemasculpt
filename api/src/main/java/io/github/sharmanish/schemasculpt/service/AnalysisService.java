@@ -1,6 +1,10 @@
 package io.github.sharmanish.schemasculpt.service;
 
-import io.github.sharmanish.schemasculpt.dto.analysis.*;
+import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -9,6 +13,11 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,10 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Service
