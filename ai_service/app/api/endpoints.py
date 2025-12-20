@@ -45,7 +45,7 @@ from ..schemas.patch_schemas import (
     SmartAIFixRequest,
     SmartAIFixResponse,
 )
-from ..schemas.security_schemas import SecurityAnalysisReport, SecurityAnalysisRequest
+from ..schemas.security_schemas import SecurityAnalysisRequest
 from ..services.agent_manager import AgentManager
 from ..services.cache_service import cache_service
 from ..services.context_manager import ContextManager
@@ -307,7 +307,7 @@ async def get_session_summary(session_id: str):
         suggestions = context_manager.get_intelligent_suggestions(session_id, None)
 
         return {"session_summary": summary, "suggestions": suggestions}
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=404,
             detail={
@@ -425,7 +425,7 @@ async def start_mock_server(
             "created_at": datetime.utcnow(),
         }
 
-        spec_info = parser.specification.get("info", {})
+        parser.specification.get("info", {})
         paths = parser.specification.get("paths", {})
 
         return MockStartResponse(
@@ -2481,7 +2481,7 @@ def _format_findings_for_prompt(findings: List[Dict[str, Any]]) -> str:
     """Format findings as a clear, numbered list for the AI prompt"""
     lines = []
     for i, finding in enumerate(findings, 1):
-        finding_type = finding.get("type", "UNKNOWN")
+        finding.get("type", "UNKNOWN")
         description = finding.get("description", "")
         endpoint = finding.get("endpoint", "")
         metadata = finding.get("metadata", {})
@@ -3209,7 +3209,7 @@ async def interpret_taint_analysis(
 
     try:
         vulnerabilities = request.get("vulnerabilities", [])
-        spec_text = request.get("spec_text", "")
+        request.get("spec_text", "")
 
         if not vulnerabilities:
             return {

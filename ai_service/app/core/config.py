@@ -3,7 +3,6 @@ Core configuration management for SchemaSculpt AI Service.
 Provides centralized configuration with environment variable support.
 """
 
-import os
 from functools import lru_cache
 from typing import List, Optional
 

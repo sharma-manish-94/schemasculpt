@@ -11,7 +11,7 @@ specialized knowledge bases (Attacker KB + Governance KB) throughout the analysi
 import hashlib
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from ...schemas.attack_path_schemas import (
     AttackPathAnalysisReport,

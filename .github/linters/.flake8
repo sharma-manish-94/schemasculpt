@@ -1,6 +1,5 @@
-# Flake8 configuration for SchemaSculpt AI Service
-# Flake8 doesn't read from pyproject.toml natively, so we use this file
-# Note: Black formats to 88 chars, but Flake8 allows up to 120 for cases Black can't wrap
+# Flake8 configuration for GitHub Super Linter
+# This file is used by the Super Linter in CI/CD
 
 [flake8]
 max-line-length = 120
@@ -13,7 +12,8 @@ exclude =
     build,
     dist,
     *.egg-info,
-    data
+    data,
+    migrations
 
 per-file-ignores =
     __init__.py:F401

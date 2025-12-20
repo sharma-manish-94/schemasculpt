@@ -7,11 +7,10 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Tuple
 
 from app.schemas.ai_schemas import AIRequest, OperationType
 from app.schemas.patch_schemas import (
-    JsonPatchOperation,
     PatchGenerationRequest,
     SmartAIFixRequest,
     SmartAIFixResponse,

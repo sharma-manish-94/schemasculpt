@@ -9,9 +9,8 @@ Two Specialized Knowledge Bases:
 2. Governance Knowledge Base: Risk frameworks (CVSS, DREAD), compliance (GDPR, HIPAA, PCI-DSS)
 """
 
-import asyncio
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ..core.config import settings
 from ..core.logging import get_logger

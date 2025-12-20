@@ -7,9 +7,9 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from ..core.exceptions import LLMError, ValidationError
+from ..core.exceptions import LLMError
 from ..core.logging import get_logger
 from ..schemas.ai_schemas import (
     AIRequest,
@@ -313,7 +313,7 @@ Respond with only the JSON schema object, no additional text.
                 schema = self._validate_and_enhance_schema(llm_response, entity)
                 schemas[entity.name] = schema
 
-            except Exception as e:
+            except Exception:
                 self.logger.warning(
                     f"LLM schema generation failed for {entity.name}, using fallback"
                 )

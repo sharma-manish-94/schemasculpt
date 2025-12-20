@@ -21,6 +21,4 @@ Desktop.ini
 !.editorconfig
 !.pre-commit-config.yaml
 !format-all.sh
-!IDE-SETUP.md
-!FORMATTING-SETUP.md
 !/*/

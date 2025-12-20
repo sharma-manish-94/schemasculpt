@@ -21,7 +21,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # Add parent directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))

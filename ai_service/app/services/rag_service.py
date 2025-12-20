@@ -11,9 +11,8 @@ Each agent consults its specialized KB, becoming a domain expert.
 """
 
 import hashlib
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 try:
     import chromadb

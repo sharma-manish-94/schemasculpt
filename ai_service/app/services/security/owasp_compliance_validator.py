@@ -188,7 +188,7 @@ class OWASPComplianceValidator:
 
                 operation = path_item[method]
                 parameters = operation.get("parameters", [])
-                request_body = operation.get("requestBody", {})
+                operation.get("requestBody", {})
 
                 # Check parameters
                 for param in parameters:

@@ -3,10 +3,9 @@ Agent Manager for SchemaSculpt AI Agentic System.
 Orchestrates multiple specialized agents to handle complex OpenAPI generation and modification tasks.
 """
 
-import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ..core.logging import get_logger
 from ..schemas.ai_schemas import (
