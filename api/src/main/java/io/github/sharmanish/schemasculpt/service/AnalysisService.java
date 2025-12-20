@@ -1,6 +1,7 @@
 package io.github.sharmanish.schemasculpt.service;
 
 import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
@@ -12,6 +13,11 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,10 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Service
@@ -517,7 +519,10 @@ public class AnalysisService {
     if (schema.getProperties() != null) {
       for (Map.Entry<String, Schema> entry : schema.getProperties().entrySet()) {
         String propName = entry.getKey();
-
+        Schema propertySchema = entry.getValue();
+        if(Boolean.TRUE.equals(propertySchema.getWriteOnly())) {
+          continue;
+        }
         // Direct property check
         if (isSensitiveWord(propName)) {
           return List.of("Property: " + propName);
@@ -699,5 +704,91 @@ public class AnalysisService {
       }
     }
     return possibleShadow;
+  }
+
+/**
+ * Calculates the total "Blast Radius" of a schema change.
+ * @param schemaName The name of the schema being changed.
+ * @param reverseGraph The graph built by buildReverseDependencyGraph
+ * @return Set of all Operations (GET /foo) that eventually depend on this schema.
+ */
+  public Set<String> calculateBlastRadius(String schemaName, Map<String, Set<String>> reverseGraph) {
+    Set<String> affectedEndpoints = new HashSet<>();
+    Set<String> visited = new HashSet<>();
+
+    // BFS Queue
+    List<String> queue = new ArrayList<>();
+    queue.add(schemaName);
+    visited.add(schemaName);
+
+    while (!queue.isEmpty()) {
+      String current = queue.removeFirst();
+
+      Set<String> dependents = reverseGraph.getOrDefault(current, Collections.emptySet());
+      for (String dep : dependents) {
+        if (dep.startsWith("Operations: ")) {
+          // We reached a leaf node (an Endpoint)
+          affectedEndpoints.add(dep);
+        } else if (dep.startsWith("Schema: ")) {
+          // We reached an intermediate node (another Schema)
+          String nextSchema = dep.substring("Schema: ".length());
+          if (!visited.contains(nextSchema)) {
+            visited.add(nextSchema);
+            queue.add(nextSchema);
+          }
+        }
+      }
+    }
+    return affectedEndpoints;
+  }
+
+
+  public BlastRadiusResponse performBlastRadiusAnalysis(String specContent, String targetSchema) {
+    // 1. Parse
+    OpenAPI openApi = parseOpenApiSpec(specContent);
+    if (isOpenAPIInvalid(openApi)) {
+      throw new IllegalArgumentException("Invalid OpenAPI Specification");
+    }
+    if (openApi.getComponents() == null
+        || openApi.getComponents().getSchemas() == null
+        || !openApi.getComponents().getSchemas().containsKey(targetSchema)) {
+      return BlastRadiusResponse.builder()
+          .targetSchema(targetSchema)
+          .riskLevel("UNKNOWN_SCHEMA")
+          .affectedPaths(List.of("Schema '" + targetSchema + "' not found in components/schemas"))
+          .build();
+    }
+
+    // 2. Build Graph
+    Map<String, Set<String>> dependencyGraph = buildReverseDependencyGraph(openApi);
+
+    // 3. Calculate Radius
+    Set<String> affectedRaw = calculateBlastRadius(targetSchema, dependencyGraph);
+
+    // 4. Calculate Metrics
+    int totalOps = 0;
+    if (openApi.getPaths() != null) {
+      for (var pathItem : openApi.getPaths().values()) {
+        totalOps += pathItem.readOperationsMap().size();
+      }
+    }
+
+    // avoid divide by zero
+    double percentage = totalOps == 0 ? 0.0 : ((double) affectedRaw.size() / totalOps) * 100;
+
+    // 5. Determine Risk
+    String risk = "LOW";
+    if (percentage > 50) risk = "CRITICAL";
+    else if (percentage > 20) risk = "HIGH";
+    else if (percentage > 0) risk = "MEDIUM";
+
+    return BlastRadiusResponse.builder()
+        .targetSchema(targetSchema)
+        .totalEndpoints(totalOps)
+        .affectedCount(affectedRaw.size())
+        .impactPercentage(Math.round(percentage * 100.0) / 100.0) // round to 2 decimals
+        .riskLevel(risk)
+        .affectedPaths(new ArrayList<>(affectedRaw))
+        .build();
   }
 }

@@ -1,6 +1,7 @@
 package io.github.sharmanish.schemasculpt.controller;
 
 import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SecurityFinding;
 import io.github.sharmanish.schemasculpt.dto.analysis.SecurityFindingsRequest;
@@ -12,19 +13,21 @@ import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/analysis")
@@ -207,5 +210,14 @@ public class AnalysisController {
       return ResponseEntity.notFound().build();
     }
     return ResponseEntity.ok(analysisService.detectZombieApis(openApi));
+  }
+
+  @PostMapping("/blast-radius")
+  public ResponseEntity<BlastRadiusResponse> analyzeBlastRadius(
+      @RequestParam("schemaName") String schemaName,
+      @RequestBody String apiSpec) {
+
+    BlastRadiusResponse response = analysisService.performBlastRadiusAnalysis(apiSpec, schemaName);
+    return ResponseEntity.ok(response);
   }
 }
