@@ -22,6 +22,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class SchemaDiffService {
 
+  public static final String SCHEMA_NAME = "Schema: ";
   private final TreeDistanceService treeDistanceService;
 
   public static final String REMOVED = "Removed";
@@ -373,24 +374,43 @@ public class SchemaDiffService {
 
   private void compareComponentSchemas(OpenAPI oldSpec, OpenAPI newSpec, List<DiffEntry> diffs) {
     if (oldSpec.getComponents() == null || oldSpec.getComponents().getSchemas() == null) {
+      if (newSpec.getComponents() != null && newSpec.getComponents().getSchemas() != null) {
+        newSpec.getComponents().getSchemas().forEach((name, newSchema) ->
+            diffs.add(createDiff(SCHEMA_NAME + name, DiffEntry.ChangeType.INFO,
+                "SCHEMA_ADDED", "New schema definition added", "None",
+                name)));
+      }
       return;
     }
 
+    Map<String, Schema> newSchemas = (newSpec.getComponents() != null
+        && newSpec.getComponents().getSchemas() != null)
+        ? newSpec.getComponents().getSchemas()
+        : Collections.emptyMap();
+
+    // 1. Check Old Schemas (Removed or Modified)
     oldSpec.getComponents().getSchemas().forEach((name, oldSchema) -> {
-      if (newSpec.getComponents() != null && newSpec.getComponents().getSchemas() != null) {
-        Schema<?> newSchema = newSpec.getComponents().getSchemas().get(name);
-        if (newSchema == null) {
-          // Schema removed from definitions.
-          // This is only INFO unless it was used, but usage is checked in comparePaths.
-          diffs.add(createDiff("Schema: " + name, DiffEntry.ChangeType.INFO,
-              "SCHEMA_REMOVED",
-              "Schema definition removed", name, REMOVED));
-        } else {
-          // We treat Component schemas as "Response Context" by default for safety,
-          // or we can skip this and rely on comparePaths to catch actual usage.
-          // For deep analysis, let's just log structural changes as INFO/DANGEROUS
-          // since we don't know the context (Request vs Response) here.
-        }
+      Schema<?> newSchema = newSchemas.get(name);
+
+      if (newSchema == null) {
+        // CASE: Schema Removed
+        diffs.add(createDiff(SCHEMA_NAME + name, DiffEntry.ChangeType.INFO,
+            "SCHEMA_REMOVED",
+            "Schema definition removed (Check if it was used)", name, REMOVED));
+      } else {
+        // CASE: Schema Modified (The missing logic)
+        // We use isResponseContext=true (Strict Mode).
+        // Logic: "Removing a field from a shared Definition is treated as Breaking".
+        compareSchemas(SCHEMA_NAME + name, oldSchema, newSchema, diffs,
+            true);
+      }
+    });
+
+    newSchemas.forEach((name, newSchema) -> {
+      if (!oldSpec.getComponents().getSchemas().containsKey(name)) {
+        diffs.add(createDiff(SCHEMA_NAME + name, DiffEntry.ChangeType.INFO,
+            "SCHEMA_ADDED",
+            "New schema definition added", "None", name));
       }
     });
   }
