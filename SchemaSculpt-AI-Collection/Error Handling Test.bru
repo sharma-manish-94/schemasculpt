@@ -29,17 +29,17 @@ tests {
   test("Should return error status", function() {
     expect(res.getStatus()).to.be.oneOf([400, 422, 500]);
   });
-  
+
   test("Error response should have proper structure", function() {
     const body = res.getBody();
     expect(body).to.have.property('detail');
-  
+
     if (body.detail && typeof body.detail === 'object') {
       expect(body.detail).to.have.property('error');
       expect(body.detail).to.have.property('message');
     }
   });
-  
+
   test("Should not crash service", function() {
     // If we get any response, service didn't crash
     expect(res.getStatus()).to.be.a('number');
@@ -48,14 +48,14 @@ tests {
 
 docs {
   # Error Handling Test
-  
+
   Tests error handling capabilities when provided with invalid input.
-  
+
   **Test Scenario:**
   - Provides invalid JSON as spec_text
   - Tests AI service's ability to handle malformed input
   - Validates proper error responses
-  
+
   **Expected Behavior:**
   - Should return appropriate HTTP error status (400 or 500)
   - Error response should follow ErrorResponse schema

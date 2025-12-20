@@ -4,18 +4,20 @@ Optimizes for performance by using patches when possible.
 """
 
 import json
+import logging
 import re
 import time
-import logging
-from typing import Optional, Tuple, Dict, Any
+from typing import Any, Dict, Optional, Tuple
 
+from app.schemas.ai_schemas import AIRequest, OperationType
 from app.schemas.patch_schemas import (
-    SmartAIFixRequest, SmartAIFixResponse, JsonPatchOperation,
-    PatchGenerationRequest
+    JsonPatchOperation,
+    PatchGenerationRequest,
+    SmartAIFixRequest,
+    SmartAIFixResponse,
 )
 from app.services.llm_service import LLMService
 from app.services.patch_generator import PatchGenerator, apply_json_patch
-from app.schemas.ai_schemas import AIRequest, OperationType
 
 logger = logging.getLogger("schemasculpt_ai.smart_fix")
 
@@ -54,7 +56,9 @@ class SmartFixService:
         # Decide which method to use
         use_patches, reasoning = self._should_use_patches(request, spec)
 
-        logger.info(f"Decision: {'PATCHES' if use_patches else 'FULL REGENERATION'} - {reasoning}")
+        logger.info(
+            f"Decision: {'PATCHES' if use_patches else 'FULL REGENERATION'} - {reasoning}"
+        )
 
         if request.force_full_regeneration:
             logger.info("Force full regeneration requested by user")
@@ -69,9 +73,7 @@ class SmartFixService:
         return result
 
     def _should_use_patches(
-        self,
-        request: SmartAIFixRequest,
-        spec: dict
+        self, request: SmartAIFixRequest, spec: dict
     ) -> Tuple[bool, str]:
         """
         Intelligently decide whether to use patches or full regeneration.
@@ -82,42 +84,76 @@ class SmartFixService:
 
         # Rule 1: If validation errors are provided, use patches (targeted fix)
         if request.validation_errors:
-            return True, f"Targeted validation fix ({len(request.validation_errors)} errors)"
+            return (
+                True,
+                f"Targeted validation fix ({len(request.validation_errors)} errors)",
+            )
 
         # Rule 2: If target path/method specified, use patches (scoped to specific operation)
         if request.target_path or request.target_method:
-            return True, f"Scoped to specific operation: {request.target_method.upper() if request.target_method else 'ANY'} {request.target_path or 'any path'}"
+            return (
+                True,
+                f"Scoped to specific operation: {request.target_method.upper() if request.target_method else 'ANY'} {request.target_path or 'any path'}",
+            )
 
         # Rule 3: Analyze prompt for scope indicators
         prompt_lower = request.prompt.lower()
 
         # Indicators for patch-based approach (targeted fixes)
         patch_indicators = [
-            "fix", "add security", "add response", "add operationid",
-            "remove", "update", "modify", "change",
-            "missing", "error", "issue", "problem"
+            "fix",
+            "add security",
+            "add response",
+            "add operationid",
+            "remove",
+            "update",
+            "modify",
+            "change",
+            "missing",
+            "error",
+            "issue",
+            "problem",
         ]
 
         # Indicators for full regeneration (broad changes)
         regen_indicators = [
-            "rewrite", "redesign", "refactor all", "add authentication to all",
-            "change all", "update all", "transform", "convert",
-            "generate", "create from scratch"
+            "rewrite",
+            "redesign",
+            "refactor all",
+            "add authentication to all",
+            "change all",
+            "update all",
+            "transform",
+            "convert",
+            "generate",
+            "create from scratch",
         ]
 
         # Check for specific path/method mentions in prompt
-        has_path_mention = bool(re.search(r'/[\w\-/{}]+', request.prompt))
+        has_path_mention = bool(re.search(r"/[\w\-/{}]+", request.prompt))
         has_method_mention = any(
             method in prompt_lower
-            for method in ['get ', 'post ', 'put ', 'delete ', 'patch ', 'options ', 'head ']
+            for method in [
+                "get ",
+                "post ",
+                "put ",
+                "delete ",
+                "patch ",
+                "options ",
+                "head ",
+            ]
         )
 
         if has_path_mention and has_method_mention:
             return True, "Prompt mentions specific path and method"
 
         # Count indicators
-        patch_score = sum(1 for indicator in patch_indicators if indicator in prompt_lower)
-        regen_score = sum(1 for indicator in regen_indicators if indicator in prompt_lower)
+        patch_score = sum(
+            1 for indicator in patch_indicators if indicator in prompt_lower
+        )
+        regen_score = sum(
+            1 for indicator in regen_indicators if indicator in prompt_lower
+        )
 
         if regen_score > patch_score:
             return False, f"Broad scope detected (regen indicators: {regen_score})"
@@ -134,10 +170,7 @@ class SmartFixService:
         return True, "Default to patches for large spec with unclear scope"
 
     async def _apply_via_patches(
-        self,
-        request: SmartAIFixRequest,
-        spec: dict,
-        start_time: float
+        self, request: SmartAIFixRequest, spec: dict, start_time: float
     ) -> SmartAIFixResponse:
         """Apply fix using JSON Patch approach."""
 
@@ -158,14 +191,14 @@ class SmartFixService:
             spec_text=request.spec_text,
             rule_id=rule_id,
             context=context,
-            suggestion_message=request.prompt
+            suggestion_message=request.prompt,
         )
 
         patch_response = await self.patch_generator.generate_patch(
             spec=spec,
             rule_id=rule_id,
             context=context,
-            suggestion_message=request.prompt
+            suggestion_message=request.prompt,
         )
 
         if not patch_response.patches:
@@ -191,14 +224,11 @@ class SmartFixService:
             confidence=patch_response.confidence,
             processing_time_ms=processing_time_ms,
             token_count=100,  # Approximate tokens for patch generation
-            warnings=patch_response.warnings
+            warnings=patch_response.warnings,
         )
 
     async def _apply_via_full_regeneration(
-        self,
-        request: SmartAIFixRequest,
-        spec: dict,
-        start_time: float
+        self, request: SmartAIFixRequest, spec: dict, start_time: float
     ) -> SmartAIFixResponse:
         """Apply fix using full spec regeneration."""
 
@@ -208,7 +238,7 @@ class SmartFixService:
         ai_request = AIRequest(
             spec_text=request.spec_text,
             prompt=request.prompt,
-            operation_type=OperationType.MODIFY
+            operation_type=OperationType.MODIFY,
         )
 
         # Process via LLM service
@@ -224,7 +254,7 @@ class SmartFixService:
             confidence=ai_response.confidence_score,
             processing_time_ms=processing_time_ms,
             token_count=ai_response.performance.token_count,
-            warnings=ai_response.validation.warnings if ai_response.validation else []
+            warnings=ai_response.validation.warnings if ai_response.validation else [],
         )
 
     def _infer_rule_from_prompt(self, prompt: str) -> str:
@@ -234,9 +264,15 @@ class SmartFixService:
         prompt_lower = prompt.lower()
 
         # Common fix patterns
-        if "security" in prompt_lower or "auth" in prompt_lower or "bearer" in prompt_lower:
+        if (
+            "security" in prompt_lower
+            or "auth" in prompt_lower
+            or "bearer" in prompt_lower
+        ):
             return "add-operation-security"
-        if "response" in prompt_lower and ("add" in prompt_lower or "missing" in prompt_lower):
+        if "response" in prompt_lower and (
+            "add" in prompt_lower or "missing" in prompt_lower
+        ):
             return "add-success-response"
         if "operationid" in prompt_lower or "operation id" in prompt_lower:
             return "generate-operation-id"

@@ -7,18 +7,25 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Dict, List, Any, AsyncGenerator, Union
+from typing import Any, AsyncGenerator, Dict, List, Union
 
 import httpx
 import jsonpatch
 
 from ..core.config import settings
-from ..core.exceptions import LLMError, LLMTimeoutError, ValidationError, OpenAPIError
+from ..core.exceptions import LLMError, LLMTimeoutError, OpenAPIError, ValidationError
 from ..core.logging import get_logger, set_correlation_id
 from ..schemas.ai_schemas import (
-    AIRequest, AIResponse, GenerateSpecRequest, StreamingChunk,
-    OperationType, StreamingMode, ValidationResult,
-    PerformanceMetrics, LLMParameters, JSONPatchOperation
+    AIRequest,
+    AIResponse,
+    GenerateSpecRequest,
+    JSONPatchOperation,
+    LLMParameters,
+    OperationType,
+    PerformanceMetrics,
+    StreamingChunk,
+    StreamingMode,
+    ValidationResult,
 )
 from .intelligent_workflow import IntelligentOpenAPIWorkflow
 
@@ -32,7 +39,7 @@ class LLMService:
         self.logger = get_logger("llm_service")
         self.client = httpx.AsyncClient(
             timeout=httpx.Timeout(settings.request_timeout),
-            limits=httpx.Limits(max_connections=settings.max_concurrent_requests)
+            limits=httpx.Limits(max_connections=settings.max_concurrent_requests),
         )
         self.base_url = settings.ollama_base_url
         self.chat_endpoint = f"{self.base_url}{settings.ollama_chat_endpoint}"
@@ -50,15 +57,19 @@ class LLMService:
             "modify": self._get_modification_system_prompt(),
             "generate": self._get_generation_system_prompt(),
             "validate": self._get_validation_system_prompt(),
-            "patch": self._get_patch_system_prompt()
+            "patch": self._get_patch_system_prompt(),
         }
 
         def run_security_analysis(self, spec_text: str, context: str) -> str:
             """Performs a security analysis of a spec using the provided RAG context."""
             messages = self._build_rag_security_prompt(spec_text, context)
 
-            payload = {"model": "codellama:13b-instruct-q4_K_M", "messages": messages, "stream": False,
-                       "options": {"temperature": 0.2}}
+            payload = {
+                "model": "codellama:13b-instruct-q4_K_M",
+                "messages": messages,
+                "stream": False,
+                "options": {"temperature": 0.2},
+            }
             response = requests.post(OLLAMA_URL, json=payload)
 
             if response.status_code == 200:
@@ -81,27 +92,41 @@ class LLMService:
 
     Based ONLY on the provided context, list any potential security issues in the specification."""
 
-            return [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
 
-    async def process_ai_request(self, request: AIRequest) -> Union[AIResponse, AsyncGenerator[StreamingChunk, None]]:
+    async def process_ai_request(
+        self, request: AIRequest
+    ) -> Union[AIResponse, AsyncGenerator[StreamingChunk, None]]:
         """
         Process AI request with advanced features including streaming and JSON patching.
         """
         start_time = time.time()
-        set_correlation_id(str(request.context.conversation_id) if request.context.conversation_id else None)
+        set_correlation_id(
+            str(request.context.conversation_id)
+            if request.context.conversation_id
+            else None
+        )
 
-        self.logger.info(f"Processing AI request: {request.operation_type}", extra={
-            "operation_type": request.operation_type,
-            "streaming": request.streaming != StreamingMode.DISABLED,
-            "has_patches": bool(request.json_patches)
-        })
+        self.logger.info(
+            f"Processing AI request: {request.operation_type}",
+            extra={
+                "operation_type": request.operation_type,
+                "streaming": request.streaming != StreamingMode.DISABLED,
+                "has_patches": bool(request.json_patches),
+            },
+        )
 
         try:
             # Validate input spec
             if request.validate_output:
                 validation_result = await self._validate_openapi_spec(request.spec_text)
                 if not validation_result.is_valid and not request.auto_fix:
-                    raise ValidationError(f"Invalid OpenAPI spec: {validation_result.errors}")
+                    raise ValidationError(
+                        f"Invalid OpenAPI spec: {validation_result.errors}"
+                    )
 
             # Handle JSON patch operations
             if request.json_patches:
@@ -114,13 +139,16 @@ class LLMService:
                 return await self._process_standard_request(request, start_time)
 
         except Exception as e:
-            self.logger.error(f"AI request processing failed: {str(e)}", extra={"error": str(e)})
+            self.logger.error(
+                f"AI request processing failed: {str(e)}", extra={"error": str(e)}
+            )
             if isinstance(e, (LLMError, ValidationError, OpenAPIError)):
                 raise
             raise LLMError(f"Unexpected error in AI processing: {str(e)}")
 
-
-    async def _process_standard_request(self, request: AIRequest, start_time: float) -> AIResponse:
+    async def _process_standard_request(
+        self, request: AIRequest, start_time: float
+    ) -> AIResponse:
         """
         Process standard (non-streaming) AI request with self-correction.
         """
@@ -128,7 +156,9 @@ class LLMService:
 
         # Initial attempt
         try:
-            response_text = await self._call_llm_with_retry(messages, request.llm_parameters)
+            response_text = await self._call_llm_with_retry(
+                messages, request.llm_parameters
+            )
 
             # Apply post-processing fixes
             response_text = self._fix_openapi_issues(response_text)
@@ -144,7 +174,7 @@ class LLMService:
                 token_count=len(response_text.split()),  # Rough estimate
                 model_used=request.llm_parameters.model,
                 cache_hit=False,  # TODO: Implement caching
-                retry_count=0  # TODO: Track retries
+                retry_count=0,  # TODO: Track retries
             )
 
             # Calculate changes and generate summary
@@ -160,14 +190,16 @@ class LLMService:
                 changes_summary=changes_summary,
                 modified_paths=modified_paths,
                 performance=performance,
-                context=request.context
+                context=request.context,
             )
 
         except Exception as e:
             self.logger.error(f"Standard request processing failed: {str(e)}")
             raise LLMError(f"Failed to process AI request: {str(e)}")
 
-    async def _process_streaming_request(self, request: AIRequest, start_time: float) -> AsyncGenerator[StreamingChunk, None]:
+    async def _process_streaming_request(
+        self, request: AIRequest, start_time: float
+    ) -> AsyncGenerator[StreamingChunk, None]:
         """
         Process streaming AI request with real-time updates.
         """
@@ -175,12 +207,14 @@ class LLMService:
         chunk_id = 0
 
         try:
-            async for chunk_text in self._stream_llm_response(messages, request.llm_parameters):
+            async for chunk_text in self._stream_llm_response(
+                messages, request.llm_parameters
+            ):
                 chunk = StreamingChunk(
                     chunk_id=chunk_id,
                     content=chunk_text,
                     is_final=False,
-                    metadata={"timestamp": datetime.utcnow().isoformat()}
+                    metadata={"timestamp": datetime.utcnow().isoformat()},
                 )
                 yield chunk
                 chunk_id += 1
@@ -192,8 +226,8 @@ class LLMService:
                 is_final=True,
                 metadata={
                     "processing_time_ms": (time.time() - start_time) * 1000,
-                    "total_chunks": chunk_id
-                }
+                    "total_chunks": chunk_id,
+                },
             )
             yield final_chunk
 
@@ -202,11 +236,13 @@ class LLMService:
                 chunk_id=chunk_id,
                 content=f"Error: {str(e)}",
                 is_final=True,
-                metadata={"error": True}
+                metadata={"error": True},
             )
             yield error_chunk
 
-    async def _process_patch_request(self, request: AIRequest, start_time: float) -> AIResponse:
+    async def _process_patch_request(
+        self, request: AIRequest, start_time: float
+    ) -> AIResponse:
         """
         Process JSON patch operations with intelligent conflict resolution.
         """
@@ -220,7 +256,9 @@ class LLMService:
             )
 
             # Validate the patched result
-            validation_result = await self._validate_openapi_spec(json.dumps(patched_spec, indent=2))
+            validation_result = await self._validate_openapi_spec(
+                json.dumps(patched_spec, indent=2)
+            )
 
             if not validation_result.is_valid and request.auto_fix:
                 # Use AI to fix validation issues
@@ -228,7 +266,7 @@ class LLMService:
                     spec_text=json.dumps(patched_spec, indent=2),
                     prompt=f"Fix validation errors: {', '.join(validation_result.errors)}",
                     operation_type=OperationType.VALIDATE,
-                    llm_parameters=request.llm_parameters
+                    llm_parameters=request.llm_parameters,
                 )
                 patched_spec = await self._ai_fix_validation_issues(fix_request)
 
@@ -236,10 +274,12 @@ class LLMService:
                 processing_time_ms=(time.time() - start_time) * 1000,
                 token_count=0,  # No LLM tokens used for patch operations
                 model_used="json_patch",
-                cache_hit=False
+                cache_hit=False,
             )
 
-            changes_summary = f"Applied {len(request.json_patches)} JSON patch operations"
+            changes_summary = (
+                f"Applied {len(request.json_patches)} JSON patch operations"
+            )
             modified_paths = [patch.path for patch in request.json_patches]
 
             return AIResponse(
@@ -251,22 +291,27 @@ class LLMService:
                 applied_patches=request.json_patches,
                 modified_paths=modified_paths,
                 performance=performance,
-                context=request.context
+                context=request.context,
             )
 
         except Exception as e:
             self.logger.error(f"JSON patch operation failed: {str(e)}")
             raise OpenAPIError(f"Failed to apply JSON patches: {str(e)}")
 
-    async def generate_spec_from_prompt(self, request: GenerateSpecRequest) -> AIResponse:
+    async def generate_spec_from_prompt(
+        self, request: GenerateSpecRequest
+    ) -> AIResponse:
         """
         Orchestrates the intelligent multi-agent process to generate a comprehensive OpenAPI spec.
         """
-        self.logger.info("Starting intelligent multi-agent spec generation", extra={
-            "domain": request.domain,
-            "complexity": request.complexity_level,
-            "use_intelligent_workflow": True
-        })
+        self.logger.info(
+            "Starting intelligent multi-agent spec generation",
+            extra={
+                "domain": request.domain,
+                "complexity": request.complexity_level,
+                "use_intelligent_workflow": True,
+            },
+        )
 
         try:
             # Use the intelligent workflow instead of the old agentic workflow
@@ -276,7 +321,9 @@ class LLMService:
             self.logger.error(f"Intelligent workflow generation failed: {str(e)}")
             raise LLMError(f"Failed to generate specification: {str(e)}")
 
-    async def _execute_agentic_workflow(self, request: GenerateSpecRequest) -> Dict[str, Any]:
+    async def _execute_agentic_workflow(
+        self, request: GenerateSpecRequest
+    ) -> Dict[str, Any]:
         """
         Execute the multi-agent workflow for comprehensive spec generation.
         """
@@ -290,7 +337,9 @@ class LLMService:
 
         # Agent 2: Entity Extraction
         self.logger.info("Agent 2: Extracting entities and relationships")
-        entities = await self._extract_entities_with_relationships(request, domain_analysis)
+        entities = await self._extract_entities_with_relationships(
+            request, domain_analysis
+        )
         total_tokens += entities["tokens"]
 
         # Agent 3: Schema Generation
@@ -319,17 +368,18 @@ class LLMService:
             "total_tokens": total_tokens,
             "entity_count": len(entities["entities"]),
             "confidence": min(0.95, (len(entities["entities"]) * 0.1) + 0.5),
-            "suggestions": suggestions + security_docs["suggestions"]
+            "suggestions": suggestions + security_docs["suggestions"],
         }
 
-    async def _build_intelligent_prompt(self, request: AIRequest) -> List[Dict[str, str]]:
+    async def _build_intelligent_prompt(
+        self, request: AIRequest
+    ) -> List[Dict[str, str]]:
         """
         Build intelligent, context-aware prompts with advanced techniques.
         """
         # Get appropriate system prompt based on operation type
         system_prompt = self._system_prompts.get(
-            request.operation_type.value,
-            self._system_prompts["modify"]
+            request.operation_type.value, self._system_prompts["modify"]
         )
 
         # Enhance with context if available
@@ -342,7 +392,7 @@ class LLMService:
 
         return [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
+            {"role": "user", "content": user_prompt},
         ]
 
     async def _build_enhanced_user_prompt(self, request: AIRequest) -> str:
@@ -368,34 +418,45 @@ class LLMService:
             "**Your Task:**",
             request.prompt,
             "",
-            "**Additional Context:**"
+            "**Additional Context:**",
         ]
 
         # Add operation-specific guidance
         if request.operation_type == OperationType.MODIFY:
-            prompt_sections.extend([
-                "- Preserve existing structure unless explicitly asked to change",
-                "- Ensure all references remain valid after modifications",
-                "- Follow OpenAPI 3.0+ best practices"
-            ])
+            prompt_sections.extend(
+                [
+                    "- Preserve existing structure unless explicitly asked to change",
+                    "- Ensure all references remain valid after modifications",
+                    "- Follow OpenAPI 3.0+ best practices",
+                ]
+            )
         elif request.operation_type == OperationType.ENHANCE:
-            prompt_sections.extend([
-                "- Add comprehensive examples and descriptions",
-                "- Include appropriate security schemes",
-                "- Add validation constraints where applicable"
-            ])
+            prompt_sections.extend(
+                [
+                    "- Add comprehensive examples and descriptions",
+                    "- Include appropriate security schemes",
+                    "- Add validation constraints where applicable",
+                ]
+            )
 
         # Add target paths if specified
         if request.target_paths:
-            prompt_sections.extend([
-                "",
-                "**Focus Areas:**",
-                f"Concentrate changes on these paths: {', '.join(request.target_paths)}"
-            ])
+            prompt_sections.extend(
+                [
+                    "",
+                    "**Focus Areas:**",
+                    f"Concentrate changes on these paths: {', '.join(request.target_paths)}",
+                ]
+            )
 
         return "\n".join(prompt_sections)
 
-    async def _call_llm_with_retry(self, messages: List[Dict[str, str]], params: LLMParameters, max_retries: int = 3) -> str:
+    async def _call_llm_with_retry(
+        self,
+        messages: List[Dict[str, str]],
+        params: LLMParameters,
+        max_retries: int = 3,
+    ) -> str:
         """
         Call LLM with intelligent retry logic and error handling.
         """
@@ -410,9 +471,9 @@ class LLMService:
                         "top_p": params.top_p,
                         "frequency_penalty": params.frequency_penalty,
                         "presence_penalty": params.presence_penalty,
-                        "max_tokens": params.max_tokens
+                        "max_tokens": params.max_tokens,
                     },
-                    "format": "json"
+                    "format": "json",
                 }
 
                 response = await self.client.post(self.chat_endpoint, json=payload)
@@ -421,9 +482,13 @@ class LLMService:
                     response_data = response.json()
                     return self._extract_and_clean_response(response_data)
                 else:
-                    self.logger.warning(f"LLM request failed with status {response.status_code}: {response.text}")
+                    self.logger.warning(
+                        f"LLM request failed with status {response.status_code}: {response.text}"
+                    )
                     if attempt == max_retries - 1:
-                        raise LLMError(f"LLM service error: {response.status_code} - {response.text}")
+                        raise LLMError(
+                            f"LLM service error: {response.status_code} - {response.text}"
+                        )
 
             except httpx.TimeoutException:
                 self.logger.warning(f"LLM request timeout on attempt {attempt + 1}")
@@ -431,12 +496,14 @@ class LLMService:
                     raise LLMTimeoutError("LLM request timed out after all retries")
 
             except Exception as e:
-                self.logger.error(f"LLM request error on attempt {attempt + 1}: {str(e)}")
+                self.logger.error(
+                    f"LLM request error on attempt {attempt + 1}: {str(e)}"
+                )
                 if attempt == max_retries - 1:
                     raise LLMError(f"LLM request failed: {str(e)}")
 
             # Exponential backoff
-            await asyncio.sleep(2 ** attempt)
+            await asyncio.sleep(2**attempt)
 
         raise LLMError("Max retries exceeded")
 
@@ -445,7 +512,7 @@ class LLMService:
         Extract and clean LLM response with advanced parsing.
         """
         try:
-            raw_content = response_data['message']['content']
+            raw_content = response_data["message"]["content"]
 
             # Advanced cleaning with multiple strategies
             cleaned_content = self._advanced_content_cleaning(raw_content)
@@ -463,38 +530,43 @@ class LLMService:
 
         # Strategy 1: Remove markdown code blocks
         patterns = [
-            (r'```(?:json|yaml|javascript)\n?', ''),
-            (r'```\n?', ''),
-            (r'^[\s]*//.*$', ''),  # Remove comments
-            (r'/\*.*?\*/', ''),    # Remove block comments
+            (r"```(?:json|yaml|javascript)\n?", ""),
+            (r"```\n?", ""),
+            (r"^[\s]*//.*$", ""),  # Remove comments
+            (r"/\*.*?\*/", ""),  # Remove block comments
         ]
 
         for pattern, replacement in patterns:
             import re
-            content = re.sub(pattern, replacement, content, flags=re.MULTILINE | re.DOTALL)
+
+            content = re.sub(
+                pattern, replacement, content, flags=re.MULTILINE | re.DOTALL
+            )
 
         # Strategy 2: Extract JSON/YAML content
-        json_start = content.find('{')
-        yaml_start = content.find('openapi:')
+        json_start = content.find("{")
+        yaml_start = content.find("openapi:")
 
         if json_start != -1 and (yaml_start == -1 or json_start < yaml_start):
             # Find matching closing brace
             brace_count = 0
             start_idx = json_start
             for i, char in enumerate(content[json_start:], json_start):
-                if char == '{':
+                if char == "{":
                     brace_count += 1
-                elif char == '}':
+                elif char == "}":
                     brace_count -= 1
                     if brace_count == 0:
-                        content = content[start_idx:i+1]
+                        content = content[start_idx : i + 1]
                         break
         elif yaml_start != -1:
             content = content[yaml_start:]
 
         return content.strip()
 
-    async def _stream_llm_response(self, messages: List[Dict[str, str]], params: LLMParameters) -> AsyncGenerator[str, None]:
+    async def _stream_llm_response(
+        self, messages: List[Dict[str, str]], params: LLMParameters
+    ) -> AsyncGenerator[str, None]:
         """
         Stream LLM response for real-time updates.
         """
@@ -506,11 +578,13 @@ class LLMService:
                 "options": {
                     "temperature": params.temperature,
                     "top_p": params.top_p,
-                    "max_tokens": params.max_tokens
-                }
+                    "max_tokens": params.max_tokens,
+                },
             }
 
-            async with self.client.stream('POST', self.chat_endpoint, json=payload) as response:
+            async with self.client.stream(
+                "POST", self.chat_endpoint, json=payload
+            ) as response:
                 if response.status_code != 200:
                     raise LLMError(f"Streaming request failed: {response.status_code}")
 
@@ -518,8 +592,8 @@ class LLMService:
                     if line.strip():
                         try:
                             chunk_data = json.loads(line)
-                            if chunk_data.get('message', {}).get('content'):
-                                yield chunk_data['message']['content']
+                            if chunk_data.get("message", {}).get("content"):
+                                yield chunk_data["message"]["content"]
                         except json.JSONDecodeError:
                             continue
 
@@ -527,7 +601,9 @@ class LLMService:
             self.logger.error(f"Streaming failed: {str(e)}")
             raise LLMError(f"Streaming request failed: {str(e)}")
 
-    async def _apply_json_patches(self, original_spec: Dict[str, Any], patches: List[JSONPatchOperation]) -> Dict[str, Any]:
+    async def _apply_json_patches(
+        self, original_spec: Dict[str, Any], patches: List[JSONPatchOperation]
+    ) -> Dict[str, Any]:
         """
         Apply JSON patches with intelligent conflict resolution.
         """
@@ -535,10 +611,7 @@ class LLMService:
             # Convert patches to jsonpatch format
             patch_objects = []
             for patch in patches:
-                patch_dict = {
-                    "op": patch.op,
-                    "path": patch.path
-                }
+                patch_dict = {"op": patch.op, "path": patch.path}
                 if patch.value is not None:
                     patch_dict["value"] = patch.value
                 if patch.from_path:
@@ -690,7 +763,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
 
         if isinstance(obj, dict):
             for key, value in obj.items():
-                if key == '$ref' and isinstance(value, str):
+                if key == "$ref" and isinstance(value, str):
                     refs.append(value)
                 else:
                     self._find_all_refs(value, refs)
@@ -713,59 +786,84 @@ You are a JSON Patch specialist for OpenAPI specifications.
             spec_data = json.loads(spec_text)
 
             # Basic structure validation
-            required_fields = ['openapi', 'info', 'paths']
+            required_fields = ["openapi", "info", "paths"]
             for field in required_fields:
                 if field not in spec_data:
                     errors.append(f"Missing required field: {field}")
 
             # Version validation
-            if 'openapi' in spec_data:
-                version = spec_data['openapi']
-                if not version.startswith('3.'):
+            if "openapi" in spec_data:
+                version = spec_data["openapi"]
+                if not version.startswith("3."):
                     warnings.append(f"OpenAPI version {version} is not 3.x")
 
             # Path validation
-            if 'paths' in spec_data and spec_data['paths']:
-                for path, path_obj in spec_data['paths'].items():
-                    if not path.startswith('/'):
+            if "paths" in spec_data and spec_data["paths"]:
+                for path, path_obj in spec_data["paths"].items():
+                    if not path.startswith("/"):
                         errors.append(f"Path {path} must start with /")
 
                     # Validate path operations
                     if isinstance(path_obj, dict):
-                        valid_methods = ['get', 'post', 'put', 'delete', 'options', 'head', 'patch', 'trace']
+                        valid_methods = [
+                            "get",
+                            "post",
+                            "put",
+                            "delete",
+                            "options",
+                            "head",
+                            "patch",
+                            "trace",
+                        ]
                         for method, operation in path_obj.items():
                             if method in valid_methods:
                                 if not isinstance(operation, dict):
-                                    errors.append(f"Operation {method} in path {path} must be an object")
+                                    errors.append(
+                                        f"Operation {method} in path {path} must be an object"
+                                    )
                                 else:
                                     # Validate operation structure
-                                    if 'responses' not in operation:
-                                        errors.append(f"Operation {method} in path {path} missing required 'responses' field")
-                            elif method not in ['summary', 'description', 'parameters', 'servers']:
+                                    if "responses" not in operation:
+                                        errors.append(
+                                            f"Operation {method} in path {path} missing required 'responses' field"
+                                        )
+                            elif method not in [
+                                "summary",
+                                "description",
+                                "parameters",
+                                "servers",
+                            ]:
                                 # Invalid field at path level
-                                errors.append(f"Invalid field '{method}' at path level for {path}")
+                                errors.append(
+                                    f"Invalid field '{method}' at path level for {path}"
+                                )
                     else:
                         errors.append(f"Path {path} must be an object")
 
             # Schema reference validation
-            if 'paths' in spec_data:
+            if "paths" in spec_data:
                 refs_found = self._find_all_refs(spec_data)
-                components_schemas = spec_data.get('components', {}).get('schemas', {})
+                components_schemas = spec_data.get("components", {}).get("schemas", {})
 
                 for ref in refs_found:
-                    if ref.startswith('#/components/schemas/'):
-                        schema_name = ref.replace('#/components/schemas/', '')
+                    if ref.startswith("#/components/schemas/"):
+                        schema_name = ref.replace("#/components/schemas/", "")
                         if schema_name not in components_schemas:
-                            errors.append(f"Reference {ref} points to non-existent schema")
+                            errors.append(
+                                f"Reference {ref} points to non-existent schema"
+                            )
 
             # Comprehensive validation using prance (if available)
             try:
                 from prance import ResolvingParser
+
                 # Use spec_dict parameter correctly
                 parser = ResolvingParser(spec_dict=spec_data)
                 # If we get here, the spec is valid according to OpenAPI specification
             except ImportError:
-                warnings.append("Advanced validation unavailable (prance not installed)")
+                warnings.append(
+                    "Advanced validation unavailable (prance not installed)"
+                )
             except Exception as e:
                 # Don't fail validation for prance-specific issues, just warn
                 warnings.append(f"Advanced validation warning: {str(e)}")
@@ -779,7 +877,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
             is_valid=len(errors) == 0,
             errors=errors,
             warnings=warnings,
-            suggestions=suggestions
+            suggestions=suggestions,
         )
 
     def _fix_openapi_issues(self, spec_text: str) -> str:
@@ -788,56 +886,79 @@ You are a JSON Patch specialist for OpenAPI specifications.
             spec_data = json.loads(spec_text)
 
             # Fix common OpenAPI 3.0 issues
-            if 'paths' in spec_data:
-                for path, path_obj in spec_data['paths'].items():
+            if "paths" in spec_data:
+                for path, path_obj in spec_data["paths"].items():
                     if isinstance(path_obj, dict):
                         for method, operation in path_obj.items():
-                            if method in ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] and isinstance(operation, dict):
+                            if method in [
+                                "get",
+                                "post",
+                                "put",
+                                "delete",
+                                "patch",
+                                "options",
+                                "head",
+                            ] and isinstance(operation, dict):
                                 # Fix parameters with "in": "body" (invalid in OpenAPI 3.0)
-                                if 'parameters' in operation:
+                                if "parameters" in operation:
                                     body_params = []
                                     non_body_params = []
 
-                                    for param in operation['parameters']:
-                                        if isinstance(param, dict) and param.get('in') == 'body':
+                                    for param in operation["parameters"]:
+                                        if (
+                                            isinstance(param, dict)
+                                            and param.get("in") == "body"
+                                        ):
                                             body_params.append(param)
                                         else:
                                             non_body_params.append(param)
 
                                     # Convert body parameters to requestBody
-                                    if body_params and method in ['post', 'put', 'patch']:
-                                        if 'requestBody' not in operation:
+                                    if body_params and method in [
+                                        "post",
+                                        "put",
+                                        "patch",
+                                    ]:
+                                        if "requestBody" not in operation:
                                             # Create requestBody from body parameters
                                             properties = {}
                                             required = []
 
                                             for param in body_params:
-                                                prop_name = param.get('name', 'unknown')
-                                                properties[prop_name] = param.get('schema', {'type': 'string'})
-                                                if param.get('required', False):
+                                                prop_name = param.get("name", "unknown")
+                                                properties[prop_name] = param.get(
+                                                    "schema", {"type": "string"}
+                                                )
+                                                if param.get("required", False):
                                                     required.append(prop_name)
 
-                                            operation['requestBody'] = {
-                                                'required': len(required) > 0,
-                                                'content': {
-                                                    'application/json': {
-                                                        'schema': {
-                                                            'type': 'object',
-                                                            'properties': properties,
-                                                            'required': required if required else None
+                                            operation["requestBody"] = {
+                                                "required": len(required) > 0,
+                                                "content": {
+                                                    "application/json": {
+                                                        "schema": {
+                                                            "type": "object",
+                                                            "properties": properties,
+                                                            "required": (
+                                                                required
+                                                                if required
+                                                                else None
+                                                            ),
                                                         }
                                                     }
-                                                }
+                                                },
                                             }
                                             # Remove the required field if empty
                                             if not required:
-                                                del operation['requestBody']['content']['application/json']['schema']['required']
+                                                del operation["requestBody"]["content"][
+                                                    "application/json"
+                                                ]["schema"]["required"]
 
                                     # Update parameters to exclude body params
                                     if non_body_params:
-                                        operation['parameters'] = non_body_params
-                                    elif 'parameters' in operation:
-                                        del operation['parameters']
+                                        operation["parameters"] = non_body_params
+                                    elif "parameters" in operation:
+                                        del operation["parameters"]
 
             return json.dumps(spec_data, indent=2)
 
@@ -852,25 +973,27 @@ You are a JSON Patch specialist for OpenAPI specifications.
         try:
             spec_data = json.loads(spec_text)
             return {
-                "version": spec_data.get('openapi', 'unknown'),
-                "path_count": len(spec_data.get('paths', {})),
-                "component_count": len(spec_data.get('components', {}).get('schemas', {})),
-                "complexity_level": self._assess_complexity(spec_data)
+                "version": spec_data.get("openapi", "unknown"),
+                "path_count": len(spec_data.get("paths", {})),
+                "component_count": len(
+                    spec_data.get("components", {}).get("schemas", {})
+                ),
+                "complexity_level": self._assess_complexity(spec_data),
             }
         except:
             return {
                 "version": "unknown",
                 "path_count": 0,
                 "component_count": 0,
-                "complexity_level": "unknown"
+                "complexity_level": "unknown",
             }
 
     def _assess_complexity(self, spec_data: Dict[str, Any]) -> str:
         """
         Assess the complexity level of an OpenAPI specification.
         """
-        path_count = len(spec_data.get('paths', {}))
-        component_count = len(spec_data.get('components', {}).get('schemas', {}))
+        path_count = len(spec_data.get("paths", {}))
+        component_count = len(spec_data.get("components", {}).get("schemas", {}))
 
         total_complexity = path_count + component_count
 
@@ -881,7 +1004,9 @@ You are a JSON Patch specialist for OpenAPI specifications.
         else:
             return "complex"
 
-    async def _analyze_changes(self, original_spec: str, updated_spec: str) -> tuple[str, List[str]]:
+    async def _analyze_changes(
+        self, original_spec: str, updated_spec: str
+    ) -> tuple[str, List[str]]:
         """
         Analyze changes between original and updated specifications.
         """
@@ -894,8 +1019,8 @@ You are a JSON Patch specialist for OpenAPI specifications.
             modified_paths = []
 
             # Compare paths
-            orig_paths = set(original.get('paths', {}).keys())
-            new_paths = set(updated.get('paths', {}).keys())
+            orig_paths = set(original.get("paths", {}).keys())
+            new_paths = set(updated.get("paths", {}).keys())
 
             added_paths = new_paths - orig_paths
             removed_paths = orig_paths - new_paths
@@ -929,7 +1054,9 @@ You are a JSON Patch specialist for OpenAPI specifications.
     async def _analyze_domain_requirements(self, request) -> Dict[str, Any]:
         return {"tokens": 100, "analysis": "domain analysis"}
 
-    async def _extract_entities_with_relationships(self, request, domain_analysis) -> Dict[str, Any]:
+    async def _extract_entities_with_relationships(
+        self, request, domain_analysis
+    ) -> Dict[str, Any]:
         return {"tokens": 150, "entities": []}
 
     async def _generate_advanced_schemas(self, entities, request) -> Dict[str, Any]:
@@ -942,9 +1069,15 @@ You are a JSON Patch specialist for OpenAPI specifications.
         return {"tokens": 120, "security": {}, "suggestions": []}
 
     async def _assemble_optimized_spec(self, *args) -> Dict[str, Any]:
-        return {"openapi": "3.0.0", "info": {"title": "Generated API", "version": "1.0.0"}, "paths": {}}
+        return {
+            "openapi": "3.0.0",
+            "info": {"title": "Generated API", "version": "1.0.0"},
+            "paths": {},
+        }
 
-    async def _validate_and_correct_response(self, response_text: str, request: AIRequest, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+    async def _validate_and_correct_response(
+        self, response_text: str, request: AIRequest, messages: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
         """
         Validate LLM response and apply self-correction if needed.
         """
@@ -952,22 +1085,28 @@ You are a JSON Patch specialist for OpenAPI specifications.
 
         if not validation_result.is_valid and request.auto_fix:
             # Self-correction attempt
-            correction_messages = messages + [{
-                "role": "assistant",
-                "content": response_text
-            }, {
-                "role": "user",
-                "content": f"The previous response has validation errors: {', '.join(validation_result.errors)}. Please fix these issues and provide the corrected specification."
-            }]
+            correction_messages = messages + [
+                {"role": "assistant", "content": response_text},
+                {
+                    "role": "user",
+                    "content": f"The previous response has validation errors: {', '.join(validation_result.errors)}. Please fix these issues and provide the corrected specification.",
+                },
+            ]
 
             try:
-                corrected_response = await self._call_llm_with_retry(correction_messages, request.llm_parameters)
-                corrected_validation = await self._validate_openapi_spec(corrected_response)
+                corrected_response = await self._call_llm_with_retry(
+                    correction_messages, request.llm_parameters
+                )
+                corrected_validation = await self._validate_openapi_spec(
+                    corrected_response
+                )
 
                 return {
                     "validation": corrected_validation,
-                    "corrected_spec": corrected_response if corrected_validation.is_valid else None,
-                    "confidence_score": 0.8 if corrected_validation.is_valid else 0.3
+                    "corrected_spec": (
+                        corrected_response if corrected_validation.is_valid else None
+                    ),
+                    "confidence_score": 0.8 if corrected_validation.is_valid else 0.3,
                 }
             except Exception as e:
                 self.logger.warning(f"Self-correction failed: {str(e)}")
@@ -975,7 +1114,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
         return {
             "validation": validation_result,
             "corrected_spec": None,
-            "confidence_score": 0.9 if validation_result.is_valid else 0.2
+            "confidence_score": 0.9 if validation_result.is_valid else 0.2,
         }
 
     async def _ai_fix_validation_issues(self, fix_request: AIRequest) -> Dict[str, Any]:
@@ -997,7 +1136,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
         prompt: str,
         model: str = None,
         temperature: float = 0.7,
-        max_tokens: int = 2048
+        max_tokens: int = 2048,
     ) -> Dict[str, Any]:
         """
         Simple method to generate text from the LLM.
@@ -1013,12 +1152,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
             Dict with 'response' and 'tokens_used'
         """
         try:
-            messages = [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            messages = [{"role": "user", "content": prompt}]
 
             payload = {
                 "model": model or settings.default_model,
@@ -1027,16 +1161,20 @@ You are a JSON Patch specialist for OpenAPI specifications.
                 "options": {
                     "temperature": temperature,
                     "num_predict": max_tokens,
-                    "num_ctx": 8192  # Large context window for agent reasoning
-                }
+                    "num_ctx": 8192,  # Large context window for agent reasoning
+                },
             }
 
-            self.logger.debug(f"Sending generation request to Ollama: model={model or settings.default_model}, temp={temperature}")
+            self.logger.debug(
+                f"Sending generation request to Ollama: model={model or settings.default_model}, temp={temperature}"
+            )
 
             response = await self.client.post(self.chat_endpoint, json=payload)
 
             if response.status_code != 200:
-                error_msg = f"LLM request failed: {response.status_code} - {response.text}"
+                error_msg = (
+                    f"LLM request failed: {response.status_code} - {response.text}"
+                )
                 self.logger.error(error_msg)
                 raise LLMError(error_msg)
 
@@ -1048,10 +1186,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
             prompt_eval_count = response_data.get("prompt_eval_count", 0)
             tokens_used = eval_count + prompt_eval_count
 
-            return {
-                "response": generated_text,
-                "tokens_used": tokens_used
-            }
+            return {"response": generated_text, "tokens_used": tokens_used}
 
         except Exception as e:
             self.logger.error(f"Generation failed: {str(e)}")
@@ -1061,7 +1196,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
         self,
         prompt: str,
         schema_description: str = "JSON response",
-        max_tokens: int = 2048
+        max_tokens: int = 2048,
     ) -> str:
         """
         Generate a JSON response from the LLM.
@@ -1079,12 +1214,9 @@ You are a JSON Patch specialist for OpenAPI specifications.
             messages = [
                 {
                     "role": "system",
-                    "content": f"You are a helpful assistant that responds only with valid JSON. {schema_description}"
+                    "content": f"You are a helpful assistant that responds only with valid JSON. {schema_description}",
                 },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt},
             ]
 
             payload = {
@@ -1095,16 +1227,20 @@ You are a JSON Patch specialist for OpenAPI specifications.
                 "options": {
                     "temperature": 0.2,  # Lower temperature for more consistent JSON
                     "num_predict": max_tokens,
-                    "num_ctx": 4096  # Increase context window
-                }
+                    "num_ctx": 4096,  # Increase context window
+                },
             }
 
-            self.logger.debug(f"Sending JSON generation request to Ollama, max_tokens={max_tokens}")
+            self.logger.debug(
+                f"Sending JSON generation request to Ollama, max_tokens={max_tokens}"
+            )
 
             response = await self.client.post(self.chat_endpoint, json=payload)
 
             if response.status_code != 200:
-                error_msg = f"LLM request failed: {response.status_code} - {response.text}"
+                error_msg = (
+                    f"LLM request failed: {response.status_code} - {response.text}"
+                )
                 self.logger.error(error_msg)
                 raise LLMError(error_msg)
 

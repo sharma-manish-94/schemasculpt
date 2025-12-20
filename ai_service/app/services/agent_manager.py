@@ -5,15 +5,20 @@ Orchestrates multiple specialized agents to handle complex OpenAPI generation an
 
 import asyncio
 import json
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from ..core.logging import get_logger
-from ..schemas.ai_schemas import GenerateSpecRequest, AIResponse, OperationType, PerformanceMetrics
+from ..schemas.ai_schemas import (
+    AIResponse,
+    GenerateSpecRequest,
+    OperationType,
+    PerformanceMetrics,
+)
 from .agents.base_agent import CoordinatorAgent
 from .agents.domain_analyzer import DomainAnalyzerAgent
-from .agents.schema_generator import SchemaGeneratorAgent
 from .agents.path_generator import PathGeneratorAgent
+from .agents.schema_generator import SchemaGeneratorAgent
 
 
 class AgentManager:
@@ -57,24 +62,24 @@ class AgentManager:
                     {
                         "agent": "DomainAnalyzer",
                         "task_type": "analyze_domain",
-                        "input_data": {}  # Will be populated at runtime
+                        "input_data": {},  # Will be populated at runtime
                     },
                     {
                         "agent": "DomainAnalyzer",
                         "task_type": "extract_entities",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "SchemaGenerator",
                         "task_type": "generate_schemas",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "PathGenerator",
                         "task_type": "generate_paths",
-                        "input_data": {}
-                    }
-                ]
+                        "input_data": {},
+                    },
+                ],
             },
             "schema_optimization": {
                 "workflow_type": "parallel",
@@ -83,14 +88,14 @@ class AgentManager:
                     {
                         "agent": "SchemaGenerator",
                         "task_type": "optimize_schemas",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "PathGenerator",
                         "task_type": "optimize_paths",
-                        "input_data": {}
-                    }
-                ]
+                        "input_data": {},
+                    },
+                ],
             },
             "security_enhancement": {
                 "workflow_type": "sequential",
@@ -99,14 +104,14 @@ class AgentManager:
                     {
                         "agent": "PathGenerator",
                         "task_type": "add_security",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "SchemaGenerator",
                         "task_type": "add_validation",
-                        "input_data": {}
-                    }
-                ]
+                        "input_data": {},
+                    },
+                ],
             },
             "comprehensive_enhancement": {
                 "workflow_type": "sequential",
@@ -115,28 +120,30 @@ class AgentManager:
                     {
                         "agent": "SchemaGenerator",
                         "task_type": "add_validation",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "SchemaGenerator",
                         "task_type": "generate_examples",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "PathGenerator",
                         "task_type": "enhance_operations",
-                        "input_data": {}
+                        "input_data": {},
                     },
                     {
                         "agent": "PathGenerator",
                         "task_type": "add_security",
-                        "input_data": {}
-                    }
-                ]
-            }
+                        "input_data": {},
+                    },
+                ],
+            },
         }
 
-    async def execute_complete_spec_generation(self, request: GenerateSpecRequest) -> AIResponse:
+    async def execute_complete_spec_generation(
+        self, request: GenerateSpecRequest
+    ) -> AIResponse:
         """
         Execute the complete specification generation workflow.
         """
@@ -150,7 +157,7 @@ class AgentManager:
             # Populate task data
             workflow_task["agent_tasks"][0]["input_data"] = {
                 "prompt": request.prompt,
-                "domain": request.domain
+                "domain": request.domain,
             }
 
             # Execute workflow
@@ -161,17 +168,21 @@ class AgentManager:
                     "include_examples": request.include_examples,
                     "include_security": request.include_security,
                     "api_style": request.api_style,
-                    "openapi_version": request.openapi_version
+                    "openapi_version": request.openapi_version,
                 }
             }
 
             workflow_result = await self.coordinator.execute(workflow_task, context)
 
             if not workflow_result.get("success", False):
-                raise Exception(f"Workflow failed: {workflow_result.get('error', 'Unknown error')}")
+                raise Exception(
+                    f"Workflow failed: {workflow_result.get('error', 'Unknown error')}"
+                )
 
             # Assemble final specification
-            final_spec = await self._assemble_final_specification(workflow_result, request)
+            final_spec = await self._assemble_final_specification(
+                workflow_result, request
+            )
 
             # Calculate performance metrics
             processing_time = (datetime.utcnow() - start_time).total_seconds() * 1000
@@ -185,11 +196,13 @@ class AgentManager:
                 processing_time_ms=processing_time,
                 token_count=total_tokens,
                 model_used=request.llm_parameters.model,
-                cache_hit=False
+                cache_hit=False,
             )
 
             # Create AI response
-            validation_result = await self.llm_service._validate_openapi_spec(final_spec)
+            validation_result = await self.llm_service._validate_openapi_spec(
+                final_spec
+            )
 
             return AIResponse(
                 updated_spec_text=final_spec,
@@ -198,14 +211,18 @@ class AgentManager:
                 confidence_score=self._calculate_confidence_score(workflow_result),
                 changes_summary="Generated complete OpenAPI specification using agentic workflow",
                 performance=performance,
-                follow_up_suggestions=self._generate_follow_up_suggestions(workflow_result)
+                follow_up_suggestions=self._generate_follow_up_suggestions(
+                    workflow_result
+                ),
             )
 
         except Exception as e:
             self.logger.error(f"Complete spec generation failed: {str(e)}")
             raise
 
-    async def execute_custom_workflow(self, workflow_name: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_custom_workflow(
+        self, workflow_name: str, input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Execute a predefined workflow with custom input data.
         """
@@ -222,16 +239,16 @@ class AgentManager:
 
         return await self.coordinator.execute(workflow_task, context)
 
-    async def execute_ad_hoc_workflow(self, workflow_definition: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_ad_hoc_workflow(
+        self, workflow_definition: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Execute an ad-hoc workflow defined by the user.
         """
         return await self.coordinator.execute(workflow_definition, {})
 
     async def _assemble_final_specification(
-        self,
-        workflow_result: Dict[str, Any],
-        request: GenerateSpecRequest
+        self, workflow_result: Dict[str, Any], request: GenerateSpecRequest
     ) -> str:
         """
         Assemble the final OpenAPI specification from agent results.
@@ -245,12 +262,10 @@ class AgentManager:
             "info": {
                 "title": self._extract_api_title(agent_results, request),
                 "version": "1.0.0",
-                "description": self._extract_api_description(agent_results, request)
+                "description": self._extract_api_description(agent_results, request),
             },
             "paths": {},
-            "components": {
-                "schemas": {}
-            }
+            "components": {"schemas": {}},
         }
 
         # Extract and merge results from each agent
@@ -281,12 +296,16 @@ class AgentManager:
             ]
 
         # Clean up empty components
-        if not spec["components"].get("schemas") and not spec["components"].get("securitySchemes"):
+        if not spec["components"].get("schemas") and not spec["components"].get(
+            "securitySchemes"
+        ):
             del spec["components"]
 
         return json.dumps(spec, indent=2)
 
-    def _extract_api_title(self, agent_results: List[Dict], request: GenerateSpecRequest) -> str:
+    def _extract_api_title(
+        self, agent_results: List[Dict], request: GenerateSpecRequest
+    ) -> str:
         """Extract API title from domain analysis or generate from prompt."""
         for result in agent_results:
             if result.get("agent") == "DomainAnalyzer" and result.get("success"):
@@ -298,13 +317,17 @@ class AgentManager:
         prompt_words = request.prompt.split()[:3]
         return f"{' '.join(word.title() for word in prompt_words)} API"
 
-    def _extract_api_description(self, agent_results: List[Dict], request: GenerateSpecRequest) -> str:
+    def _extract_api_description(
+        self, agent_results: List[Dict], request: GenerateSpecRequest
+    ) -> str:
         """Extract API description from domain analysis."""
         for result in agent_results:
             if result.get("agent") == "DomainAnalyzer" and result.get("success"):
                 data = result.get("data", {})
                 if "business_processes" in data and data["business_processes"]:
-                    processes = [proc["description"] for proc in data["business_processes"][:2]]
+                    processes = [
+                        proc["description"] for proc in data["business_processes"][:2]
+                    ]
                     return f"API for {', '.join(processes)}"
 
         return f"API generated from requirements: {request.prompt[:100]}..."
@@ -312,7 +335,9 @@ class AgentManager:
     def _calculate_confidence_score(self, workflow_result: Dict[str, Any]) -> float:
         """Calculate confidence score based on workflow success."""
         agent_results = workflow_result.get("data", [])
-        successful_agents = sum(1 for result in agent_results if result.get("success", False))
+        successful_agents = sum(
+            1 for result in agent_results if result.get("success", False)
+        )
         total_agents = len(agent_results)
 
         if total_agents == 0:
@@ -324,7 +349,9 @@ class AgentManager:
         complexity_bonus = 0.1 if total_agents >= 4 else 0  # Full workflow bonus
         return min(0.95, base_confidence + complexity_bonus)
 
-    def _generate_follow_up_suggestions(self, workflow_result: Dict[str, Any]) -> List[str]:
+    def _generate_follow_up_suggestions(
+        self, workflow_result: Dict[str, Any]
+    ) -> List[str]:
         """Generate follow-up suggestions based on workflow results."""
         suggestions = []
         agent_results = workflow_result.get("data", [])
@@ -341,12 +368,14 @@ class AgentManager:
         )
 
         if has_schemas and has_paths:
-            suggestions.extend([
-                "Consider adding comprehensive examples to improve documentation",
-                "Review security schemes and add authentication where needed",
-                "Add request/response validation rules for better API reliability",
-                "Consider implementing rate limiting and caching strategies"
-            ])
+            suggestions.extend(
+                [
+                    "Consider adding comprehensive examples to improve documentation",
+                    "Review security schemes and add authentication where needed",
+                    "Add request/response validation rules for better API reliability",
+                    "Consider implementing rate limiting and caching strategies",
+                ]
+            )
 
         if not has_schemas:
             suggestions.append("Generate comprehensive schemas for better type safety")
@@ -359,8 +388,7 @@ class AgentManager:
     def get_available_workflows(self) -> Dict[str, str]:
         """Get list of available predefined workflows."""
         return {
-            name: workflow["description"]
-            for name, workflow in self._workflows.items()
+            name: workflow["description"] for name, workflow in self._workflows.items()
         }
 
     def get_agent_status(self) -> Dict[str, Any]:
@@ -371,7 +399,7 @@ class AgentManager:
             "schema_generator": self.schema_generator.get_agent_status(),
             "path_generator": self.path_generator.get_agent_status(),
             "active_workflows": len(self.coordinator.active_workflows),
-            "available_workflows": list(self._workflows.keys())
+            "available_workflows": list(self._workflows.keys()),
         }
 
     async def health_check(self) -> Dict[str, Any]:
@@ -380,14 +408,14 @@ class AgentManager:
             "overall_status": "healthy",
             "agents": {},
             "coordinator": {},
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
         # Check individual agents
         agents = {
             "domain_analyzer": self.domain_analyzer,
             "schema_generator": self.schema_generator,
-            "path_generator": self.path_generator
+            "path_generator": self.path_generator,
         }
 
         for name, agent in agents.items():
@@ -395,7 +423,7 @@ class AgentManager:
             health_status["agents"][name] = {
                 "status": "healthy" if not agent_status["is_busy"] else "busy",
                 "execution_count": agent_status["execution_count"],
-                "average_execution_time": agent_status["average_execution_time"]
+                "average_execution_time": agent_status["average_execution_time"],
             }
 
         # Check coordinator
@@ -403,7 +431,7 @@ class AgentManager:
         health_status["coordinator"] = {
             "status": "healthy",
             "active_workflows": len(self.coordinator.active_workflows),
-            "total_executions": coordinator_status["execution_count"]
+            "total_executions": coordinator_status["execution_count"],
         }
 
         return health_status

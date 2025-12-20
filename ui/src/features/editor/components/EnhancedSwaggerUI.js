@@ -183,7 +183,7 @@ function MockDataTab() {
             count: variationCount,
           }),
           signal: controller.signal,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -359,7 +359,7 @@ function TestCasesTab() {
 
       if (!response.ok) {
         throw new Error(
-          `Failed to generate test cases: ${response.statusText}`
+          `Failed to generate test cases: ${response.statusText}`,
         );
       }
 
@@ -628,7 +628,7 @@ function EnhancedSwaggerUI() {
 
       return req;
     },
-    [serverTarget, mockServer, customServerUrl, originalServers]
+    [serverTarget, mockServer, customServerUrl, originalServers],
   );
 
   // Response interceptor
@@ -639,7 +639,7 @@ function EnhancedSwaggerUI() {
       }
       return response;
     },
-    [serverTarget, mockServer]
+    [serverTarget, mockServer],
   );
 
   // Callback when Swagger UI finishes rendering
@@ -651,7 +651,7 @@ function EnhancedSwaggerUI() {
   const scrollToOperation = useCallback((path, method) => {
     setTimeout(() => {
       const tagButtons = document.querySelectorAll(
-        ".opblock-tag-section .opblock-tag"
+        ".opblock-tag-section .opblock-tag",
       );
       tagButtons.forEach((tagButton) => {
         const section = tagButton.closest(".opblock-tag-section");

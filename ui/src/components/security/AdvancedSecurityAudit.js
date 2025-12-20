@@ -5,10 +5,10 @@
  * This is the entry point for the "Wow" feature.
  */
 
-import React, { useState } from 'react';
-import { runAttackPathSimulation } from '../../api/attackPathService';
-import AttackPathReport from './AttackPathReport';
-import './AdvancedSecurityAudit.css';
+import React, { useState } from "react";
+import { runAttackPathSimulation } from "../../api/attackPathService";
+import AttackPathReport from "./AttackPathReport";
+import "./AdvancedSecurityAudit.css";
 
 const AdvancedSecurityAudit = ({ sessionId }) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -23,7 +23,7 @@ const AdvancedSecurityAudit = ({ sessionId }) => {
 
     // Simulate progress (since we don't have WebSocket yet)
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
+      setProgress((prev) => {
         if (prev >= 90) {
           clearInterval(progressInterval);
           return 90;
@@ -34,8 +34,8 @@ const AdvancedSecurityAudit = ({ sessionId }) => {
 
     try {
       const result = await runAttackPathSimulation(sessionId, {
-        analysisDepth: 'standard',
-        maxChainLength: 5
+        analysisDepth: "standard",
+        maxChainLength: 5,
       });
 
       clearInterval(progressInterval);
@@ -43,8 +43,8 @@ const AdvancedSecurityAudit = ({ sessionId }) => {
       setReport(result);
     } catch (err) {
       clearInterval(progressInterval);
-      setError(err.message || 'Failed to run attack path simulation');
-      console.error('Attack path simulation error:', err);
+      setError(err.message || "Failed to run attack path simulation");
+      console.error("Attack path simulation error:", err);
     } finally {
       setIsRunning(false);
     }
@@ -115,13 +115,13 @@ const AdvancedSecurityAudit = ({ sessionId }) => {
               />
             </div>
             <div className="progress-stages">
-              <div className={progress >= 30 ? 'active' : ''}>
+              <div className={progress >= 30 ? "active" : ""}>
                 🔍 Scanning vulnerabilities
               </div>
-              <div className={progress >= 60 ? 'active' : ''}>
+              <div className={progress >= 60 ? "active" : ""}>
                 🤖 AI analyzing attack chains
               </div>
-              <div className={progress >= 90 ? 'active' : ''}>
+              <div className={progress >= 90 ? "active" : ""}>
                 📝 Generating report
               </div>
             </div>
@@ -133,12 +133,13 @@ const AdvancedSecurityAudit = ({ sessionId }) => {
           onClick={handleRunAudit}
           disabled={isRunning}
         >
-          {isRunning ? 'Running Analysis...' : '🚀 Run Advanced Security Audit'}
+          {isRunning ? "Running Analysis..." : "🚀 Run Advanced Security Audit"}
         </button>
 
         <div className="audit-info">
           <small>
-            ⚡ Powered by AI agents using LLM reasoning to simulate real-world attacks
+            ⚡ Powered by AI agents using LLM reasoning to simulate real-world
+            attacks
           </small>
         </div>
       </div>

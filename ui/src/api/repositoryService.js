@@ -30,7 +30,7 @@ export const connectRepository = async (sessionId, provider, accessToken) => {
           "X-Session-ID": sessionId,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return {
@@ -64,7 +64,7 @@ export const disconnectRepository = async (sessionId) => {
         headers: {
           "X-Session-ID": sessionId,
         },
-      }
+      },
     );
 
     return { success: true };
@@ -90,7 +90,7 @@ export const disconnectRepository = async (sessionId) => {
  */
 export const browseTree = async (
   sessionId,
-  { owner, repo, path = "", branch = null }
+  { owner, repo, path = "", branch = null },
 ) => {
   try {
     const response = await axios.post(
@@ -106,7 +106,7 @@ export const browseTree = async (
           "X-Session-ID": sessionId,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return {
@@ -138,7 +138,7 @@ export const browseTree = async (
  */
 export const readFile = async (
   sessionId,
-  { owner, repo, path, ref = null }
+  { owner, repo, path, ref = null },
 ) => {
   try {
     const response = await axios.post(
@@ -154,7 +154,7 @@ export const readFile = async (
           "X-Session-ID": sessionId,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return {
@@ -214,7 +214,7 @@ export const getGitHubAuthUrl = (clientId, redirectUri, scopes = ["repo"]) => {
   sessionStorage.setItem("github_oauth_state", state);
 
   return `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-    redirectUri
+    redirectUri,
   )}&scope=${encodeURIComponent(scopeString)}&state=${state}`;
 };
 

@@ -104,7 +104,7 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
   private ValidationSuggestion createErrorStructureSuggestion(String path, String method, String statusCode) {
     String message = String.format("""
             Operation [%s %s] returns a non-standard error response for status %s.
-            
+
             WHY: When an AI agent receives an error, it attempts to 'reason' through a fix. \
             If the error body is just a plain string or missing a 'type' code, the agent cannot \
             determine if the error was a validation issue (retryable with better input) \
@@ -162,7 +162,7 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
   private ValidationSuggestion createStandardWrapperSuggestion() {
 	String message = """
         Missing standardized response wrapper or RFC 7807 Problem Details.
-        
+
         WHY: AI agents (and MCP servers) perform best when they can use a 'Uniform Observation' pattern. \
         Without a standard wrapper, the agent must re-learn the success/failure indicators for every endpoint, \
         which increases token usage and the risk of hallucination.""";

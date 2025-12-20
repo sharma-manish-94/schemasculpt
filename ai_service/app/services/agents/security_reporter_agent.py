@@ -11,17 +11,17 @@ risk scores, business impact assessments, and compliance implications.
 """
 
 import logging
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .base_agent import LLMAgent
 from ...schemas.attack_path_schemas import (
-    AttackPathContext,
+    AttackChain,
     AttackPathAnalysisReport,
-    AttackChain
+    AttackPathContext,
 )
 from ...schemas.security_schemas import SecurityIssue, SecuritySeverity
 from ..rag_service import RAGService
+from .base_agent import LLMAgent
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class SecurityReporterAgent(LLMAgent):
         super().__init__(
             name="SecurityReporter",
             description="RAG-enhanced agent that generates executive security reports with governance expertise",
-            llm_service=llm_service
+            llm_service=llm_service,
         )
         # Initialize or receive RAG service
         self.rag_service = rag_service or RAGService()
@@ -52,10 +52,12 @@ class SecurityReporterAgent(LLMAgent):
             "executive_summary_generation",
             "risk_prioritization",
             "remediation_roadmap_creation",
-            "business_impact_assessment"
+            "business_impact_assessment",
         ]
 
-    async def execute(self, task: Dict[str, Any], context: AttackPathContext) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: AttackPathContext
+    ) -> Dict[str, Any]:
         """
         Generate comprehensive security report
 
@@ -79,8 +81,12 @@ class SecurityReporterAgent(LLMAgent):
             vulnerabilities = context.individual_vulnerabilities
 
             # Categorize attack chains by severity
-            critical_chains = [c for c in attack_chains if c.severity == SecuritySeverity.CRITICAL]
-            high_chains = [c for c in attack_chains if c.severity == SecuritySeverity.HIGH]
+            critical_chains = [
+                c for c in attack_chains if c.severity == SecuritySeverity.CRITICAL
+            ]
+            high_chains = [
+                c for c in attack_chains if c.severity == SecuritySeverity.HIGH
+            ]
 
             # Calculate statistics
             vuln_ids_in_chains = set()
@@ -93,24 +99,17 @@ class SecurityReporterAgent(LLMAgent):
 
             # Determine overall risk level
             risk_level = self._determine_risk_level(
-                len(critical_chains),
-                len(high_chains),
-                vulnerabilities_in_chains
+                len(critical_chains), len(high_chains), vulnerabilities_in_chains
             )
 
             # Calculate security score (0-100, higher is better)
             security_score = self._calculate_security_score(
-                critical_chains,
-                high_chains,
-                attack_chains,
-                vulnerabilities
+                critical_chains, high_chains, attack_chains, vulnerabilities
             )
 
             # RAG ENHANCEMENT: Query Governance Knowledge Base
             governance_context = await self._query_governance_knowledge(
-                attack_chains,
-                vulnerabilities,
-                risk_level
+                attack_chains, vulnerabilities, risk_level
             )
 
             # Generate executive summary using LLM with RAG-enhanced governance context
@@ -120,16 +119,15 @@ class SecurityReporterAgent(LLMAgent):
                 vulnerabilities,
                 risk_level,
                 security_score,
-                governance_context
+                governance_context,
             )
 
             # Generate top 3 risks (simplified explanations)
             top_3_risks = self._generate_top_risks(attack_chains)
 
             # Generate remediation roadmap
-            immediate_actions, short_term, long_term = self._generate_remediation_roadmap(
-                attack_chains,
-                vulnerabilities
+            immediate_actions, short_term, long_term = (
+                self._generate_remediation_roadmap(attack_chains, vulnerabilities)
             )
 
             # Create the report
@@ -152,7 +150,7 @@ class SecurityReporterAgent(LLMAgent):
                 analysis_depth=task.get("analysis_depth", "standard"),
                 execution_time_ms=context.total_execution_time_ms,
                 tokens_used=context.tokens_used,
-                context_id=context.context_id
+                context_id=context.context_id,
             )
 
             # Update context
@@ -170,32 +168,23 @@ class SecurityReporterAgent(LLMAgent):
                 f"Risk Level: {risk_level}, Score: {security_score:.1f}/100"
             )
 
-            return {
-                "success": True,
-                "attack_path_report": report
-            }
+            return {"success": True, "attack_path_report": report}
 
         except Exception as e:
             logger.error(f"[{self.name}] Error generating report: {e}", exc_info=True)
             context.current_stage = "error"
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def can_handle_task(self, task_type: str) -> bool:
         """Check if this agent can handle the given task type"""
         return task_type in [
             "generate_report",
             "create_executive_summary",
-            "security_reporting"
+            "security_reporting",
         ]
 
     def _determine_risk_level(
-        self,
-        critical_count: int,
-        high_count: int,
-        vulns_in_chains: int
+        self, critical_count: int, high_count: int, vulns_in_chains: int
     ) -> str:
         """Determine overall risk level based on findings"""
         if critical_count > 0:
@@ -212,7 +201,7 @@ class SecurityReporterAgent(LLMAgent):
         critical_chains: List[AttackChain],
         high_chains: List[AttackChain],
         all_chains: List[AttackChain],
-        vulnerabilities: List[SecurityIssue]
+        vulnerabilities: List[SecurityIssue],
     ) -> float:
         """Calculate security score (0-100, higher is better)"""
         # Start with perfect score
@@ -221,10 +210,14 @@ class SecurityReporterAgent(LLMAgent):
         # Deduct points for attack chains
         score -= len(critical_chains) * 25  # Each critical chain is -25 points
         score -= len(high_chains) * 10  # Each high chain is -10 points
-        score -= (len(all_chains) - len(critical_chains) - len(high_chains)) * 3  # Other chains -3
+        score -= (
+            len(all_chains) - len(critical_chains) - len(high_chains)
+        ) * 3  # Other chains -3
 
         # Additional deductions for isolated high-severity vulnerabilities
-        critical_vulns = [v for v in vulnerabilities if v.severity == SecuritySeverity.CRITICAL]
+        critical_vulns = [
+            v for v in vulnerabilities if v.severity == SecuritySeverity.CRITICAL
+        ]
         high_vulns = [v for v in vulnerabilities if v.severity == SecuritySeverity.HIGH]
         score -= len(critical_vulns) * 5
         score -= len(high_vulns) * 2
@@ -236,7 +229,7 @@ class SecurityReporterAgent(LLMAgent):
         self,
         attack_chains: List[AttackChain],
         vulnerabilities: List[SecurityIssue],
-        risk_level: str
+        risk_level: str,
     ) -> Dict[str, Any]:
         """
         Query the Governance Knowledge Base for risk assessment expertise.
@@ -245,12 +238,10 @@ class SecurityReporterAgent(LLMAgent):
         compliance requirements (GDPR, HIPAA, PCI-DSS) relevant to the findings.
         """
         if not self.rag_service.governance_kb_available():
-            logger.warning(f"[{self.name}] Governance KB not available. Operating without RAG enhancement.")
-            return {
-                "context": "",
-                "sources": [],
-                "available": False
-            }
+            logger.warning(
+                f"[{self.name}] Governance KB not available. Operating without RAG enhancement."
+            )
+            return {"context": "", "sources": [], "available": False}
 
         try:
             # Build query based on risk level and vulnerability types
@@ -258,13 +249,13 @@ class SecurityReporterAgent(LLMAgent):
                 f"risk level {risk_level}",
                 "CVSS scoring",
                 "DREAD framework",
-                "business impact assessment"
+                "business impact assessment",
             ]
 
             # Add compliance queries if data exposure risks exist
             has_data_risk = any(
-                "data" in chain.business_impact.lower() or
-                "privacy" in chain.business_impact.lower()
+                "data" in chain.business_impact.lower()
+                or "privacy" in chain.business_impact.lower()
                 for chain in attack_chains
             )
 
@@ -273,12 +264,13 @@ class SecurityReporterAgent(LLMAgent):
 
             query = " ".join(query_parts)
 
-            logger.info(f"[{self.name}] Querying Governance KB with: '{query[:100]}...'")
+            logger.info(
+                f"[{self.name}] Querying Governance KB with: '{query[:100]}...'"
+            )
 
             # Query the Governance Knowledge Base
             rag_result = await self.rag_service.query_governance_knowledge(
-                query=query,
-                n_results=4  # Get top 4 governance documents
+                query=query, n_results=4  # Get top 4 governance documents
             )
 
             if rag_result.get("context"):
@@ -287,21 +279,19 @@ class SecurityReporterAgent(LLMAgent):
                     f"relevant governance documents from KB"
                 )
             else:
-                logger.warning(f"[{self.name}] No relevant governance knowledge found in KB")
+                logger.warning(
+                    f"[{self.name}] No relevant governance knowledge found in KB"
+                )
 
             return {
                 "context": rag_result.get("context", ""),
                 "sources": rag_result.get("sources", []),
-                "available": True
+                "available": True,
             }
 
         except Exception as e:
             logger.error(f"[{self.name}] Error querying Governance KB: {e}")
-            return {
-                "context": "",
-                "sources": [],
-                "available": False
-            }
+            return {"context": "", "sources": [], "available": False}
 
     async def _generate_executive_summary(
         self,
@@ -309,18 +299,18 @@ class SecurityReporterAgent(LLMAgent):
         vulnerabilities: List[SecurityIssue],
         risk_level: str,
         security_score: float,
-        governance_context: Dict[str, Any]
+        governance_context: Dict[str, Any],
     ) -> str:
         """Generate RAG-enhanced executive summary using LLM with governance expertise"""
         try:
             # Build detailed context for summary with step-by-step attack flows
             chains_detail = []
-            for idx, chain in enumerate(attack_chains[:3], 1):  # Top 3 chains with full details
+            for idx, chain in enumerate(
+                attack_chains[:3], 1
+            ):  # Top 3 chains with full details
                 steps_text = []
                 for step_num, step in enumerate(chain.steps, 1):
-                    steps_text.append(
-                        f"  Step {step_num}: {step.description}"
-                    )
+                    steps_text.append(f"  Step {step_num}: {step.description}")
 
                 chain_detail = f"""Attack Chain {idx}: {chain.name} ({chain.severity.value.upper()})
 Goal: {chain.attack_goal}
@@ -334,7 +324,9 @@ Complexity: {chain.complexity}"""
 
             # Build RAG-enhanced governance section
             governance_section = ""
-            if governance_context.get("available") and governance_context.get("context"):
+            if governance_context.get("available") and governance_context.get(
+                "context"
+            ):
                 governance_section = f"""
 **GOVERNANCE & RISK ASSESSMENT EXPERTISE**:
 Use this specialized knowledge from CVSS, DREAD, and compliance frameworks to inform your report:
@@ -395,7 +387,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                 model="mistral:7b-instruct",
                 prompt=prompt,
                 temperature=0.7,  # Balanced for professional yet natural language
-                max_tokens=1200  # Increased for detailed explanation
+                max_tokens=1200,  # Increased for detailed explanation
             )
 
             summary = response.get("response", "").strip()
@@ -404,20 +396,18 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
             tokens_used = response.get("tokens_used", 0)
             self._total_tokens_used += tokens_used
 
-            return summary if summary else self._fallback_executive_summary(
-                risk_level,
-                len(attack_chains),
-                len(vulnerabilities),
-                attack_chains
+            return (
+                summary
+                if summary
+                else self._fallback_executive_summary(
+                    risk_level, len(attack_chains), len(vulnerabilities), attack_chains
+                )
             )
 
         except Exception as e:
             logger.error(f"[{self.name}] Error generating executive summary: {e}")
             return self._fallback_executive_summary(
-                risk_level,
-                len(attack_chains),
-                len(vulnerabilities),
-                attack_chains
+                risk_level, len(attack_chains), len(vulnerabilities), attack_chains
             )
 
     def _fallback_executive_summary(
@@ -425,7 +415,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
         risk_level: str,
         chain_count: int,
         vuln_count: int,
-        attack_chains: List[AttackChain] = None
+        attack_chains: List[AttackChain] = None,
     ) -> str:
         """Generate a detailed executive summary without LLM"""
         # Get the most critical chain for detailed explanation
@@ -436,9 +426,9 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                 key=lambda c: (
                     c.severity == SecuritySeverity.CRITICAL,
                     c.severity == SecuritySeverity.HIGH,
-                    c.impact_score
+                    c.impact_score,
                 ),
-                reverse=True
+                reverse=True,
             )
             most_critical = sorted_chains[0] if sorted_chains else None
 
@@ -472,9 +462,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                     f"by exploiting {len(most_critical.steps)} interconnected vulnerabilities. "
                 )
             else:
-                attack_explanation = (
-                    f"We found {chain_count} attack chain(s) and {vuln_count} individual vulnerabilities. "
-                )
+                attack_explanation = f"We found {chain_count} attack chain(s) and {vuln_count} individual vulnerabilities. "
 
             recommendation = (
                 f"While not immediately critical, these issues significantly increase your risk exposure to data "
@@ -492,9 +480,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                     f"of exploitation ({most_critical.complexity}) reduces immediate risk. "
                 )
             else:
-                attack_explanation = (
-                    f"We found {chain_count} attack chain(s) that could be exploited under specific conditions. "
-                )
+                attack_explanation = f"We found {chain_count} attack chain(s) that could be exploited under specific conditions. "
 
             recommendation = (
                 f"These vulnerabilities are manageable and should be remediated to strengthen your security posture. "
@@ -513,9 +499,9 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
             key=lambda c: (
                 c.severity == SecuritySeverity.CRITICAL,
                 c.severity == SecuritySeverity.HIGH,
-                c.impact_score
+                c.impact_score,
             ),
-            reverse=True
+            reverse=True,
         )
 
         for chain in sorted_chains[:3]:
@@ -529,9 +515,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
         return top_risks
 
     def _generate_remediation_roadmap(
-        self,
-        attack_chains: List[AttackChain],
-        vulnerabilities: List[SecurityIssue]
+        self, attack_chains: List[AttackChain], vulnerabilities: List[SecurityIssue]
     ) -> tuple:
         """Generate prioritized remediation roadmap"""
         immediate = []
@@ -539,7 +523,9 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
         long_term = []
 
         # Immediate actions: Fix critical chains
-        critical_chains = [c for c in attack_chains if c.severity == SecuritySeverity.CRITICAL]
+        critical_chains = [
+            c for c in attack_chains if c.severity == SecuritySeverity.CRITICAL
+        ]
         for chain in critical_chains:
             for step in chain.remediation_steps[:2]:  # Top 2 fixes per chain
                 if step not in immediate:
@@ -554,8 +540,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
 
         # Add critical isolated vulnerabilities to short-term
         critical_isolated = [
-            v for v in vulnerabilities
-            if v.severity == SecuritySeverity.CRITICAL
+            v for v in vulnerabilities if v.severity == SecuritySeverity.CRITICAL
         ]
         for vuln in critical_isolated[:3]:
             if vuln.recommendation and vuln.recommendation not in immediate:
@@ -567,11 +552,11 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
             "Add automated security testing to CI/CD pipeline",
             "Conduct regular security audits and penetration testing",
             "Implement API rate limiting and abuse prevention",
-            "Add comprehensive API logging and monitoring"
+            "Add comprehensive API logging and monitoring",
         ]
 
         return (
             immediate[:5],  # Top 5 immediate actions
             short_term[:5],  # Top 5 short-term actions
-            long_term[:5]  # Top 5 long-term actions
+            long_term[:5],  # Top 5 long-term actions
         )

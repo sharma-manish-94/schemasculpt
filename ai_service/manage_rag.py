@@ -12,17 +12,17 @@ Usage:
     python manage_rag.py query <text>  # Test query against knowledge bases
 """
 
-import sys
-import asyncio
 import argparse
+import asyncio
+import sys
 from pathlib import Path
 
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+from app.core.logging import get_logger
 from app.services.rag_initializer import RAGInitializer
 from app.services.rag_service import RAGService
-from app.core.logging import get_logger
 
 logger = get_logger("manage_rag")
 
@@ -40,10 +40,16 @@ async def init_knowledge_bases(force: bool = False):
         if result.get("status") == "success":
             print(f"\n✅ Initialization successful!")
             print(f"   Total documents ingested: {result.get('total_documents', 0)}")
-            print(f"\n   Attacker KB: {result['attacker_kb'].get('documents_added', 0)} documents")
+            print(
+                f"\n   Attacker KB: {result['attacker_kb'].get('documents_added', 0)} documents"
+            )
             print(f"   Sources: {', '.join(result['attacker_kb'].get('sources', []))}")
-            print(f"\n   Governance KB: {result['governance_kb'].get('documents_added', 0)} documents")
-            print(f"   Sources: {', '.join(result['governance_kb'].get('sources', []))}")
+            print(
+                f"\n   Governance KB: {result['governance_kb'].get('documents_added', 0)} documents"
+            )
+            print(
+                f"   Sources: {', '.join(result['governance_kb'].get('sources', []))}"
+            )
         elif result.get("status") == "already_initialized":
             print("\n✅ Knowledge bases already initialized")
             print("   Use 'python manage_rag.py reingest' to force re-ingestion")
@@ -54,6 +60,7 @@ async def init_knowledge_bases(force: bool = False):
     except Exception as e:
         print(f"\n❌ Initialization failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
@@ -103,6 +110,7 @@ async def show_status():
     except Exception as e:
         print(f"\n❌ Failed to get status: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
@@ -134,7 +142,9 @@ async def test_query(query: str, kb_name: str = "attacker", n_results: int = 3):
             return
 
         print(f"\n📚 Found {results.get('total_documents', 0)} relevant documents")
-        print(f"   Average relevance: {sum(results.get('relevance_scores', [0])) / max(len(results.get('relevance_scores', [1])), 1):.2f}")
+        print(
+            f"   Average relevance: {sum(results.get('relevance_scores', [0])) / max(len(results.get('relevance_scores', [1])), 1):.2f}"
+        )
         print("\n" + "-" * 70)
 
         # Show top results
@@ -154,6 +164,7 @@ async def test_query(query: str, kb_name: str = "attacker", n_results: int = 3):
     except Exception as e:
         print(f"\n❌ Query failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
@@ -178,7 +189,7 @@ Examples:
 
   # Test query on governance KB
   python manage_rag.py query "GDPR compliance requirements" --kb governance
-        """
+        """,
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -187,7 +198,9 @@ Examples:
     init_parser = subparsers.add_parser("init", help="Initialize knowledge bases")
 
     # Reingest command
-    reingest_parser = subparsers.add_parser("reingest", help="Force re-ingestion of all documents")
+    reingest_parser = subparsers.add_parser(
+        "reingest", help="Force re-ingestion of all documents"
+    )
 
     # Status command
     status_parser = subparsers.add_parser("status", help="Show knowledge base status")
@@ -195,8 +208,15 @@ Examples:
     # Query command
     query_parser = subparsers.add_parser("query", help="Test RAG query")
     query_parser.add_argument("text", help="Query text")
-    query_parser.add_argument("--kb", choices=["attacker", "governance"], default="attacker", help="Knowledge base to query")
-    query_parser.add_argument("-n", "--num-results", type=int, default=3, help="Number of results to return")
+    query_parser.add_argument(
+        "--kb",
+        choices=["attacker", "governance"],
+        default="attacker",
+        help="Knowledge base to query",
+    )
+    query_parser.add_argument(
+        "-n", "--num-results", type=int, default=3, help="Number of results to return"
+    )
 
     args = parser.parse_args()
 

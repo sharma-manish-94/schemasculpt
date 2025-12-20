@@ -16,12 +16,12 @@ Usage:
     python scripts/add_documents_to_rag.py --file cvss_guide.pdf --kb governance --metadata '{"source": "FIRST", "version": "3.1"}'
 """
 
-import sys
 import argparse
-import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 import hashlib
+import json
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Add parent directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     import chromadb
     from sentence_transformers import SentenceTransformer
+
     DEPS_AVAILABLE = True
 except ImportError as e:
     DEPS_AVAILABLE = False
@@ -46,7 +47,9 @@ class DocumentIngestionTool:
         self.vector_store_dir = self.project_root / "vector_store"
 
         print("📦 Initializing embedding model...")
-        self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        self.embedding_model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
         print(f"✅ Loaded on {self.embedding_model.device}")
 
         print("📦 Connecting to ChromaDB...")
@@ -70,6 +73,7 @@ class DocumentIngestionTool:
 
     def create_embedding_function(self):
         """Create ChromaDB-compatible embedding function."""
+
         class EmbeddingFunction:
             def __init__(self, model):
                 self.model = model
@@ -81,7 +85,7 @@ class DocumentIngestionTool:
 
     def read_text_file(self, file_path: Path) -> str:
         """Read plain text or markdown file."""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
 
     def read_pdf_file(self, file_path: Path) -> str:
@@ -104,7 +108,7 @@ class DocumentIngestionTool:
 
     def read_json_file(self, file_path: Path) -> List[Dict]:
         """Read JSON file with structured knowledge."""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         # If it's a knowledge base format, extract documents
@@ -113,47 +117,53 @@ class DocumentIngestionTool:
         if isinstance(data, list):
             # Array of documents
             for item in data:
-                if isinstance(item, dict) and 'content' in item:
+                if isinstance(item, dict) and "content" in item:
                     documents.append(item)
                 elif isinstance(item, str):
                     documents.append({"content": item})
         elif isinstance(data, dict):
             # Check for our knowledge base format
-            if 'owasp_vulnerabilities' in data:
-                for vuln in data['owasp_vulnerabilities']:
+            if "owasp_vulnerabilities" in data:
+                for vuln in data["owasp_vulnerabilities"]:
                     doc_text = self.format_owasp_vuln(vuln)
-                    documents.append({
-                        "content": doc_text,
-                        "metadata": {
-                            "type": "owasp_vulnerability",
-                            "category": vuln.get("category"),
-                            "risk_level": vuln.get("risk_level")
+                    documents.append(
+                        {
+                            "content": doc_text,
+                            "metadata": {
+                                "type": "owasp_vulnerability",
+                                "category": vuln.get("category"),
+                                "risk_level": vuln.get("risk_level"),
+                            },
                         }
-                    })
+                    )
 
-            if 'common_vulnerabilities' in data:
-                for vuln in data['common_vulnerabilities']:
+            if "common_vulnerabilities" in data:
+                for vuln in data["common_vulnerabilities"]:
                     doc_text = self.format_common_vuln(vuln)
-                    documents.append({
-                        "content": doc_text,
-                        "metadata": {
-                            "type": "common_vulnerability",
-                            "name": vuln.get("name"),
-                            "category": vuln.get("category")
+                    documents.append(
+                        {
+                            "content": doc_text,
+                            "metadata": {
+                                "type": "common_vulnerability",
+                                "name": vuln.get("name"),
+                                "category": vuln.get("category"),
+                            },
                         }
-                    })
+                    )
 
-            if 'attack_patterns' in data:
-                for pattern in data['attack_patterns']:
+            if "attack_patterns" in data:
+                for pattern in data["attack_patterns"]:
                     doc_text = self.format_attack_pattern(pattern)
-                    documents.append({
-                        "content": doc_text,
-                        "metadata": {
-                            "type": "attack_pattern",
-                            "name": pattern.get("name"),
-                            "pattern_type": pattern.get("type")
+                    documents.append(
+                        {
+                            "content": doc_text,
+                            "metadata": {
+                                "type": "attack_pattern",
+                                "name": pattern.get("name"),
+                                "pattern_type": pattern.get("type"),
+                            },
                         }
-                    })
+                    )
 
         return documents
 
@@ -217,13 +227,15 @@ Defenses:
         """.strip()
         return text
 
-    def chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+    def chunk_text(
+        self, text: str, chunk_size: int = 500, overlap: int = 50
+    ) -> List[str]:
         """Split text into overlapping chunks."""
         words = text.split()
         chunks = []
 
         for i in range(0, len(words), chunk_size - overlap):
-            chunk = " ".join(words[i:i + chunk_size])
+            chunk = " ".join(words[i : i + chunk_size])
             if len(chunk.strip()) > 50:  # Skip very small chunks
                 chunks.append(chunk.strip())
 
@@ -234,7 +246,7 @@ Defenses:
         file_path: Path,
         kb_name: str,
         metadata: Optional[Dict] = None,
-        chunk_size: int = 500
+        chunk_size: int = 500,
     ) -> int:
         """
         Add a document to the knowledge base.
@@ -254,15 +266,19 @@ Defenses:
         elif kb_name == "governance":
             collection = self.governance_kb
         else:
-            raise ValueError(f"Invalid KB name: {kb_name}. Use 'attacker' or 'governance'")
+            raise ValueError(
+                f"Invalid KB name: {kb_name}. Use 'attacker' or 'governance'"
+            )
 
         if collection is None:
-            raise ValueError(f"{kb_name} KB not found. Run init_knowledge_base.py first.")
+            raise ValueError(
+                f"{kb_name} KB not found. Run init_knowledge_base.py first."
+            )
 
         # Read file based on extension
         suffix = file_path.suffix.lower()
 
-        if suffix in ['.txt', '.md']:
+        if suffix in [".txt", ".md"]:
             print(f"📄 Reading text file: {file_path.name}")
             content = self.read_text_file(file_path)
             if not content:
@@ -278,13 +294,13 @@ Defenses:
                         **(metadata or {}),
                         "source_file": file_path.name,
                         "file_type": suffix,
-                        "chunk_index": i
-                    }
+                        "chunk_index": i,
+                    },
                 }
                 for i, chunk in enumerate(chunks)
             ]
 
-        elif suffix == '.pdf':
+        elif suffix == ".pdf":
             print(f"📕 Reading PDF file: {file_path.name}")
             content = self.read_pdf_file(file_path)
             if not content:
@@ -299,13 +315,13 @@ Defenses:
                         **(metadata or {}),
                         "source_file": file_path.name,
                         "file_type": "pdf",
-                        "chunk_index": i
-                    }
+                        "chunk_index": i,
+                    },
                 }
                 for i, chunk in enumerate(chunks)
             ]
 
-        elif suffix == '.json':
+        elif suffix == ".json":
             print(f"📋 Reading JSON file: {file_path.name}")
             documents_to_add = self.read_json_file(file_path)
             if not documents_to_add:
@@ -349,15 +365,11 @@ Defenses:
         # Add in batches
         batch_size = 100
         for i in range(0, len(documents), batch_size):
-            batch_docs = documents[i:i+batch_size]
-            batch_meta = metadatas[i:i+batch_size]
-            batch_ids = ids[i:i+batch_size]
+            batch_docs = documents[i : i + batch_size]
+            batch_meta = metadatas[i : i + batch_size]
+            batch_ids = ids[i : i + batch_size]
 
-            collection.add(
-                documents=batch_docs,
-                metadatas=batch_meta,
-                ids=batch_ids
-            )
+            collection.add(documents=batch_docs, metadatas=batch_meta, ids=batch_ids)
 
         print(f"✅ Added {len(documents)} chunks to {kb_name}_knowledge")
         return len(documents)
@@ -367,7 +379,7 @@ Defenses:
         directory: Path,
         kb_name: str,
         metadata: Optional[Dict] = None,
-        recursive: bool = False
+        recursive: bool = False,
     ) -> int:
         """Add all supported documents from a directory."""
         total_chunks = 0
@@ -398,16 +410,15 @@ Defenses:
             print(f"❌ {kb_name} KB not available")
             return
 
-        results = collection.query(
-            query_texts=[query],
-            n_results=n_results
-        )
+        results = collection.query(query_texts=[query], n_results=n_results)
 
         print(f"\n🔍 Query: {query}")
         print(f"📚 Knowledge Base: {kb_name}_knowledge")
         print("-" * 70)
 
-        for i, (doc, metadata) in enumerate(zip(results['documents'][0], results['metadatas'][0])):
+        for i, (doc, metadata) in enumerate(
+            zip(results["documents"][0], results["metadatas"][0])
+        ):
             print(f"\nResult {i+1}:")
             print(f"Source: {metadata.get('source_file', 'Unknown')}")
             print(f"Type: {metadata.get('type', metadata.get('file_type', 'Unknown'))}")
@@ -432,16 +443,24 @@ Examples:
 
   # Test query
   python add_documents_to_rag.py --query "SQL injection attack patterns" --kb attacker
-        """
+        """,
     )
 
-    parser.add_argument('--file', type=Path, help='Single file to add')
-    parser.add_argument('--directory', type=Path, help='Directory of files to add')
-    parser.add_argument('--kb', choices=['attacker', 'governance'], help='Knowledge base to add to')
-    parser.add_argument('--metadata', type=str, help='JSON string of metadata to attach')
-    parser.add_argument('--chunk-size', type=int, default=500, help='Chunk size for text splitting')
-    parser.add_argument('--recursive', action='store_true', help='Recursively process directory')
-    parser.add_argument('--query', type=str, help='Test query against knowledge base')
+    parser.add_argument("--file", type=Path, help="Single file to add")
+    parser.add_argument("--directory", type=Path, help="Directory of files to add")
+    parser.add_argument(
+        "--kb", choices=["attacker", "governance"], help="Knowledge base to add to"
+    )
+    parser.add_argument(
+        "--metadata", type=str, help="JSON string of metadata to attach"
+    )
+    parser.add_argument(
+        "--chunk-size", type=int, default=500, help="Chunk size for text splitting"
+    )
+    parser.add_argument(
+        "--recursive", action="store_true", help="Recursively process directory"
+    )
+    parser.add_argument("--query", type=str, help="Test query against knowledge base")
 
     args = parser.parse_args()
 
@@ -490,7 +509,9 @@ Examples:
                 print(f"❌ Directory not found: {args.directory}")
                 sys.exit(1)
 
-            total = tool.add_directory(args.directory, args.kb, metadata, args.recursive)
+            total = tool.add_directory(
+                args.directory, args.kb, metadata, args.recursive
+            )
             print(f"\n🎉 Total chunks added: {total}")
 
         else:
@@ -502,6 +523,7 @@ Examples:
     except Exception as e:
         print(f"\n\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

@@ -1,5 +1,5 @@
-import apiClient, { BASE_URL } from './axiosConfig';
-import axios from 'axios';
+import apiClient, { BASE_URL } from "./axiosConfig";
+import axios from "axios";
 
 export const authAPI = {
   /**
@@ -8,7 +8,7 @@ export const authAPI = {
    */
   async getToken() {
     const response = await axios.post(`${BASE_URL}/api/v1/auth/token`, null, {
-      withCredentials: true // Include OAuth session cookie
+      withCredentials: true, // Include OAuth session cookie
     });
     return response.data;
   },
@@ -18,7 +18,7 @@ export const authAPI = {
    * Uses apiClient which automatically adds token from localStorage
    */
   async getCurrentUser() {
-    const response = await apiClient.get('/api/v1/auth/me');
+    const response = await apiClient.get("/api/v1/auth/me");
     return response.data;
   },
 
@@ -26,8 +26,8 @@ export const authAPI = {
    * Logout (clear local state, backend doesn't need to know)
    */
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   },
 
   /**
@@ -35,5 +35,5 @@ export const authAPI = {
    */
   initiateLogin() {
     window.location.href = `${BASE_URL}/oauth2/authorization/github`;
-  }
+  },
 };

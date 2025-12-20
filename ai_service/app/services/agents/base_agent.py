@@ -6,12 +6,12 @@ Provides the foundation for specialized agents with common functionality.
 import asyncio
 import json
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
-from ...core.logging import get_logger
 from ...core.exceptions import LLMError
+from ...core.logging import get_logger
 from ...schemas.ai_schemas import LLMParameters
 
 
@@ -41,7 +41,9 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    async def execute(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute the agent's primary task."""
         pass
 
@@ -49,13 +51,19 @@ class BaseAgent(ABC):
         """Hook called before task execution."""
         self._is_busy = True
         self._execution_count += 1
-        self.logger.info(f"Agent {self.name} starting execution #{self._execution_count}")
+        self.logger.info(
+            f"Agent {self.name} starting execution #{self._execution_count}"
+        )
 
-    async def _post_execution_hook(self, result: Dict[str, Any], execution_time: float) -> None:
+    async def _post_execution_hook(
+        self, result: Dict[str, Any], execution_time: float
+    ) -> None:
         """Hook called after task execution."""
         self._is_busy = False
         self._total_execution_time += execution_time
-        self.logger.info(f"Agent {self.name} completed execution in {execution_time:.2f}s")
+        self.logger.info(
+            f"Agent {self.name} completed execution in {execution_time:.2f}s"
+        )
 
     def get_agent_status(self) -> Dict[str, Any]:
         """Get current agent status and metrics."""
@@ -70,8 +78,9 @@ class BaseAgent(ABC):
             "total_execution_time": self._total_execution_time,
             "average_execution_time": (
                 self._total_execution_time / self._execution_count
-                if self._execution_count > 0 else 0
-            )
+                if self._execution_count > 0
+                else 0
+            ),
         }
 
     def can_handle_task(self, task_type: str) -> bool:
@@ -92,7 +101,9 @@ class BaseAgent(ABC):
         """Get the required fields for this agent's tasks."""
         return ["task_type", "input_data"]
 
-    def _create_success_result(self, data: Any, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _create_success_result(
+        self, data: Any, metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Create a standardized success result."""
         return {
             "success": True,
@@ -100,10 +111,12 @@ class BaseAgent(ABC):
             "agent_id": self.agent_id,
             "timestamp": datetime.utcnow().isoformat(),
             "data": data,
-            "metadata": metadata or {}
+            "metadata": metadata or {},
         }
 
-    def _create_error_result(self, error: str, error_code: Optional[str] = None) -> Dict[str, Any]:
+    def _create_error_result(
+        self, error: str, error_code: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Create a standardized error result."""
         return {
             "success": False,
@@ -112,7 +125,7 @@ class BaseAgent(ABC):
             "timestamp": datetime.utcnow().isoformat(),
             "error": error,
             "error_code": error_code or "AGENT_ERROR",
-            "data": None
+            "data": None,
         }
 
 
@@ -126,9 +139,7 @@ class LLMAgent(BaseAgent):
         self.llm_service = llm_service
 
     async def _call_llm(
-        self,
-        messages: List[Dict[str, str]],
-        params: Optional[LLMParameters] = None
+        self, messages: List[Dict[str, str]], params: Optional[LLMParameters] = None
     ) -> str:
         """Call LLM service with proper error handling."""
         try:
@@ -172,7 +183,9 @@ Important guidelines:
             return json.loads(cleaned_response)
         except json.JSONDecodeError as e:
             self.logger.error(f"Failed to parse LLM JSON response: {str(e)}")
-            raise LLMError(f"Agent {self.name} received invalid JSON from LLM: {str(e)}")
+            raise LLMError(
+                f"Agent {self.name} received invalid JSON from LLM: {str(e)}"
+            )
 
 
 class CoordinatorAgent(BaseAgent):
@@ -183,7 +196,7 @@ class CoordinatorAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             name="Coordinator",
-            description="Coordinates multiple agents and manages complex workflows"
+            description="Coordinates multiple agents and manages complex workflows",
         )
         self.registered_agents: Dict[str, BaseAgent] = {}
         self.active_workflows: Dict[str, Dict[str, Any]] = {}
@@ -194,7 +207,7 @@ class CoordinatorAgent(BaseAgent):
             "agent_management",
             "task_distribution",
             "result_aggregation",
-            "error_recovery"
+            "error_recovery",
         ]
 
     def register_agent(self, agent: BaseAgent) -> None:
@@ -202,7 +215,9 @@ class CoordinatorAgent(BaseAgent):
         self.registered_agents[agent.name] = agent
         self.logger.info(f"Registered agent: {agent.name}")
 
-    async def execute(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute a coordinated multi-agent workflow."""
         workflow_id = str(uuid4())
         workflow_type = task.get("workflow_type", "sequential")
@@ -217,15 +232,21 @@ class CoordinatorAgent(BaseAgent):
                 "workflow_type": workflow_type,
                 "tasks": task.get("agent_tasks", []),
                 "results": [],
-                "status": "running"
+                "status": "running",
             }
 
             if workflow_type == "sequential":
-                result = await self._execute_sequential_workflow(workflow_id, task, context)
+                result = await self._execute_sequential_workflow(
+                    workflow_id, task, context
+                )
             elif workflow_type == "parallel":
-                result = await self._execute_parallel_workflow(workflow_id, task, context)
+                result = await self._execute_parallel_workflow(
+                    workflow_id, task, context
+                )
             elif workflow_type == "conditional":
-                result = await self._execute_conditional_workflow(workflow_id, task, context)
+                result = await self._execute_conditional_workflow(
+                    workflow_id, task, context
+                )
             else:
                 raise ValueError(f"Unknown workflow type: {workflow_type}")
 
@@ -243,10 +264,7 @@ class CoordinatorAgent(BaseAgent):
             return self._create_error_result(str(e), "WORKFLOW_ERROR")
 
     async def _execute_sequential_workflow(
-        self,
-        workflow_id: str,
-        task: Dict[str, Any],
-        context: Dict[str, Any]
+        self, workflow_id: str, task: Dict[str, Any], context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute agents sequentially, passing results between them."""
         agent_tasks = task.get("agent_tasks", [])
@@ -267,7 +285,9 @@ class CoordinatorAgent(BaseAgent):
             if results:
                 accumulated_context["previous_results"] = results
 
-            self.logger.info(f"Executing agent {agent_name} (step {i+1}/{len(agent_tasks)})")
+            self.logger.info(
+                f"Executing agent {agent_name} (step {i+1}/{len(agent_tasks)})"
+            )
 
             agent_result = await agent.execute(agent_task, accumulated_context)
             results.append(agent_result)
@@ -280,20 +300,20 @@ class CoordinatorAgent(BaseAgent):
                 if not task.get("continue_on_error", False):
                     return self._create_error_result(
                         f"Workflow stopped at agent {agent_name}: {agent_result.get('error')}",
-                        "WORKFLOW_AGENT_FAILED"
+                        "WORKFLOW_AGENT_FAILED",
                     )
 
-        return self._create_success_result(results, {
-            "workflow_id": workflow_id,
-            "workflow_type": "sequential",
-            "agents_executed": len(results)
-        })
+        return self._create_success_result(
+            results,
+            {
+                "workflow_id": workflow_id,
+                "workflow_type": "sequential",
+                "agents_executed": len(results),
+            },
+        )
 
     async def _execute_parallel_workflow(
-        self,
-        workflow_id: str,
-        task: Dict[str, Any],
-        context: Dict[str, Any]
+        self, workflow_id: str, task: Dict[str, Any], context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute agents in parallel for improved performance."""
         agent_tasks = task.get("agent_tasks", [])
@@ -320,8 +340,7 @@ class CoordinatorAgent(BaseAgent):
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 error_result = self._create_error_result(
-                    f"Agent failed with exception: {str(result)}",
-                    "AGENT_EXCEPTION"
+                    f"Agent failed with exception: {str(result)}", "AGENT_EXCEPTION"
                 )
                 processed_results.append(error_result)
             else:
@@ -330,18 +349,20 @@ class CoordinatorAgent(BaseAgent):
         # Update workflow tracking
         self.active_workflows[workflow_id]["results"] = processed_results
 
-        return self._create_success_result(processed_results, {
-            "workflow_id": workflow_id,
-            "workflow_type": "parallel",
-            "agents_executed": len(processed_results),
-            "successful_agents": sum(1 for r in processed_results if r.get("success", False))
-        })
+        return self._create_success_result(
+            processed_results,
+            {
+                "workflow_id": workflow_id,
+                "workflow_type": "parallel",
+                "agents_executed": len(processed_results),
+                "successful_agents": sum(
+                    1 for r in processed_results if r.get("success", False)
+                ),
+            },
+        )
 
     async def _execute_conditional_workflow(
-        self,
-        workflow_id: str,
-        task: Dict[str, Any],
-        context: Dict[str, Any]
+        self, workflow_id: str, task: Dict[str, Any], context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute agents based on conditional logic."""
         conditions = task.get("conditions", [])
@@ -353,7 +374,9 @@ class CoordinatorAgent(BaseAgent):
 
             # Evaluate condition (simple implementation)
             if self._evaluate_condition(condition, context, results):
-                self.logger.info(f"Condition '{condition}' met, executing {len(agent_tasks)} agents")
+                self.logger.info(
+                    f"Condition '{condition}' met, executing {len(agent_tasks)} agents"
+                )
 
                 for agent_task in agent_tasks:
                     agent_name = agent_task.get("agent")
@@ -365,18 +388,21 @@ class CoordinatorAgent(BaseAgent):
                     agent_result = await agent.execute(agent_task, context)
                     results.append(agent_result)
 
-        return self._create_success_result(results, {
-            "workflow_id": workflow_id,
-            "workflow_type": "conditional",
-            "conditions_evaluated": len(conditions),
-            "agents_executed": len(results)
-        })
+        return self._create_success_result(
+            results,
+            {
+                "workflow_id": workflow_id,
+                "workflow_type": "conditional",
+                "conditions_evaluated": len(conditions),
+                "agents_executed": len(results),
+            },
+        )
 
     def _evaluate_condition(
         self,
         condition: str,
         context: Dict[str, Any],
-        previous_results: List[Dict[str, Any]]
+        previous_results: List[Dict[str, Any]],
     ) -> bool:
         """Evaluate a simple condition (can be extended for complex logic)."""
         # Simple condition evaluation - can be made more sophisticated
@@ -406,8 +432,10 @@ class CoordinatorAgent(BaseAgent):
         workflows_to_remove = []
 
         for workflow_id, workflow_data in self.active_workflows.items():
-            if (workflow_data.get("status") in ["completed", "failed"] and
-                workflow_data.get("start_time", datetime.utcnow()) < cutoff_time):
+            if (
+                workflow_data.get("status") in ["completed", "failed"]
+                and workflow_data.get("start_time", datetime.utcnow()) < cutoff_time
+            ):
                 workflows_to_remove.append(workflow_id)
 
         for workflow_id in workflows_to_remove:

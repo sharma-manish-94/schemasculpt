@@ -8,20 +8,20 @@ RAG Enhancement: Provides shared RAG service to all agents, enabling them to que
 specialized knowledge bases (Attacker KB + Governance KB) throughout the analysis.
 """
 
-import logging
 import hashlib
-from typing import Dict, Any, Optional
+import logging
 from datetime import datetime
+from typing import Any, Dict, Optional
 
-from .vulnerability_scanner_agent import VulnerabilityScannerAgent
-from .threat_modeling_agent import ThreatModelingAgent
-from .security_reporter_agent import SecurityReporterAgent
-from ..rag_service import RAGService
 from ...schemas.attack_path_schemas import (
-    AttackPathContext,
+    AttackPathAnalysisReport,
     AttackPathAnalysisRequest,
-    AttackPathAnalysisReport
+    AttackPathContext,
 )
+from ..rag_service import RAGService
+from .security_reporter_agent import SecurityReporterAgent
+from .threat_modeling_agent import ThreatModelingAgent
+from .vulnerability_scanner_agent import VulnerabilityScannerAgent
 
 logger = logging.getLogger(__name__)
 
@@ -57,21 +57,27 @@ class AttackPathOrchestrator:
 
         # Log RAG availability
         if self.rag_service.is_available():
-            attacker_kb_status = "✓" if self.rag_service.attacker_kb_available() else "✗"
-            governance_kb_status = "✓" if self.rag_service.governance_kb_available() else "✗"
+            attacker_kb_status = (
+                "✓" if self.rag_service.attacker_kb_available() else "✗"
+            )
+            governance_kb_status = (
+                "✓" if self.rag_service.governance_kb_available() else "✗"
+            )
             logger.info(
                 f"[AttackPathOrchestrator] RAG-Enhanced mode enabled! "
                 f"Attacker KB: {attacker_kb_status}, Governance KB: {governance_kb_status}"
             )
         else:
-            logger.warning("[AttackPathOrchestrator] RAG service not available. Operating in basic mode.")
+            logger.warning(
+                "[AttackPathOrchestrator] RAG service not available. Operating in basic mode."
+            )
 
         logger.info("[AttackPathOrchestrator] Initialized with all agents")
 
     async def run_attack_path_analysis(
         self,
         request: AttackPathAnalysisRequest,
-        progress_callback: Optional[callable] = None
+        progress_callback: Optional[callable] = None,
     ) -> AttackPathAnalysisReport:
         """
         Run complete attack path simulation analysis
@@ -92,8 +98,9 @@ class AttackPathOrchestrator:
 
         try:
             # Parse the spec
-            import yaml
             import json
+
+            import yaml
 
             try:
                 spec = json.loads(request.spec_text)
@@ -110,17 +117,19 @@ class AttackPathOrchestrator:
                 spec_hash=spec_hash,
                 current_stage="initialized",
                 progress_percentage=0.0,
-                current_activity="Initializing attack path simulation..."
+                current_activity="Initializing attack path simulation...",
             )
 
-            logger.info(f"[AttackPathOrchestrator] MCP Context created: {context.context_id}")
+            logger.info(
+                f"[AttackPathOrchestrator] MCP Context created: {context.context_id}"
+            )
 
             # Send initial progress
             if progress_callback:
                 await progress_callback(
                     context.current_stage,
                     context.progress_percentage,
-                    context.current_activity
+                    context.current_activity,
                 )
 
             # ====================================================================
@@ -135,7 +144,7 @@ class AttackPathOrchestrator:
                 await progress_callback(
                     context.current_stage,
                     context.progress_percentage,
-                    context.current_activity
+                    context.current_activity,
                 )
 
             scanner_task = {"task_type": "vulnerability_scan"}
@@ -153,7 +162,7 @@ class AttackPathOrchestrator:
                 await progress_callback(
                     context.current_stage,
                     context.progress_percentage,
-                    f"Found {len(context.individual_vulnerabilities)} vulnerabilities"
+                    f"Found {len(context.individual_vulnerabilities)} vulnerabilities",
                 )
 
             # ====================================================================
@@ -168,13 +177,13 @@ class AttackPathOrchestrator:
                 await progress_callback(
                     context.current_stage,
                     context.progress_percentage,
-                    context.current_activity
+                    context.current_activity,
                 )
 
             threat_task = {
                 "task_type": "threat_modeling",
                 "max_chain_length": request.max_chain_length,
-                "analysis_depth": request.analysis_depth
+                "analysis_depth": request.analysis_depth,
             }
             threat_result = await self.threat_agent.execute(threat_task, context)
 
@@ -194,7 +203,7 @@ class AttackPathOrchestrator:
                 await progress_callback(
                     context.current_stage,
                     context.progress_percentage,
-                    f"Found {len(context.attack_chains)} attack chains"
+                    f"Found {len(context.attack_chains)} attack chains",
                 )
 
             # ====================================================================
@@ -209,12 +218,12 @@ class AttackPathOrchestrator:
                 await progress_callback(
                     context.current_stage,
                     context.progress_percentage,
-                    context.current_activity
+                    context.current_activity,
                 )
 
             reporter_task = {
                 "task_type": "generate_report",
-                "analysis_depth": request.analysis_depth
+                "analysis_depth": request.analysis_depth,
             }
             reporter_result = await self.reporter_agent.execute(reporter_task, context)
 
@@ -231,9 +240,7 @@ class AttackPathOrchestrator:
             # Final progress update
             if progress_callback:
                 await progress_callback(
-                    "completed",
-                    100.0,
-                    "Attack path analysis complete!"
+                    "completed", 100.0, "Attack path analysis complete!"
                 )
 
             # Calculate total execution time
@@ -247,11 +254,7 @@ class AttackPathOrchestrator:
 
             # Send error progress update
             if progress_callback:
-                await progress_callback(
-                    "error",
-                    0.0,
-                    f"Analysis failed: {str(e)}"
-                )
+                await progress_callback("error", 0.0, f"Analysis failed: {str(e)}")
 
             raise
 
@@ -263,5 +266,5 @@ class AttackPathOrchestrator:
             "analyzing_chains": "Analyzing attack chains with AI...",
             "reporting": "Generating executive security report...",
             "completed": "Analysis complete!",
-            "error": "Analysis encountered an error"
+            "error": "Analysis encountered an error",
         }

@@ -10,12 +10,12 @@ Two Specialized Knowledge Bases:
 """
 
 import asyncio
-from typing import Dict, Any, List
 from pathlib import Path
+from typing import Any, Dict, List
 
-from .rag_service import RAGService
-from ..core.logging import get_logger
 from ..core.config import settings
+from ..core.logging import get_logger
+from .rag_service import RAGService
 
 logger = get_logger("rag_initializer")
 
@@ -33,7 +33,9 @@ class RAGInitializer:
         self.knowledge_base_dir = Path(settings.ai_service_data_dir) / "knowledge_base"
         self._initialized = False
 
-    async def initialize_knowledge_bases(self, force_reingest: bool = False) -> Dict[str, Any]:
+    async def initialize_knowledge_bases(
+        self, force_reingest: bool = False
+    ) -> Dict[str, Any]:
         """
         Initialize both knowledge bases with security knowledge.
 
@@ -53,7 +55,7 @@ class RAGInitializer:
             "status": "success",
             "attacker_kb": {},
             "governance_kb": {},
-            "total_documents": 0
+            "total_documents": 0,
         }
 
         try:
@@ -61,15 +63,15 @@ class RAGInitializer:
             stats = await self.rag_service.get_knowledge_base_stats()
 
             attacker_needs_init = (
-                not stats.get("attacker_kb", {}).get("available") or
-                stats.get("attacker_kb", {}).get("document_count", 0) == 0 or
-                force_reingest
+                not stats.get("attacker_kb", {}).get("available")
+                or stats.get("attacker_kb", {}).get("document_count", 0) == 0
+                or force_reingest
             )
 
             governance_needs_init = (
-                not stats.get("governance_kb", {}).get("available") or
-                stats.get("governance_kb", {}).get("document_count", 0) == 0 or
-                force_reingest
+                not stats.get("governance_kb", {}).get("available")
+                or stats.get("governance_kb", {}).get("document_count", 0) == 0
+                or force_reingest
             )
 
             # Initialize Attacker Knowledge Base
@@ -87,7 +89,9 @@ class RAGInitializer:
                 logger.info("Initializing Governance Knowledge Base...")
                 governance_result = await self._initialize_governance_kb()
                 results["governance_kb"] = governance_result
-                results["total_documents"] += governance_result.get("documents_added", 0)
+                results["total_documents"] += governance_result.get(
+                    "documents_added", 0
+                )
             else:
                 logger.info("Governance KB already populated, skipping...")
                 results["governance_kb"] = {"status": "skipped", "documents_added": 0}
@@ -127,7 +131,7 @@ class RAGInitializer:
         return {
             "status": "success",
             "documents_added": total_docs,
-            "sources": ["OWASP API Security Top 10", "MITRE ATT&CK"]
+            "sources": ["OWASP API Security Top 10", "MITRE ATT&CK"],
         }
 
     async def _initialize_governance_kb(self) -> Dict[str, Any]:
@@ -159,7 +163,7 @@ class RAGInitializer:
         return {
             "status": "success",
             "documents_added": total_docs,
-            "sources": ["CVSS v3.1", "DREAD", "GDPR", "HIPAA", "PCI-DSS"]
+            "sources": ["CVSS v3.1", "DREAD", "GDPR", "HIPAA", "PCI-DSS"],
         }
 
     def _ingest_owasp_api_security(self) -> Dict[str, Any]:
@@ -183,7 +187,6 @@ Real-World Impact: Unauthorized access to sensitive user data, financial records
 Detection: Look for endpoints with path/query parameters containing IDs without proper authorization checks. Test by swapping IDs between different user contexts.
 
 CVSS Score: Typically HIGH (7.0-8.9) to CRITICAL (9.0+) depending on data sensitivity.""",
-
             # API2: Broken Authentication
             """OWASP API2:2023 - Broken Authentication
 
@@ -208,7 +211,6 @@ Real-World Impact: Complete account takeover, unauthorized access to all user da
 Detection: Missing rate limiting, weak JWT implementation, predictable session tokens, no MFA enforcement for sensitive operations.
 
 CVSS Score: CRITICAL (9.0+) when authentication can be fully bypassed.""",
-
             # API3: Broken Object Property Level Authorization
             """OWASP API3:2023 - Broken Object Property Level Authorization
 
@@ -230,7 +232,6 @@ Real-World Impact: Privilege escalation, unauthorized data disclosure, account t
 Detection: API endpoints that accept generic objects without property whitelisting, endpoints returning full database objects without filtering.
 
 CVSS Score: HIGH (7.0-8.9) for privilege escalation scenarios.""",
-
             # API4: Unrestricted Resource Consumption
             """OWASP API4:2023 - Unrestricted Resource Consumption
 
@@ -253,7 +254,6 @@ Real-World Impact: Service unavailability, increased infrastructure costs, degra
 Detection: Missing rate limiting, no file size restrictions, no pagination, lack of query complexity limits.
 
 CVSS Score: MEDIUM (4.0-6.9) to HIGH (7.0-8.9) for critical availability impact.""",
-
             # API5: Broken Function Level Authorization
             """OWASP API5:2023 - Broken Function Level Authorization
 
@@ -276,7 +276,6 @@ Real-World Impact: Complete system compromise, data manipulation, unauthorized a
 Detection: Missing role/permission checks on sensitive endpoints, endpoints with administrative functions accessible to regular users.
 
 CVSS Score: HIGH (7.0-8.9) to CRITICAL (9.0+) for admin access.""",
-
             # API6-10 abbreviated for space
             """OWASP API6:2023 - Unrestricted Access to Sensitive Business Flows
 
@@ -285,7 +284,6 @@ Description: APIs vulnerable to this risk expose a business flow without compens
 Attack Patterns: Automated scalping, mass spam, referral abuse, inventory manipulation, vote manipulation.
 
 CVSS Score: MEDIUM (4.0-6.9) to HIGH (7.0-8.9) depending on business impact.""",
-
             """OWASP API7:2023 - Server Side Request Forgery (SSRF)
 
 Description: API fetches remote resource without validating user-supplied URI. Attackers force the application to send crafted requests to unexpected destinations.
@@ -293,7 +291,6 @@ Description: API fetches remote resource without validating user-supplied URI. A
 Attack Patterns: Internal network scanning, cloud metadata access (AWS 169.254.169.254), firewall bypass, local file reading.
 
 CVSS Score: HIGH (7.0-8.9) to CRITICAL (9.0+) for cloud metadata access.""",
-
             """OWASP API8:2023 - Security Misconfiguration
 
 Description: APIs contain complex configurations that are often missed or not following security best practices.
@@ -301,7 +298,6 @@ Description: APIs contain complex configurations that are often missed or not fo
 Common Issues: Missing security headers, verbose errors exposing stack traces, unnecessary HTTP methods, default credentials, misconfigured CORS, missing TLS.
 
 CVSS Score: MEDIUM (4.0-6.9) to HIGH (7.0-8.9).""",
-
             """OWASP API9:2023 - Improper Inventory Management
 
 Description: APIs expose more endpoints than traditional web applications. Lack of proper inventory leads to deprecated versions and debug endpoints being exposed.
@@ -309,33 +305,70 @@ Description: APIs expose more endpoints than traditional web applications. Lack 
 Attack Patterns: Accessing old unpatched API versions, discovering hidden debug endpoints, exploiting deprecated endpoints.
 
 CVSS Score: MEDIUM (4.0-6.9) to HIGH (7.0-8.9) for exploitable old versions.""",
-
             """OWASP API10:2023 - Unsafe Consumption of APIs
 
 Description: Developers trust data from third-party APIs more than user input. Weak security in third-party APIs can compromise the consuming API.
 
 Attack Patterns: Injection through third-party responses, data poisoning, malicious redirects, parsing vulnerabilities.
 
-CVSS Score: HIGH (7.0-8.9) when external data flows to sensitive operations."""
+CVSS Score: HIGH (7.0-8.9) when external data flows to sensitive operations.""",
         ]
 
         metadatas = [
-            {"source": "OWASP API Security Top 10", "category": "API1:2023 BOLA", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API2:2023 Authentication", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API3:2023 Property Authorization", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API4:2023 Resource Consumption", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API5:2023 Function Authorization", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API6:2023 Business Flow", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API7:2023 SSRF", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API8:2023 Misconfiguration", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API9:2023 Inventory Management", "type": "vulnerability_pattern"},
-            {"source": "OWASP API Security Top 10", "category": "API10:2023 Unsafe Consumption", "type": "vulnerability_pattern"},
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API1:2023 BOLA",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API2:2023 Authentication",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API3:2023 Property Authorization",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API4:2023 Resource Consumption",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API5:2023 Function Authorization",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API6:2023 Business Flow",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API7:2023 SSRF",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API8:2023 Misconfiguration",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API9:2023 Inventory Management",
+                "type": "vulnerability_pattern",
+            },
+            {
+                "source": "OWASP API Security Top 10",
+                "category": "API10:2023 Unsafe Consumption",
+                "type": "vulnerability_pattern",
+            },
         ]
 
         return self.rag_service.ingest_documents(
-            documents=documents,
-            metadatas=metadatas,
-            knowledge_base="attacker"
+            documents=documents, metadatas=metadatas, knowledge_base="attacker"
         )
 
     def _ingest_mitre_attack_patterns(self) -> Dict[str, Any]:
@@ -350,7 +383,6 @@ Description: Adversaries exploit weaknesses in Internet-facing APIs to gain init
 API-Specific Tactics: Exploiting unauthenticated endpoints, bypassing weak auth, leveraging default credentials, exploiting SSRF.
 
 Detection: Monitor unusual API traffic patterns, authentication failures, access to sensitive endpoints from new IPs.""",
-
             """MITRE ATT&CK - Credential Access via API (T1552.001)
 
 Technique: Unsecured Credentials in Files
@@ -358,7 +390,6 @@ Technique: Unsecured Credentials in Files
 Description: Adversaries search for API keys, tokens, and credentials in insecure locations such as configuration files, code repositories, or environment variables.
 
 API-Specific Tactics: Extracting hardcoded API keys, discovering exposed .env files, finding tokens in version control, accessing exposed configuration endpoints.""",
-
             """MITRE ATT&CK - Privilege Escalation in APIs (T1078)
 
 Technique: Valid Accounts with Escalated Privileges
@@ -366,27 +397,44 @@ Technique: Valid Accounts with Escalated Privileges
 Description: Adversaries obtain credentials with elevated privileges through API exploitation, then use those accounts to expand access.
 
 API-Specific Tactics: Mass assignment for admin privileges, JWT token manipulation, horizontal privilege escalation through BOLA, function-level authorization flaws.""",
-
             """MITRE ATT&CK - Data Exfiltration via API (T1020)
 
 Technique: Automated Exfiltration
 
 Description: Adversaries use automated methods to collect and exfiltrate sensitive data through APIs at scale.
 
-API-Specific Tactics: Mass data extraction through BOLA, pagination flaws for full datasets, excessive data exposure, export functionality abuse."""
+API-Specific Tactics: Mass data extraction through BOLA, pagination flaws for full datasets, excessive data exposure, export functionality abuse.""",
         ]
 
         metadatas = [
-            {"source": "MITRE ATT&CK", "category": "Initial Access", "technique": "T1190", "type": "attack_pattern"},
-            {"source": "MITRE ATT&CK", "category": "Credential Access", "technique": "T1552.001", "type": "attack_pattern"},
-            {"source": "MITRE ATT&CK", "category": "Privilege Escalation", "technique": "T1078", "type": "attack_pattern"},
-            {"source": "MITRE ATT&CK", "category": "Exfiltration", "technique": "T1020", "type": "attack_pattern"},
+            {
+                "source": "MITRE ATT&CK",
+                "category": "Initial Access",
+                "technique": "T1190",
+                "type": "attack_pattern",
+            },
+            {
+                "source": "MITRE ATT&CK",
+                "category": "Credential Access",
+                "technique": "T1552.001",
+                "type": "attack_pattern",
+            },
+            {
+                "source": "MITRE ATT&CK",
+                "category": "Privilege Escalation",
+                "technique": "T1078",
+                "type": "attack_pattern",
+            },
+            {
+                "source": "MITRE ATT&CK",
+                "category": "Exfiltration",
+                "technique": "T1020",
+                "type": "attack_pattern",
+            },
         ]
 
         return self.rag_service.ingest_documents(
-            documents=documents,
-            metadatas=metadatas,
-            knowledge_base="attacker"
+            documents=documents, metadatas=metadatas, knowledge_base="attacker"
         )
 
     def _ingest_cvss_knowledge(self) -> Dict[str, Any]:
@@ -419,9 +467,7 @@ API Security Examples:
         ]
 
         return self.rag_service.ingest_documents(
-            documents=documents,
-            metadatas=metadatas,
-            knowledge_base="governance"
+            documents=documents, metadatas=metadatas, knowledge_base="governance"
         )
 
     def _ingest_dread_framework(self) -> Dict[str, Any]:
@@ -450,13 +496,15 @@ DREAD Score: 8.8/10 (HIGH RISK)"""
         ]
 
         metadatas = [
-            {"source": "DREAD Framework", "category": "Risk Assessment", "type": "framework"},
+            {
+                "source": "DREAD Framework",
+                "category": "Risk Assessment",
+                "type": "framework",
+            },
         ]
 
         return self.rag_service.ingest_documents(
-            documents=documents,
-            metadatas=metadatas,
-            knowledge_base="governance"
+            documents=documents, metadatas=metadatas, knowledge_base="governance"
         )
 
     def _ingest_compliance_frameworks(self) -> Dict[str, Any]:
@@ -476,7 +524,6 @@ Key Requirements:
 API Violations: BOLA exposing personal data, missing encryption, excessive data exposure, inadequate authentication
 
 Penalties: Up to €20 million or 4% of global annual revenue""",
-
             """PCI-DSS - Payment API Security Requirements
 
 Payment Card Industry Data Security Standard
@@ -491,7 +538,6 @@ Key Requirements:
 10. Track and monitor: Log all payment data access, secure audit storage, regular review
 
 API Violations: Exposing card data in responses, missing encryption, weak authentication, insufficient logging""",
-
             """HIPAA - Healthcare API Security Requirements
 
 Health Insurance Portability and Accountability Act (US)
@@ -506,19 +552,29 @@ Required Controls: Role-based access control, patient consent management, audit 
 
 Common Violations: BOLA exposing patient records, missing encryption, inadequate logging, lack of consent verification, excessive PHI exposure
 
-Penalties: Up to $1.5 million per violation category per year"""
+Penalties: Up to $1.5 million per violation category per year""",
         ]
 
         metadatas = [
-            {"source": "GDPR", "category": "Compliance", "type": "regulatory_framework"},
-            {"source": "PCI-DSS", "category": "Compliance", "type": "regulatory_framework"},
-            {"source": "HIPAA", "category": "Compliance", "type": "regulatory_framework"},
+            {
+                "source": "GDPR",
+                "category": "Compliance",
+                "type": "regulatory_framework",
+            },
+            {
+                "source": "PCI-DSS",
+                "category": "Compliance",
+                "type": "regulatory_framework",
+            },
+            {
+                "source": "HIPAA",
+                "category": "Compliance",
+                "type": "regulatory_framework",
+            },
         ]
 
         return self.rag_service.ingest_documents(
-            documents=documents,
-            metadatas=metadatas,
-            knowledge_base="governance"
+            documents=documents, metadatas=metadatas, knowledge_base="governance"
         )
 
 

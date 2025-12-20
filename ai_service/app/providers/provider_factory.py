@@ -3,16 +3,15 @@ Provider Factory for LLM providers.
 Handles provider initialization and selection based on configuration.
 """
 
-from typing import Dict, Any, Optional
 from functools import lru_cache
+from typing import Any, Dict, Optional
 
-from .base_provider import BaseLLMProvider, ProviderType
-from .ollama_provider import OllamaProvider
-from .huggingface_provider import HuggingFaceProvider
-from .vcap_provider import VCAPProvider
-from ..core.logging import get_logger
 from ..core.exceptions import LLMError
-
+from ..core.logging import get_logger
+from .base_provider import BaseLLMProvider, ProviderType
+from .huggingface_provider import HuggingFaceProvider
+from .ollama_provider import OllamaProvider
+from .vcap_provider import VCAPProvider
 
 logger = get_logger("provider_factory")
 
@@ -28,9 +27,7 @@ class ProviderFactory:
 
     @classmethod
     def create_provider(
-        cls,
-        provider_type: str,
-        config: Dict[str, Any]
+        cls, provider_type: str, config: Dict[str, Any]
     ) -> BaseLLMProvider:
         """
         Create an LLM provider instance.
@@ -69,11 +66,7 @@ class ProviderFactory:
             raise LLMError(error_msg)
 
     @classmethod
-    def register_provider(
-        cls,
-        provider_type: ProviderType,
-        provider_class: type
-    ):
+    def register_provider(cls, provider_type: ProviderType, provider_class: type):
         """
         Register a new provider type.
 

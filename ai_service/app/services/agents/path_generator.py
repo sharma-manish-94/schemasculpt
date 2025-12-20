@@ -4,11 +4,11 @@ Specializes in generating RESTful API paths and operations.
 """
 
 import json
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .base_agent import LLMAgent
 from ...schemas.ai_schemas import LLMParameters
+from .base_agent import LLMAgent
 
 
 class PathGeneratorAgent(LLMAgent):
@@ -20,7 +20,7 @@ class PathGeneratorAgent(LLMAgent):
         super().__init__(
             name="PathGenerator",
             description="Generates comprehensive RESTful API paths with operations, parameters, and responses",
-            llm_service=llm_service
+            llm_service=llm_service,
         )
 
     def _define_capabilities(self) -> List[str]:
@@ -30,10 +30,12 @@ class PathGeneratorAgent(LLMAgent):
             "parameter_definition",
             "response_modeling",
             "security_integration",
-            "api_versioning"
+            "api_versioning",
         ]
 
-    async def execute(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute path generation task."""
         try:
             await self._pre_execution_hook(task)
@@ -61,7 +63,9 @@ class PathGeneratorAgent(LLMAgent):
             self.logger.error(f"Path generation failed: {str(e)}")
             return self._create_error_result(str(e), "PATH_GENERATION_ERROR")
 
-    async def _generate_paths(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_paths(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Generate comprehensive RESTful paths for entities."""
         entities = task.get("input_data", {}).get("entities", [])
         schemas = task.get("input_data", {}).get("schemas", {})
@@ -76,9 +80,12 @@ class PathGeneratorAgent(LLMAgent):
                     schemas = result["data"]["schemas"]
 
         if not entities:
-            return self._create_error_result("No entities data provided for path generation")
+            return self._create_error_result(
+                "No entities data provided for path generation"
+            )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an expert RESTful API designer specializing in creating comprehensive, production-ready API paths and operations.
 
 **API Design Principles:**
@@ -142,17 +149,24 @@ You are an expert RESTful API designer specializing in creating comprehensive, p
     {{"pattern": "pagination", "implementation": "query parameters", "paths": ["list of paths using this pattern"]}}
   ]
 }}
-""")
+"""
+        )
 
-        entity_info = "\n".join([
-            f"**{entity['name']}:**\n" +
-            f"- Description: {entity.get('description', 'No description')}\n" +
-            f"- Attributes: {[attr['name'] for attr in entity.get('attributes', [])]}\n" +
-            f"- Relationships: {[rel['target'] for rel in entity.get('relationships', [])]}\n"
-            for entity in entities
-        ])
+        entity_info = "\n".join(
+            [
+                f"**{entity['name']}:**\n"
+                + f"- Description: {entity.get('description', 'No description')}\n"
+                + f"- Attributes: {[attr['name'] for attr in entity.get('attributes', [])]}\n"
+                + f"- Relationships: {[rel['target'] for rel in entity.get('relationships', [])]}\n"
+                for entity in entities
+            ]
+        )
 
-        schema_info = f"**Available Schemas:** {list(schemas.keys())}" if schemas else "**No schemas provided**"
+        schema_info = (
+            f"**Available Schemas:** {list(schemas.keys())}"
+            if schemas
+            else "**No schemas provided**"
+        )
 
         user_message = f"""
 Generate comprehensive RESTful API paths for the following entities:
@@ -175,28 +189,36 @@ Create production-ready paths with comprehensive operation definitions.
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.3))
         paths_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(paths_data, {
-            "generation_type": "restful_paths",
-            "tokens_used": len(response.split()),
-            "entities_processed": len(entities),
-            "paths_generated": len(paths_data.get("paths", {}))
-        })
+        return self._create_success_result(
+            paths_data,
+            {
+                "generation_type": "restful_paths",
+                "tokens_used": len(response.split()),
+                "entities_processed": len(entities),
+                "paths_generated": len(paths_data.get("paths", {})),
+            },
+        )
 
-    async def _enhance_operations(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _enhance_operations(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Enhance existing operations with additional features."""
         existing_paths = task.get("input_data", {}).get("paths", {})
-        enhancements = task.get("input_data", {}).get("enhancements", ["examples", "security", "validation"])
+        enhancements = task.get("input_data", {}).get(
+            "enhancements", ["examples", "security", "validation"]
+        )
 
         if not existing_paths:
             return self._create_error_result("No paths provided for enhancement")
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an API enhancement specialist focused on adding advanced features to existing operations.
 
 **Enhancement Categories:**
@@ -222,7 +244,8 @@ You are an API enhancement specialist focused on adding advanced features to exi
     "documentation_improvements": 0
   }}
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Enhance the following API paths with the requested features:
@@ -243,28 +266,38 @@ Focus on:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         enhancement_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(enhancement_data, {
-            "enhancement_type": "operation_enhancement",
-            "tokens_used": len(response.split()),
-            "paths_enhanced": len(existing_paths),
-            "enhancements_requested": enhancements
-        })
+        return self._create_success_result(
+            enhancement_data,
+            {
+                "enhancement_type": "operation_enhancement",
+                "tokens_used": len(response.split()),
+                "paths_enhanced": len(existing_paths),
+                "enhancements_requested": enhancements,
+            },
+        )
 
-    async def _add_security_schemes(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _add_security_schemes(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Add comprehensive security schemes to paths."""
         paths = task.get("input_data", {}).get("paths", {})
-        security_requirements = task.get("input_data", {}).get("security", ["jwt", "api_key"])
+        security_requirements = task.get("input_data", {}).get(
+            "security", ["jwt", "api_key"]
+        )
 
         if not paths:
-            return self._create_error_result("No paths provided for security enhancement")
+            return self._create_error_result(
+                "No paths provided for security enhancement"
+            )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are a security specialist expert in API security design and implementation.
 
 **Security Scheme Types:**
@@ -301,7 +334,8 @@ You are a security specialist expert in API security design and implementation.
     "security_levels": ["public", "authenticated", "admin"]
   }}
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Add comprehensive security schemes to the following API paths:
@@ -324,28 +358,36 @@ Create a secure API design that balances security with usability.
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         security_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(security_data, {
-            "security_type": "comprehensive_security",
-            "tokens_used": len(response.split()),
-            "paths_secured": len(paths),
-            "security_schemes": security_requirements
-        })
+        return self._create_success_result(
+            security_data,
+            {
+                "security_type": "comprehensive_security",
+                "tokens_used": len(response.split()),
+                "paths_secured": len(paths),
+                "security_schemes": security_requirements,
+            },
+        )
 
-    async def _optimize_path_structure(self, task: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def _optimize_path_structure(
+        self, task: Dict[str, Any], context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Optimize path structure for better organization and performance."""
         paths = task.get("input_data", {}).get("paths", {})
-        optimization_goals = task.get("input_data", {}).get("goals", ["organization", "performance", "consistency"])
+        optimization_goals = task.get("input_data", {}).get(
+            "goals", ["organization", "performance", "consistency"]
+        )
 
         if not paths:
             return self._create_error_result("No paths provided for optimization")
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are a path structure optimization expert focusing on API organization and performance.
 
 **Optimization Areas:**
@@ -371,7 +413,8 @@ You are a path structure optimization expert focusing on API organization and pe
   }},
   "recommendations": ["additional optimization suggestions"]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Optimize the structure of the following API paths:
@@ -394,18 +437,21 @@ Provide a well-structured, efficient API design.
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ]
 
         response = await self._call_llm(messages, LLMParameters(temperature=0.2))
         optimization_data = await self._parse_llm_json_response(response)
 
-        return self._create_success_result(optimization_data, {
-            "optimization_type": "path_structure",
-            "tokens_used": len(response.split()),
-            "paths_optimized": len(paths),
-            "optimization_goals": optimization_goals
-        })
+        return self._create_success_result(
+            optimization_data,
+            {
+                "optimization_type": "path_structure",
+                "tokens_used": len(response.split()),
+                "paths_optimized": len(paths),
+                "optimization_goals": optimization_goals,
+            },
+        )
 
     def _get_required_task_fields(self) -> List[str]:
         """Get required fields for path generation tasks."""

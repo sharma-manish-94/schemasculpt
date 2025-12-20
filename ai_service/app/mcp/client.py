@@ -7,12 +7,13 @@ to various MCP servers (GitHub, GitLab, etc.)
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Optional
 
 try:
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
+
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
@@ -23,16 +24,19 @@ logger = logging.getLogger(__name__)
 
 class MCPClientError(Exception):
     """Base exception for MCP client errors"""
+
     pass
 
 
 class MCPConnectionError(MCPClientError):
     """Error connecting to MCP server"""
+
     pass
 
 
 class MCPOperationError(MCPClientError):
     """Error performing MCP operation"""
+
     pass
 
 
@@ -55,7 +59,9 @@ class MCPClient:
             server_params: Server configuration parameters
         """
         if not MCP_AVAILABLE:
-            raise MCPClientError("MCP SDK is not installed. Install with: pip install mcp")
+            raise MCPClientError(
+                "MCP SDK is not installed. Install with: pip install mcp"
+            )
 
         self.server_params = server_params or {}
         self.session: Optional[ClientSession] = None
@@ -63,7 +69,9 @@ class MCPClient:
         self._write_stream = None
         self._connected = False
 
-    async def connect(self, command: str, args: List[str], env: Optional[Dict[str, str]] = None) -> None:
+    async def connect(
+        self, command: str, args: List[str], env: Optional[Dict[str, str]] = None
+    ) -> None:
         """
         Connect to an MCP server.
 
@@ -79,14 +87,14 @@ class MCPClient:
             logger.info(f"Connecting to MCP server: {command} {' '.join(args)}")
 
             server_params = StdioServerParameters(
-                command=command,
-                args=args,
-                env=env or {}
+                command=command, args=args, env=env or {}
             )
 
             # Create stdio client context
             self._stdio_context = stdio_client(server_params)
-            self._read_stream, self._write_stream = await self._stdio_context.__aenter__()
+            self._read_stream, self._write_stream = (
+                await self._stdio_context.__aenter__()
+            )
 
             # Create session context
             self._session_context = ClientSession(self._read_stream, self._write_stream)
@@ -168,7 +176,7 @@ class MCPClient:
 
         try:
             result = await self.session.list_tools()
-            return result.tools if hasattr(result, 'tools') else []
+            return result.tools if hasattr(result, "tools") else []
 
         except Exception as e:
             logger.error(f"Error listing tools: {e}")
@@ -200,7 +208,9 @@ class MCPClient:
             raise MCPOperationError(f"Error reading resource {uri}: {e}") from e
 
     @asynccontextmanager
-    async def connection(self, command: str, args: List[str], env: Optional[Dict[str, str]] = None):
+    async def connection(
+        self, command: str, args: List[str], env: Optional[Dict[str, str]] = None
+    ):
         """
         Context manager for MCP connection.
 
