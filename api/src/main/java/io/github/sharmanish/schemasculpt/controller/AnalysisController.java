@@ -1,13 +1,10 @@
 package io.github.sharmanish.schemasculpt.controller;
 
-import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
-import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
-import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
-import io.github.sharmanish.schemasculpt.dto.analysis.SecurityFinding;
-import io.github.sharmanish.schemasculpt.dto.analysis.SecurityFindingsRequest;
-import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
-import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.*;
+import io.github.sharmanish.schemasculpt.dto.diff.DiffRequest;
+import io.github.sharmanish.schemasculpt.dto.diff.DiffResult;
 import io.github.sharmanish.schemasculpt.service.AnalysisService;
+import io.github.sharmanish.schemasculpt.service.SchemaDiffService;
 import io.github.sharmanish.schemasculpt.service.SecurityFindingsExtractor;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -15,13 +12,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -36,6 +27,7 @@ public class AnalysisController {
   private final SessionService sessionService;
   private final AnalysisService analysisService;
   private final SecurityFindingsExtractor securityFindingsExtractor;
+  private final SchemaDiffService diffService;
   private final WebClient webClient;
 
   public AnalysisController(
@@ -43,11 +35,13 @@ public class AnalysisController {
       AnalysisService analysisService,
       SecurityFindingsExtractor securityFindingsExtractor,
       WebClient.Builder webClientBuilder,
-      @Value("${ai.service.url}") String aiServiceUrl) {
+      @Value("${ai.service.url}") String aiServiceUrl,
+      SchemaDiffService diffService) {
     this.sessionService = sessionService;
     this.analysisService = analysisService;
     this.securityFindingsExtractor = securityFindingsExtractor;
     this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
+    this.diffService = diffService;
   }
 
   @GetMapping("/dependencies")
@@ -219,5 +213,11 @@ public class AnalysisController {
 
     BlastRadiusResponse response = analysisService.performBlastRadiusAnalysis(apiSpec, schemaName);
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/diff")
+  public ResponseEntity<DiffResult> diffSpecs(@RequestBody DiffRequest request) {
+    // DiffRequest contains String oldSpec, String newSpec
+    return ResponseEntity.ok(diffService.compareSpecs(request.getOldSpec(), request.getNewSpec()));
   }
 }
