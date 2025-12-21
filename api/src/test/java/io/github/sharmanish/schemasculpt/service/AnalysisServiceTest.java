@@ -7,6 +7,13 @@ import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
+import io.github.sharmanish.schemasculpt.service.analyzer.complexity.NestingDepthAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.dependency.BlastRadiusAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.dependency.ReverseDependencyGraphAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.quality.SchemaSimilarityAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.quality.ZombieApiAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.security.AuthorizationMatrixAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.security.TaintAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import java.io.IOException;
@@ -26,8 +33,27 @@ class AnalysisServiceTest {
 
   @BeforeEach
   void setUp() {
-    analysisService = new AnalysisService(new JsonMapper());
+    // Create all analyzers
+    JsonMapper jsonMapper = new JsonMapper();
+    ReverseDependencyGraphAnalyzer dependencyGraphAnalyzer =
+        new ReverseDependencyGraphAnalyzer();
+    BlastRadiusAnalyzer blastRadiusAnalyzer = new BlastRadiusAnalyzer(dependencyGraphAnalyzer);
+    NestingDepthAnalyzer nestingDepthAnalyzer = new NestingDepthAnalyzer(jsonMapper);
+    TaintAnalyzer taintAnalyzer = new TaintAnalyzer();
+    AuthorizationMatrixAnalyzer authzMatrixAnalyzer = new AuthorizationMatrixAnalyzer();
+    SchemaSimilarityAnalyzer schemaSimilarityAnalyzer = new SchemaSimilarityAnalyzer();
+    ZombieApiAnalyzer zombieApiAnalyzer = new ZombieApiAnalyzer();
 
+    // Create AnalysisService with all analyzers
+    analysisService =
+        new AnalysisService(
+            dependencyGraphAnalyzer,
+            blastRadiusAnalyzer,
+            nestingDepthAnalyzer,
+            taintAnalyzer,
+            authzMatrixAnalyzer,
+            schemaSimilarityAnalyzer,
+            zombieApiAnalyzer);
   }
 
   @AfterEach
