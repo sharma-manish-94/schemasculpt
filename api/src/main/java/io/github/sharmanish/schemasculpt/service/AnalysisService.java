@@ -5,239 +5,163 @@ import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
-import io.swagger.v3.oas.models.Components;
+import io.github.sharmanish.schemasculpt.service.analyzer.complexity.NestingDepthAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.dependency.BlastRadiusAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.dependency.ReverseDependencyGraphAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.quality.SchemaSimilarityAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.quality.ZombieApiAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.security.AuthorizationMatrixAnalyzer;
+import io.github.sharmanish.schemasculpt.service.analyzer.security.TaintAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 
+/**
+ * Facade service orchestrating OpenAPI analysis operations.
+ *
+ * <p>Delegates to specialized analyzers following Single Responsibility Principle. Maintains full
+ * backward compatibility with existing API consumers.
+ *
+ * <p>Each analysis operation is implemented by a dedicated analyzer:
+ *
+ * <ul>
+ *   <li>Dependency analysis: {@link ReverseDependencyGraphAnalyzer}, {@link BlastRadiusAnalyzer}
+ *   <li>Complexity analysis: {@link NestingDepthAnalyzer}
+ *   <li>Security analysis: {@link TaintAnalyzer}, {@link AuthorizationMatrixAnalyzer}
+ *   <li>Quality analysis: {@link SchemaSimilarityAnalyzer}, {@link ZombieApiAnalyzer}
+ * </ul>
+ */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AnalysisService {
 
-  private static final String COMPONENTS_SCHEMAS_PREFIX = "#/components/schemas/";
-  private static final String OPERATION_PREFIX = "Operations: ";
-  private static final String SCHEMA_PREFIX = "Schema: ";
-  private static final Set<String> SENSITIVE_KEYWORDS = Set.of(
-      "password", "secret", "token", "key", "ssn", "socialsecurity",
-      "creditcard", "cardnumber", "cvv", "pii", "salary", "internal"
-  );
-  private final JsonMapper jsonMapper;
-
-  public AnalysisService(JsonMapper jsonMapper) {
-    this.jsonMapper = jsonMapper;
-  }
+  private final ReverseDependencyGraphAnalyzer dependencyGraphAnalyzer;
+  private final BlastRadiusAnalyzer blastRadiusAnalyzer;
+  private final NestingDepthAnalyzer nestingDepthAnalyzer;
+  private final TaintAnalyzer taintAnalyzer;
+  private final AuthorizationMatrixAnalyzer authzMatrixAnalyzer;
+  private final SchemaSimilarityAnalyzer schemaSimilarityAnalyzer;
+  private final ZombieApiAnalyzer zombieApiAnalyzer;
 
   /**
    * Builds a map where the key is a component name and the value is a set of all other
    * components/operations that depend on it.
+   *
+   * @param openApi The OpenAPI specification
+   * @return Reverse dependency graph
    */
   public Map<String, Set<String>> buildReverseDependencyGraph(OpenAPI openApi) {
-    Map<String, Set<String>> reverseGraph = new HashMap<>();
-
-    Map<String, Schema> allSchemas =
-        Optional.ofNullable(openApi.getComponents())
-            .map(Components::getSchemas)
-            .orElse(Collections.emptyMap());
-    if (allSchemas.isEmpty()) {
-      return reverseGraph;
-    }
-
-    allSchemas.keySet().forEach(schemaName -> reverseGraph.put(schemaName, new HashSet<>()));
-
-    if (Objects.nonNull(openApi.getPaths())) {
-      openApi
-          .getPaths()
-          .forEach(
-              (pathName, pathItem) -> {
-                pathItem
-                    .readOperationsMap()
-                    .forEach(
-                        (httpMethod, operation) -> {
-                          String dependantName = OPERATION_PREFIX + httpMethod + " " + pathName;
-                          findRefsInOperation(operation, dependantName, reverseGraph);
-                        });
-              });
-    }
-
-    allSchemas.forEach(
-        (schemaName, schema) -> {
-          String dependantName = SCHEMA_PREFIX + schemaName;
-          findRefsInSchema(schema, dependantName, reverseGraph, new HashSet<>());
-        });
-
-    return reverseGraph;
+    log.debug("Building reverse dependency graph");
+    return dependencyGraphAnalyzer.analyze(openApi);
   }
 
   /**
-   * Scans an operation's request bodies and responses for schema references
+   * Calculates maximum nesting depth for all operations.
    *
-   * @param operation     operation for which request and response schema is being scanned
-   * @param dependentName The name of the item that contains this schema (e.g., "Operation: GET
-   *                      /users").
-   * @param reverseGraph  The graph to populate.
+   * @param specText The OpenAPI specification as text
+   * @return Map of operation key to maximum nesting depth
    */
-  private void findRefsInOperation(
-      Operation operation, String dependentName, Map<String, Set<String>> reverseGraph) {
-    Optional.ofNullable(operation.getRequestBody())
-        .map(RequestBody::getContent)
-        .ifPresent(
-            content ->
-                content
-                    .values()
-                    .forEach(
-                        mediaType ->
-                            findRefsInSchema(
-                                mediaType.getSchema(),
-                                dependentName,
-                                reverseGraph,
-                                new HashSet<>())));
-    Optional.ofNullable(operation.getResponses())
-        .ifPresent(
-            apiResponses ->
-                apiResponses
-                    .values()
-                    .forEach(
-                        apiResponse -> {
-                          Optional.ofNullable(apiResponse.getContent())
-                              .ifPresent(
-                                  content ->
-                                      content
-                                          .values()
-                                          .forEach(
-                                              mediaType ->
-                                                  findRefsInSchema(
-                                                      mediaType.getSchema(),
-                                                      dependentName,
-                                                      reverseGraph,
-                                                      new HashSet<>())));
-                        }));
-  }
-
-  /**
-   * Recursively finds all $ref links within a given Schema object and adds them to the graph.
-   *
-   * @param schema        The schema object to scan.
-   * @param dependentName The name of the item that contains this schema (e.g., "Operation: GET
-   *                      /users").
-   * @param reverseGraph  The graph to populate.
-   * @param visited       A set to track visited schemas and prevent infinite recursion in circular
-   *                      models.
-   */
-  private void findRefsInSchema(
-      Schema<?> schema,
-      String dependentName,
-      Map<String, Set<String>> reverseGraph,
-      Set<Schema<?>> visited) {
-    if (schema == null || visited.contains(schema)) {
-      return;
-    }
-    visited.add(schema);
-    processDirectReferences(schema, dependentName, reverseGraph);
-    processObjectProperties(schema, dependentName, reverseGraph, visited);
-    processArrayItems(schema, dependentName, reverseGraph, visited);
-    processCompositeSchemas(schema, dependentName, reverseGraph, visited);
-    visited.remove(schema);
-  }
-
-  private void processCompositeSchemas(
-      Schema<?> schema,
-      String dependentName,
-      Map<String, Set<String>> reverseGraph,
-      Set<Schema<?>> visited) {
-    if (schema.getAllOf() != null) {
-      schema.getAllOf().forEach(s -> findRefsInSchema(s, dependentName, reverseGraph, visited));
-    }
-    if (schema.getAnyOf() != null) {
-      schema.getAnyOf().forEach(s -> findRefsInSchema(s, dependentName, reverseGraph, visited));
-    }
-    if (schema.getOneOf() != null) {
-      schema.getOneOf().forEach(s -> findRefsInSchema(s, dependentName, reverseGraph, visited));
-    }
-  }
-
-  private void processArrayItems(
-      Schema<?> schema,
-      String dependentName,
-      Map<String, Set<String>> reverseGraph,
-      Set<Schema<?>> visited) {
-    if (schema.getItems() != null) {
-      findRefsInSchema(schema.getItems(), dependentName, reverseGraph, visited);
-    }
-  }
-
-  private void processObjectProperties(
-      Schema<?> schema,
-      String dependentName,
-      Map<String, Set<String>> reverseGraph,
-      Set<Schema<?>> visited) {
-    if (schema.getProperties() != null) {
-      schema
-          .getProperties()
-          .values()
-          .forEach(
-              propertySchema ->
-                  findRefsInSchema(propertySchema, dependentName, reverseGraph, visited));
-    }
-  }
-
-  private void processDirectReferences(
-      Schema<?> schema, String dependentName, Map<String, Set<String>> reverseGraph) {
-    if (schema.get$ref() != null) {
-      String refPath = schema.get$ref();
-      if (refPath.startsWith(COMPONENTS_SCHEMAS_PREFIX)) {
-        String schemaName = refPath.substring(COMPONENTS_SCHEMAS_PREFIX.length());
-        reverseGraph.computeIfAbsent(schemaName, k -> new HashSet<>()).add(dependentName);
-      }
-    }
-  }
-
   public Map<String, Integer> calculateAllDepths(String specText) {
-    if (specText == null || specText.isEmpty()) {
-      return Collections.emptyMap();
-    }
+    log.debug("Calculating nesting depths from spec text");
     OpenAPI openApi = parseOpenApiSpec(specText);
-    return calculateAllDepths(openApi);
+    return nestingDepthAnalyzer.analyze(openApi);
   }
 
+  /**
+   * Calculates maximum nesting depth for all operations.
+   *
+   * @param openApi The OpenAPI specification
+   * @return Map of operation key to maximum nesting depth
+   */
   public Map<String, Integer> calculateAllDepths(final OpenAPI openApi) {
-    if (isOpenAPIInvalid(openApi)) {
-      log.error("Parsed OpenAPI spec is null or has no paths");
-      return Collections.emptyMap();
-    }
-
-    Map<String, Schema> allSchemas =
-        Optional.ofNullable(openApi.getComponents())
-            .map(Components::getSchemas)
-            .orElse(Collections.emptyMap());
-    return processAllOperations(openApi, allSchemas);
+    log.debug("Calculating nesting depths from OpenAPI object");
+    return nestingDepthAnalyzer.analyze(openApi);
   }
 
-  private boolean isOpenAPIInvalid(OpenAPI openApi) {
-    return (openApi == null || openApi.getPaths() == null || openApi.getPaths().isEmpty());
+  /**
+   * Calculates nesting depth for a specific operation.
+   *
+   * @param operation The operation to analyze
+   * @param openApi The OpenAPI specification
+   * @return The maximum nesting depth
+   */
+  public int calculateNestingDepthForOperation(Operation operation, OpenAPI openApi) {
+    log.debug("Calculating nesting depth for single operation");
+    return nestingDepthAnalyzer.analyzeOperation(operation, openApi);
   }
 
+  /**
+   * Generates an authorization matrix showing required scopes for each operation.
+   *
+   * @param openApi The OpenAPI specification
+   * @return Authorization matrix response
+   */
+  public AuthzMatrixResponse generateAuthzMatrix(OpenAPI openApi) {
+    log.debug("Generating authorization matrix");
+    return authzMatrixAnalyzer.analyze(openApi);
+  }
+
+  /**
+   * Performs taint analysis to detect sensitive data leakage.
+   *
+   * @param openApi The OpenAPI specification
+   * @return Taint analysis response with vulnerabilities
+   */
+  public TaintAnalysisResponse performTaintAnalysis(OpenAPI openApi) {
+    log.debug("Performing taint analysis");
+    return taintAnalyzer.analyze(openApi);
+  }
+
+  /**
+   * Analyzes schema similarity using Jaccard index.
+   *
+   * @param openApi The OpenAPI specification
+   * @return Schema similarity response with clusters
+   */
+  public SchemaSimilarityResponse analyzeSchemaSimilarity(OpenAPI openApi) {
+    log.debug("Analyzing schema similarity");
+    return schemaSimilarityAnalyzer.analyze(openApi);
+  }
+
+  /**
+   * Detects zombie APIs (shadowed paths and orphaned operations).
+   *
+   * @param openApi The OpenAPI specification
+   * @return Zombie API detection response
+   */
+  public ZombieApiResponse detectZombieApis(OpenAPI openApi) {
+    log.debug("Detecting zombie APIs");
+    return zombieApiAnalyzer.analyze(openApi);
+  }
+
+  /**
+   * Performs blast radius analysis for a target schema.
+   *
+   * @param specContent The OpenAPI specification content
+   * @param targetSchema The target schema name
+   * @return Blast radius analysis response
+   */
+  public BlastRadiusResponse performBlastRadiusAnalysis(String specContent, String targetSchema) {
+    log.debug("Performing blast radius analysis for schema: {}", targetSchema);
+    OpenAPI openApi = parseOpenApiSpec(specContent);
+    return blastRadiusAnalyzer.analyze(openApi, targetSchema);
+  }
+
+  /**
+   * Parses OpenAPI specification from text.
+   *
+   * @param specText The specification text
+   * @return Parsed OpenAPI object
+   */
   private OpenAPI parseOpenApiSpec(String specText) {
     ParseOptions options = new ParseOptions();
     options.setResolve(false);
@@ -245,550 +169,9 @@ public class AnalysisService {
     SwaggerParseResult parseResult = new OpenAPIV3Parser().readContents(specText, null, options);
 
     if (parseResult.getMessages() != null && !parseResult.getMessages().isEmpty()) {
-      log.warn("Warnings during OpenAPI parsing: " + parseResult.getMessages());
+      log.warn("Warnings during OpenAPI parsing: {}", parseResult.getMessages());
     }
 
     return parseResult.getOpenAPI();
-  }
-
-  private Map<String, Integer> processAllOperations(
-      OpenAPI openApi, Map<String, Schema> allSchemas) {
-    Map<String, Integer> allDepths = new HashMap<>();
-    Map<String, Integer> memo = new HashMap<>();
-    openApi
-        .getPaths()
-        .forEach(
-            (pathKey, pathItem) ->
-                pathItem
-                    .readOperationsMap()
-                    .forEach(
-                        (method, operation) -> {
-                          String operationKey = method.toString() + " " + pathKey;
-                          log.debug("Calculating depth for operation: " + operationKey);
-                          JsonNode operationNode = jsonMapper.valueToTree(operation);
-                          int maxDepth =
-                              calculateMaxDepth(operationNode, new HashSet<>(), allSchemas, memo);
-                          allDepths.put(operationKey, maxDepth);
-                        }));
-
-    return allDepths;
-  }
-
-  private int calculateMaxDepth(
-      JsonNode node,
-      Set<String> visited,
-      Map<String, Schema> allSchemas,
-      Map<String, Integer> memo) {
-    if (node == null || !node.isContainer()) {
-      return 0;
-    }
-
-    if (node.isObject() && node.has("$ref")) {
-      String refPath = node.get("$ref").asText();
-      if (refPath.startsWith(COMPONENTS_SCHEMAS_PREFIX)) {
-        String schemaName = refPath.substring(COMPONENTS_SCHEMAS_PREFIX.length());
-
-        if (memo.containsKey(schemaName)) {
-          return 1 + memo.get(schemaName);
-        }
-        if (visited.contains(schemaName)) {
-          return 0;
-        }
-
-        Schema schema = allSchemas.get(schemaName);
-          if (schema == null) {
-              return 0;
-          }
-
-        visited.add(schemaName);
-        JsonNode schemaNode = jsonMapper.valueToTree(schema);
-
-        int nestedDepth = calculateMaxDepth(schemaNode, visited, allSchemas, memo);
-
-        visited.remove(schemaName);
-
-        memo.put(schemaName, nestedDepth);
-        return 1 + nestedDepth;
-      }
-    }
-
-    int maxDepth = 0;
-    Iterator<JsonNode> elements = node.iterator();
-    while (elements.hasNext()) {
-      int childDepth = calculateMaxDepth(elements.next(), new HashSet<>(visited), allSchemas, memo);
-      maxDepth = Math.max(maxDepth, childDepth);
-    }
-    return maxDepth;
-  }
-
-  public int calculateNestingDepthForOperation(Operation operation, OpenAPI openApi) {
-    if (operation == null || openApi == null || openApi.getComponents() == null) {
-      return 0;
-    }
-
-    Map<String, Schema> allSchemas =
-        Optional.ofNullable(openApi.getComponents())
-            .map(Components::getSchemas)
-            .orElse(Collections.emptyMap());
-
-    JsonNode operationNode = jsonMapper.valueToTree(operation);
-    Map<String, Integer> memo = new HashMap<>();
-
-    return calculateMaxDepth(operationNode, new HashSet<>(), allSchemas, memo);
-  }
-
-  public AuthzMatrixResponse generateAuthzMatrix(OpenAPI openApi) {
-    Set<String> allUniqueScopes = new TreeSet<>(); // Sorted for UI columns
-    Map<String, List<String>> matrix = new LinkedHashMap<>();
-
-    if (openApi.getPaths() != null) {
-      openApi.getPaths().forEach((path, pathItem) -> {
-        pathItem.readOperationsMap().forEach((method, operation) -> {
-          String opKey = method.name() + " " + path;
-          List<String> opScopes = new ArrayList<>();
-
-          // 1. Check Operation-level security
-          if (operation.getSecurity() != null && !operation.getSecurity().isEmpty()) {
-            operation.getSecurity().forEach(requirement -> {
-              requirement.forEach((scheme, scopes) -> {
-                allUniqueScopes.addAll(scopes);
-                opScopes.addAll(scopes);
-              });
-            });
-          }
-          // 2. Fallback to Global security if operation level is missing
-          else if (openApi.getSecurity() != null && !openApi.getSecurity().isEmpty()) {
-            openApi.getSecurity().forEach(requirement -> {
-              requirement.forEach((scheme, scopes) -> {
-                allUniqueScopes.addAll(scopes);
-                opScopes.addAll(scopes);
-              });
-            });
-          } else {
-            opScopes.add("PUBLIC"); // Mark as public if no security
-            allUniqueScopes.add("PUBLIC");
-          }
-
-          matrix.put(opKey, opScopes);
-        });
-      });
-    }
-    return new AuthzMatrixResponse(new ArrayList<>(allUniqueScopes), matrix);
-  }
-
-  public TaintAnalysisResponse performTaintAnalysis(OpenAPI openApi) {
-    List<TaintAnalysisResponse.TaintVulnerability> vulnerabilities = new ArrayList<>();
-
-    // Step A: Identify Sources (Schemas that contain sensitive data)
-    Set<String> sensitiveSchemas = identifySensitiveSchemas(openApi);
-
-    if (openApi.getPaths() != null) {
-      openApi.getPaths().forEach((path, pathItem) -> {
-        pathItem.readOperationsMap().forEach((method, operation) -> {
-          // Step B: Check Barriers (Is the endpoint secured?)
-          boolean isSecured = isOperationSecured(operation, openApi);
-
-          // Step C: Check Sinks (Responses)
-          if (operation.getResponses() != null) {
-            operation.getResponses().forEach((statusCode, response) -> {
-              if (response.getContent() != null) {
-                response.getContent().forEach((mediaType, content) -> {
-                  Schema<?> schema = content.getSchema();
-                  if (schema != null) {
-                    // Traversal: Check if response flows from a sensitive source
-                    List<String> leakTrail =
-                        findSensitiveLeak(schema, sensitiveSchemas, openApi, new HashSet<>());
-
-                    if (!leakTrail.isEmpty()) {
-                      String trailString = String.join(" -> ", leakTrail);
-
-                      if (!isSecured) {
-                        // CRITICAL: Sensitive data on public endpoint
-                        vulnerabilities.add(new TaintAnalysisResponse.TaintVulnerability(
-                            method.name() + " " + path,
-                            "CRITICAL",
-                            "Public endpoint returning sensitive data (Data Leakage)",
-                            trailString
-                        ));
-                      } else {
-                        // WARNING: Sensitive data returned, verified security needed
-                        vulnerabilities.add(new TaintAnalysisResponse.TaintVulnerability(
-                            method.name() + " " + path,
-                            "WARNING",
-                            "Sensitive data exposure (Verify necessity)",
-                            trailString
-                        ));
-                      }
-                    }
-                  }
-                });
-              }
-            });
-          }
-        });
-      });
-    }
-    return new TaintAnalysisResponse(vulnerabilities);
-  }
-
-
-  private boolean isOperationSecured(Operation operation, OpenAPI openApi) {
-    if (operation.getSecurity() != null && !operation.getSecurity().isEmpty()) {
-      return true;
-    }
-    // If no operation security, check global security
-    return openApi.getSecurity() != null && !openApi.getSecurity().isEmpty();
-  }
-
-  private Set<String> identifySensitiveSchemas(OpenAPI openApi) {
-    Set<String> sensitiveSchemas = new HashSet<>();
-    if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
-      return sensitiveSchemas;
-    }
-
-    openApi.getComponents().getSchemas().forEach((name, schema) -> {
-      // 1. Check Schema Name (e.g., "CreditCard")
-      if (isSensitiveWord(name)) {
-        sensitiveSchemas.add(name);
-      }
-      // 2. Check Properties (e.g., "password")
-      else if (schema.getProperties() != null) {
-        boolean hasSensitiveProp = schema.getProperties().keySet().stream()
-            .anyMatch(key -> isSensitiveWord((String) key));
-        if (hasSensitiveProp) {
-          sensitiveSchemas.add(name);
-        }
-      }
-    });
-    return sensitiveSchemas;
-  }
-
-
-  private boolean isSensitiveWord(String text) {
-      if (text == null) {
-          return false;
-      }
-    String lower = text.toLowerCase(Locale.ROOT);
-    return SENSITIVE_KEYWORDS.stream().anyMatch(lower::contains);
-  }
-
-  private List<String> findSensitiveLeak(Schema<?> schema, Set<String> sensitiveSchemas,
-                                         OpenAPI openApi, Set<String> visited) {
-      if (schema == null) {
-          return Collections.emptyList();
-      }
-
-    // 1. Check $ref
-    if (schema.get$ref() != null) {
-      String schemaName = schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1);
-
-        if (visited.contains(schemaName)) {
-            return Collections.emptyList(); // Cycle detected
-        }
-
-      // If this schema is marked sensitive, we found a leak!
-      if (sensitiveSchemas.contains(schemaName)) {
-        return List.of("Schema: " + schemaName);
-      }
-
-      // Otherwise, dig deeper into the ref
-      visited.add(schemaName);
-      Schema<?> resolvedSchema = openApi.getComponents().getSchemas().get(schemaName);
-      List<String> childLeak =
-          findSensitiveLeak(resolvedSchema, sensitiveSchemas, openApi, visited);
-      visited.remove(schemaName);
-
-      if (!childLeak.isEmpty()) {
-        List<String> path = new ArrayList<>();
-        path.add("Schema: " + schemaName);
-        path.addAll(childLeak);
-        return path;
-      }
-    }
-
-    // 2. Check Array Items
-    if (schema.getItems() != null) {
-      List<String> itemsLeak =
-          findSensitiveLeak(schema.getItems(), sensitiveSchemas, openApi, visited);
-        if (!itemsLeak.isEmpty()) {
-            return itemsLeak;
-        }
-    }
-
-    // 3. Check Properties
-    if (schema.getProperties() != null) {
-      for (Map.Entry<String, Schema> entry : schema.getProperties().entrySet()) {
-        String propName = entry.getKey();
-        Schema propertySchema = entry.getValue();
-        if(Boolean.TRUE.equals(propertySchema.getWriteOnly())) {
-          continue;
-        }
-        // Direct property check
-        if (isSensitiveWord(propName)) {
-          return List.of("Property: " + propName);
-        }
-
-        // Recursive property check
-        List<String> propLeak =
-            findSensitiveLeak(entry.getValue(), sensitiveSchemas, openApi, visited);
-        if (!propLeak.isEmpty()) {
-          List<String> path = new ArrayList<>();
-          path.add("Property: " + propName);
-          path.addAll(propLeak);
-          return path;
-        }
-      }
-    }
-    return Collections.emptyList();
-  }
-
-  public SchemaSimilarityResponse analyzeSchemaSimilarity(OpenAPI openApi) {
-    List<SchemaSimilarityResponse.SchemaCluster> clusters = new ArrayList<>();
-    if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
-      return new SchemaSimilarityResponse(clusters);
-    }
-
-    Map<String, Schema> schemas = openApi.getComponents().getSchemas();
-    List<String> schemaNames = new ArrayList<>(schemas.keySet());
-
-    // Compare every schema against every other schema (O(n^2))
-    // For large specs, we might want to limit this or optimize.
-    Set<String> processed = new HashSet<>();
-
-    for (int i = 0; i < schemaNames.size(); i++) {
-      String nameA = schemaNames.get(i);
-        if (processed.contains(nameA)) {
-            continue;
-        }
-
-      Set<String> currentCluster = new HashSet<>();
-      currentCluster.add(nameA);
-
-      for (int j = i + 1; j < schemaNames.size(); j++) {
-        String nameB = schemaNames.get(j);
-          if (processed.contains(nameB)) {
-              continue;
-          }
-
-        double similarity = calculateJaccardSimilarity(schemas.get(nameA), schemas.get(nameB));
-
-        // Threshold: If 80% similar, group them
-        if (similarity > 0.80) {
-          currentCluster.add(nameB);
-          processed.add(nameB);
-        }
-      }
-
-      if (currentCluster.size() > 1) {
-        clusters.add(new SchemaSimilarityResponse.SchemaCluster(
-            currentCluster,
-            0.80, // Simplified score for the group
-            "These schemas share >80% structure. Consider creating a base schema."
-        ));
-      }
-    }
-    return new SchemaSimilarityResponse(clusters);
-  }
-
-  private double calculateJaccardSimilarity(Schema schemaA, Schema schemaB) {
-    // 1. Extract "features" (property names + types)
-    Set<String> featuresA = extractSchemaFeatures(schemaA);
-    Set<String> featuresB = extractSchemaFeatures(schemaB);
-
-      if (featuresA.isEmpty() && featuresB.isEmpty()) {
-          return 1.0; // Both empty = identical
-      }
-      if (featuresA.isEmpty() || featuresB.isEmpty()) {
-          return 0.0;
-      }
-
-    // 2. Calculate Jaccard Index: (Intersection) / (Union)
-    Set<String> intersection = new HashSet<>(featuresA);
-    intersection.retainAll(featuresB);
-
-    Set<String> union = new HashSet<>(featuresA);
-    union.addAll(featuresB);
-
-    return (double) intersection.size() / union.size();
-  }
-
-  private Set<String> extractSchemaFeatures(Schema schema) {
-    Set<String> features = new HashSet<>();
-    if (schema.getProperties() != null) {
-      schema.getProperties().forEach((propName, propSchema) -> {
-        String type = propSchema instanceof Schema ? ((Schema) propSchema).getType() : "unknown";
-        features.add(propName + ":" + type);
-      });
-    }
-    return features;
-  }
-
-  public ZombieApiResponse detectZombieApis(OpenAPI openApi) {
-    List<ZombieApiResponse.ZombieEndpoint> shadowed = new ArrayList<>();
-    List<String> orphaned = new ArrayList<>();
-
-      if (openApi.getPaths() == null) {
-          return new ZombieApiResponse(shadowed, orphaned);
-      }
-
-    List<String> paths = new ArrayList<>(openApi.getPaths().keySet());
-
-    // A. Shadow Detection (Simplified: Parameterized paths vs. Static paths)
-    for (String pathA : paths) {
-      for (String pathB : paths) {
-          if (pathA.equals(pathB)) {
-              continue;
-          }
-
-        // Check if pathA (e.g., /users/{id}) shadows pathB (e.g., /users/current)
-        if (isShadowing(pathA, pathB)) {
-          shadowed.add(new ZombieApiResponse.ZombieEndpoint(
-              pathB,
-              pathA,
-              "Path " + pathB +
-                  " may be unreachable because it is shadowed by the parameterized path " + pathA
-          ));
-        }
-      }
-    }
-
-    // B. Orphaned Operations (Empty returns/inputs)
-    openApi.getPaths().forEach((path, pathItem) -> {
-      pathItem.readOperationsMap().forEach((method, operation) -> {
-        boolean hasParams =
-            operation.getParameters() != null && !operation.getParameters().isEmpty();
-        boolean hasBody = operation.getRequestBody() != null;
-        boolean hasContent = false;
-
-        if (operation.getResponses() != null) {
-          // Check if 200 OK has content
-          var success = operation.getResponses().get("200");
-            if (success != null && success.getContent() != null) {
-                hasContent = true;
-            }
-        }
-
-        if (!hasParams && !hasBody && !hasContent) {
-          orphaned.add(method.name() + " " + path);
-        }
-      });
-    });
-
-    return new ZombieApiResponse(shadowed, orphaned);
-  }
-
-  private boolean isShadowing(String genericPath, String specificPath) {
-    // Logic: If genericPath has a parameter {x} and specificPath has a static segment
-    // at the same position, it *might* be a shadow.
-    // Example: /users/{id} vs /users/current
-
-    String[] genParts = genericPath.split("/");
-    String[] specParts = specificPath.split("/");
-
-      if (genParts.length != specParts.length) {
-          return false;
-      }
-
-    boolean possibleShadow = false;
-    for (int i = 0; i < genParts.length; i++) {
-      String genPart = genParts[i];
-      String specPart = specParts[i];
-
-      if (genPart.startsWith("{") && genPart.endsWith("}")) {
-        // This is a parameter in the generic path.
-        // If the specific path has a concrete string here, it's a potential collision.
-        possibleShadow = true;
-      } else if (!genPart.equals(specPart)) {
-        // Static parts don't match (e.g., /users vs /products), so no shadow.
-        return false;
-      }
-    }
-    return possibleShadow;
-  }
-
-/**
- * Calculates the total "Blast Radius" of a schema change.
- * @param schemaName The name of the schema being changed.
- * @param reverseGraph The graph built by buildReverseDependencyGraph
- * @return Set of all Operations (GET /foo) that eventually depend on this schema.
- */
-  public Set<String> calculateBlastRadius(String schemaName, Map<String, Set<String>> reverseGraph) {
-    Set<String> affectedEndpoints = new HashSet<>();
-    Set<String> visited = new HashSet<>();
-
-    // BFS Queue
-    List<String> queue = new ArrayList<>();
-    queue.add(schemaName);
-    visited.add(schemaName);
-
-    while (!queue.isEmpty()) {
-      String current = queue.removeFirst();
-
-      Set<String> dependents = reverseGraph.getOrDefault(current, Collections.emptySet());
-      for (String dep : dependents) {
-        if (dep.startsWith("Operations: ")) {
-          // We reached a leaf node (an Endpoint)
-          affectedEndpoints.add(dep);
-        } else if (dep.startsWith("Schema: ")) {
-          // We reached an intermediate node (another Schema)
-          String nextSchema = dep.substring("Schema: ".length());
-          if (!visited.contains(nextSchema)) {
-            visited.add(nextSchema);
-            queue.add(nextSchema);
-          }
-        }
-      }
-    }
-    return affectedEndpoints;
-  }
-
-
-  public BlastRadiusResponse performBlastRadiusAnalysis(String specContent, String targetSchema) {
-    // 1. Parse
-    OpenAPI openApi = parseOpenApiSpec(specContent);
-    if (isOpenAPIInvalid(openApi)) {
-      throw new IllegalArgumentException("Invalid OpenAPI Specification");
-    }
-    if (openApi.getComponents() == null
-        || openApi.getComponents().getSchemas() == null
-        || !openApi.getComponents().getSchemas().containsKey(targetSchema)) {
-      return BlastRadiusResponse.builder()
-          .targetSchema(targetSchema)
-          .riskLevel("UNKNOWN_SCHEMA")
-          .affectedPaths(List.of("Schema '" + targetSchema + "' not found in components/schemas"))
-          .build();
-    }
-
-    // 2. Build Graph
-    Map<String, Set<String>> dependencyGraph = buildReverseDependencyGraph(openApi);
-
-    // 3. Calculate Radius
-    Set<String> affectedRaw = calculateBlastRadius(targetSchema, dependencyGraph);
-
-    // 4. Calculate Metrics
-    int totalOps = 0;
-    if (openApi.getPaths() != null) {
-      for (var pathItem : openApi.getPaths().values()) {
-        totalOps += pathItem.readOperationsMap().size();
-      }
-    }
-
-    // avoid divide by zero
-    double percentage = totalOps == 0 ? 0.0 : ((double) affectedRaw.size() / totalOps) * 100;
-
-    // 5. Determine Risk
-    String risk = "LOW";
-    if (percentage > 50) risk = "CRITICAL";
-    else if (percentage > 20) risk = "HIGH";
-    else if (percentage > 0) risk = "MEDIUM";
-
-    return BlastRadiusResponse.builder()
-        .targetSchema(targetSchema)
-        .totalEndpoints(totalOps)
-        .affectedCount(affectedRaw.size())
-        .impactPercentage(Math.round(percentage * 100.0) / 100.0) // round to 2 decimals
-        .riskLevel(risk)
-        .affectedPaths(new ArrayList<>(affectedRaw))
-        .build();
   }
 }
