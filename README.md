@@ -409,7 +409,7 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 Before starting, ensure you have:
 
 - ✅ **Java 21+** ([Download](https://jdk.java.net/))
-- ✅ **Maven 3.9+** (included with `./mvnw`)
+- ✅ **Gradle 8.14+** (included with `./gradlew`)
 - ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
 - ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
 - ✅ **Docker** ([Download](https://www.docker.com/))
@@ -469,7 +469,7 @@ uvicorn app.main:app --reload
 cd api
 
 # Start Spring Boot application
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
 
 ✅ API Gateway running at `http://localhost:8080`
