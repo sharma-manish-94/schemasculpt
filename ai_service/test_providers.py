@@ -28,7 +28,12 @@ async def test_provider(provider_type: str):
         config = settings.get_provider_config()
         settings.llm_provider = original_provider
 
-        print(f"Configuration: {config}\n")
+        # Avoid logging sensitive values such as API keys
+        safe_config = {
+            key: ("<redacted>" if key == "api_key" and value is not None else value)
+            for key, value in config.items()
+        }
+        print(f"Configuration: {safe_config}\n")
 
         # Create provider
         print(f"Initializing {provider_type} provider...")
