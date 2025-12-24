@@ -2613,7 +2613,7 @@ Please provide your analysis in JSON format:
 
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse AI response as JSON: {str(e)}")
-        # Return a fallback response
+        # Return a fallback response without exposing internal error details
         return {
             "report_id": str(uuid.uuid4()),
             "risk_level": "UNKNOWN",
@@ -2626,7 +2626,7 @@ Please provide your analysis in JSON format:
             "immediate_actions": ["Review findings manually"],
             "short_term_actions": [],
             "long_term_actions": [],
-            "error": str(e),
+            "error": "FALLBACK_PARSING_ERROR",
         }
 
 
