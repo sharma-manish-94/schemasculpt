@@ -224,19 +224,6 @@
                     </snapshots>
                 </repository>
 
-                <!-- JCenter (archived but still accessible) -->
-                <repository>
-                    <id>jcenter</id>
-                    <name>JCenter</name>
-                    <url>https://jcenter.bintray.com</url>
-                    <releases>
-                        <enabled>true</enabled>
-                        <updatePolicy>daily</updatePolicy>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
 
                 <!-- Atlassian Public Repository (for some utility libs) -->
                 <repository>
