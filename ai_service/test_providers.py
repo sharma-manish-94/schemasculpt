@@ -15,6 +15,28 @@ from app.core.config import settings
 from app.providers.provider_factory import ProviderFactory
 
 
+def _redact_sensitive_config(config: dict) -> dict:
+    """Return a copy of the config with sensitive values redacted."""
+    sensitive_keywords = ("key", "secret", "token", "password")
+
+    def _redact(obj):
+        if isinstance(obj, dict):
+            redacted = {}
+            for k, v in obj.items():
+                if isinstance(k, str) and any(
+                    kw in k.lower() for kw in sensitive_keywords
+                ):
+                    redacted[k] = "<redacted>" if v is not None else None
+                else:
+                    redacted[k] = _redact(v)
+            return redacted
+        elif isinstance(obj, list):
+            return [_redact(item) for item in obj]
+        return obj
+
+    return _redact(config)
+
+
 async def test_provider(provider_type: str):
     """Test a specific provider."""
     print(f"\n{'='*60}")
@@ -28,7 +50,9 @@ async def test_provider(provider_type: str):
         config = settings.get_provider_config()
         settings.llm_provider = original_provider
 
-        print(f"Configuration: {config}\n")
+        # Avoid logging sensitive values such as API keys or tokens
+        safe_config = _redact_sensitive_config(config)
+        print(f"Configuration: {safe_config}\n")
 
         # Create provider
         print(f"Initializing {provider_type} provider...")
