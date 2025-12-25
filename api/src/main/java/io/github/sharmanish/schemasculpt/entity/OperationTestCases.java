@@ -23,9 +23,9 @@ import org.hibernate.type.SqlTypes;
 @Table(
     name = "operation_test_cases",
     uniqueConstraints =
-    @UniqueConstraint(
-        name = "unique_project_operation_tests",
-        columnNames = {"project_id", "path", "method"}))
+        @UniqueConstraint(
+            name = "unique_project_operation_tests",
+            columnNames = {"project_id", "path", "method"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

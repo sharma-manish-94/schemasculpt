@@ -8,5 +8,4 @@ import java.util.List;
  * analysis.
  */
 public record AIMetaAnalysisRequest(
-    String specText, List<ValidationError> errors, List<ValidationSuggestion> suggestions) {
-}
+    String specText, List<ValidationError> errors, List<ValidationSuggestion> suggestions) {}

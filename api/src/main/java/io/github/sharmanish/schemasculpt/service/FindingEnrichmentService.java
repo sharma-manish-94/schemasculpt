@@ -52,7 +52,7 @@ public class FindingEnrichmentService {
    * that would be expensive/unreliable for the AI to discover.
    *
    * @param findings Raw validation suggestions
-   * @param openApi  The OpenAPI spec
+   * @param openApi The OpenAPI spec
    * @return Map of enriched finding data ready for AI
    */
   public List<Map<String, Object>> enrichFindings(
@@ -138,7 +138,9 @@ public class FindingEnrichmentService {
       PathItem pathItem = openApi.getPaths().get(path);
       if (pathItem != null && method != null) {
         Operation operation =
-            pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+            pathItem
+                .readOperationsMap()
+                .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
         if (operation != null) {
           boolean isPublic = isPublicEndpoint(operation, openApi);
           boolean authRequired = requiresAuthentication(operation, openApi);
@@ -196,7 +198,7 @@ public class FindingEnrichmentService {
       return operation.getSecurity() != null
           && operation.getSecurity().isEmpty()
           && operation.getSecurity() instanceof List; // Explicitly public (overrides global)
-// Uses global security
+      // Uses global security
     }
 
     return true; // No security at all = public
@@ -207,8 +209,8 @@ public class FindingEnrichmentService {
   }
 
   /**
-   * Build forward dependency graph - what each component depends on
-   * This is the inverse of the reverse graph from AnalysisService
+   * Build forward dependency graph - what each component depends on This is the inverse of the
+   * reverse graph from AnalysisService
    */
   private Map<String, Set<String>> buildForwardDependencyGraph(OpenAPI openApi) {
     Map<String, Set<String>> forwardGraph = new HashMap<>();
@@ -233,9 +235,7 @@ public class FindingEnrichmentService {
     return forwardGraph;
   }
 
-  /**
-   * Recursively extract schema dependencies from a schema
-   */
+  /** Recursively extract schema dependencies from a schema */
   private void extractSchemaDependencies(Schema<?> schema, Set<String> dependencies) {
     if (schema == null) {
       return;

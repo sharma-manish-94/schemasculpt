@@ -1,16 +1,15 @@
 package io.github.sharmanish.schemasculpt.service.analyzer.base;
 
 import io.swagger.v3.oas.models.media.Schema;
-import lombok.experimental.UtilityClass;
-
 import java.util.Map;
 import java.util.Set;
+import lombok.experimental.UtilityClass;
 
 /**
  * Utility for recursive schema traversal in OpenAPI specifications.
  *
- * <p>Extracted from AnalysisService to be reused across analyzers.
- * Handles circular references through visited set tracking.
+ * <p>Extracted from AnalysisService to be reused across analyzers. Handles circular references
+ * through visited set tracking.
  */
 @UtilityClass
 public class SchemaTraversalUtil {

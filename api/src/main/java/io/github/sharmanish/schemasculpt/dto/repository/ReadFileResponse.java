@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response with file content from repository
- */
+/** Response with file content from repository */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

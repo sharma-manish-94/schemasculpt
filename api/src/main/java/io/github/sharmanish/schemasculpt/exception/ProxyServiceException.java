@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when proxy service operations fail.
- */
+/** Exception thrown when proxy service operations fail. */
 public class ProxyServiceException extends SchemaSculptException {
 
   private static final String ERROR_CODE = "PROXY_SERVICE_ERROR";

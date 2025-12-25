@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when AI service operations fail.
- */
+/** Exception thrown when AI service operations fail. */
 public class AIServiceException extends SchemaSculptException {
 
   private static final String ERROR_CODE = "AI_SERVICE_ERROR";

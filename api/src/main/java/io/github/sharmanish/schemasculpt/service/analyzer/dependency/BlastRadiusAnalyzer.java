@@ -3,15 +3,14 @@ package io.github.sharmanish.schemasculpt.service.analyzer.dependency;
 import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that calculates the blast radius of a schema change.

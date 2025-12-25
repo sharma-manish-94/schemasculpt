@@ -17,5 +17,4 @@ public record SmartAIFixResponse(
     Double confidence,
     @JsonProperty("processing_time_ms") Double processingTimeMs,
     @JsonProperty("token_count") Integer tokenCount,
-    List<String> warnings) {
-}
+    List<String> warnings) {}

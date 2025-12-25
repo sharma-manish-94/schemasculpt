@@ -22,9 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * REST controller for specification version management
- */
+/** REST controller for specification version management */
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/specifications")
 @Slf4j
@@ -36,9 +34,7 @@ public class SpecificationManagementController {
     this.specificationService = specificationService;
   }
 
-  /**
-   * Save a new version of the specification
-   */
+  /** Save a new version of the specification */
   @PostMapping
   public ResponseEntity<SpecificationDTO> saveSpecification(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -58,9 +54,7 @@ public class SpecificationManagementController {
     return ResponseEntity.status(HttpStatus.CREATED).body(new SpecificationDTO(spec));
   }
 
-  /**
-   * Get the current version of the specification
-   */
+  /** Get the current version of the specification */
   @GetMapping("/current")
   public ResponseEntity<SpecificationDetailDTO> getCurrentSpecification(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
@@ -77,14 +71,13 @@ public class SpecificationManagementController {
     return ResponseEntity.ok(new SpecificationDetailDTO(spec));
   }
 
-  /**
-   * Get all versions of the specification
-   */
+  /** Get all versions of the specification */
   @GetMapping
   public ResponseEntity<List<SpecificationDTO>> getSpecificationVersions(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
 
-    log.debug("Fetching all specification versions for project {}", LogSanitizer.sanitize(projectId));
+    log.debug(
+        "Fetching all specification versions for project {}", LogSanitizer.sanitize(projectId));
 
     List<SpecificationDTO> versions =
         specificationService.getSpecificationVersions(projectId, principal.getUserId()).stream()
@@ -94,16 +87,17 @@ public class SpecificationManagementController {
     return ResponseEntity.ok(versions);
   }
 
-  /**
-   * Get a specific version of the specification
-   */
+  /** Get a specific version of the specification */
   @GetMapping("/versions/{version}")
   public ResponseEntity<SpecificationDetailDTO> getSpecificationByVersion(
       @AuthenticationPrincipal CustomOAuth2User principal,
       @PathVariable Long projectId,
       @PathVariable String version) {
 
-    log.debug("Fetching specification version {} for project {}", LogSanitizer.sanitize(version), LogSanitizer.sanitize(projectId));
+    log.debug(
+        "Fetching specification version {} for project {}",
+        LogSanitizer.sanitize(version),
+        LogSanitizer.sanitize(projectId));
 
     Specification spec =
         specificationService.getSpecificationByVersion(projectId, version, principal.getUserId());
@@ -111,9 +105,7 @@ public class SpecificationManagementController {
     return ResponseEntity.ok(new SpecificationDetailDTO(spec));
   }
 
-  /**
-   * Revert to a previous version
-   */
+  /** Revert to a previous version */
   @PostMapping("/versions/{version}/revert")
   public ResponseEntity<SpecificationDTO> revertToVersion(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -121,7 +113,10 @@ public class SpecificationManagementController {
       @PathVariable String version,
       @RequestParam(required = false) String commitMessage) {
 
-    log.info("Reverting project {} to version {}", LogSanitizer.sanitize(projectId), LogSanitizer.sanitize(version));
+    log.info(
+        "Reverting project {} to version {}",
+        LogSanitizer.sanitize(projectId),
+        LogSanitizer.sanitize(version));
 
     Specification spec =
         specificationService.revertToVersion(

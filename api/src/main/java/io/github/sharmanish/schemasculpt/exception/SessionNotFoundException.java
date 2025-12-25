@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when a session cannot be found.
- */
+/** Exception thrown when a session cannot be found. */
 public class SessionNotFoundException extends SchemaSculptException {
 
   private static final String ERROR_CODE = "SESSION_NOT_FOUND";

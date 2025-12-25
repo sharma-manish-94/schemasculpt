@@ -113,11 +113,7 @@ public class MissingSchemaReferenceRule implements LinterRule {
   }
 
   private List<ValidationSuggestion> checkSchemaForMissingRefs(
-      Schema<?> schema,
-      Set<String> existingSchemas,
-      String path,
-      String method,
-      String location) {
+      Schema<?> schema, Set<String> existingSchemas, String path, String method, String location) {
     List<ValidationSuggestion> suggestions = new ArrayList<>();
 
     if (schema == null) {
@@ -137,7 +133,8 @@ public class MissingSchemaReferenceRule implements LinterRule {
           suggestions.add(
               new ValidationSuggestion(
                   String.format(
-                      "Path '%s' (%s) references schema '%s' which doesn't exist in components.",
+                      "Path '%s' (%s) references schema '%s' which doesn't"
+                          + " exist in components.",
                       path, method.toUpperCase(Locale.ROOT), schemaName),
                   "create-missing-schema",
                   "error",

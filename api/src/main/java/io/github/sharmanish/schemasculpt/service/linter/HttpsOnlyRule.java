@@ -42,8 +42,8 @@ public class HttpsOnlyRule implements LinterRule {
           suggestions.add(
               new ValidationSuggestion(
                   String.format(
-                      "Server URL '%s' uses HTTP. Consider using HTTPS for production"
-                          + " environments.",
+                      "Server URL '%s' uses HTTP. Consider using HTTPS for"
+                          + " production environments.",
                       serverUrl),
                   "use-https-for-production",
                   "warning",
@@ -66,8 +66,8 @@ public class HttpsOnlyRule implements LinterRule {
       if (serverUrl != null && hasMultipleProtocols(openApi.getServers())) {
         suggestions.add(
             new ValidationSuggestion(
-                "API defines servers with mixed protocols (HTTP and HTTPS). Consider using HTTPS"
-                    + " consistently.",
+                "API defines servers with mixed protocols (HTTP and HTTPS)."
+                    + " Consider using HTTPS consistently.",
                 "consistent-https-usage",
                 "warning",
                 "security",

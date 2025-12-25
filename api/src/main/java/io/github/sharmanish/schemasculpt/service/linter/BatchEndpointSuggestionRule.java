@@ -78,16 +78,20 @@ public class BatchEndpointSuggestionRule implements LinterRule {
             suggestions.add(
                 new ValidationSuggestion(
                     String.format(
-                        "AI-Friendliness: Consider adding a batch GET endpoint for /%s. AI agents"
-                            + " can retrieve multiple items in one call instead of making"
-                            + " sequential requests. Example: POST /%s/batch-get with body:"
-                            + " {\"ids\": [...]}\n\n"
-                            + "WHY: AI agents are inefficient at making many sequential API calls"
-                            + " in loops. If an agent needs data for 100 items, making 100"
-                            + " individual GET requests is slow, expensive (100x API costs), and"
-                            + " unreliable (higher chance of failures). A batch endpoint reduces"
-                            + " this to 1 request, dramatically improving speed, cost, and"
-                            + " reliability.",
+                        "AI-Friendliness: Consider adding a batch GET"
+                            + " endpoint for /%s. AI agents can retrieve"
+                            + " multiple items in one call instead of"
+                            + " making sequential requests. Example: POST"
+                            + " /%s/batch-get with body: {\"ids\":"
+                            + " [...]}\n\n"
+                            + "WHY: AI agents are inefficient at making"
+                            + " many sequential API calls in loops. If an"
+                            + " agent needs data for 100 items, making 100"
+                            + " individual GET requests is slow, expensive"
+                            + " (100x API costs), and unreliable (higher"
+                            + " chance of failures). A batch endpoint"
+                            + " reduces this to 1 request, dramatically"
+                            + " improving speed, cost, and reliability.",
                         resource, resource),
                     RULE_ID,
                     "info",
@@ -100,8 +104,8 @@ public class BatchEndpointSuggestionRule implements LinterRule {
                         "benefit",
                         "Reduces chatty API calls from AI agents",
                         "why",
-                        "One batch request replaces hundreds of sequential calls, improving"
-                            + " speed 100x"),
+                        "One batch request replaces hundreds of sequential"
+                            + " calls, improving speed 100x"),
                     true));
           }
 
@@ -110,13 +114,18 @@ public class BatchEndpointSuggestionRule implements LinterRule {
             suggestions.add(
                 new ValidationSuggestion(
                     String.format(
-                        "AI-Friendliness: Consider adding a batch DELETE endpoint for /%s. Example:"
-                            + " POST /%s/batch-delete with body: {\"ids\": [...]}\n\n"
-                            + "WHY: Cleanup operations often involve deleting many items. Forcing"
-                            + " agents to make sequential DELETE calls is inefficient and"
-                            + " error-prone. If any single request fails mid-loop, you end up with"
-                            + " partial deletions and inconsistent state. Batch operations support"
-                            + " atomic all-or-nothing deletions and dramatically reduce latency.",
+                        "AI-Friendliness: Consider adding a batch DELETE"
+                            + " endpoint for /%s. Example: POST"
+                            + " /%s/batch-delete with body: {\"ids\":"
+                            + " [...]}\n\n"
+                            + "WHY: Cleanup operations often involve"
+                            + " deleting many items. Forcing agents to make"
+                            + " sequential DELETE calls is inefficient and"
+                            + " error-prone. If any single request fails"
+                            + " mid-loop, you end up with partial deletions"
+                            + " and inconsistent state. Batch operations"
+                            + " support atomic all-or-nothing deletions and"
+                            + " dramatically reduce latency.",
                         resource, resource),
                     RULE_ID,
                     "info",
@@ -127,10 +136,10 @@ public class BatchEndpointSuggestionRule implements LinterRule {
                         "operation",
                         "batch-delete",
                         "benefit",
-                        "Enables AI agents to delete multiple items efficiently",
+                        "Enables AI agents to delete multiple items" + " efficiently",
                         "why",
-                        "Supports atomic operations and prevents partial failures in cleanup"
-                            + " workflows"),
+                        "Supports atomic operations and prevents partial"
+                            + " failures in cleanup workflows"),
                     true));
           }
 
@@ -139,15 +148,19 @@ public class BatchEndpointSuggestionRule implements LinterRule {
             suggestions.add(
                 new ValidationSuggestion(
                     String.format(
-                        "AI-Friendliness: Consider adding a batch UPDATE endpoint for /%s. Example:"
-                            + " POST /%s/batch-update with body: {\"updates\": [{\"id\": ...,"
-                            + " \"data\": ...}, ...]}\n\n"
-                            + "WHY: Bulk update operations are common in automation workflows"
-                            + " (e.g., updating status for multiple records, applying changes"
-                            + " across a dataset). Sequential updates create race conditions,"
-                            + " consistency issues, and performance bottlenecks. Batch updates"
-                            + " allow agents to apply changes atomically and efficiently, ensuring"
-                            + " data consistency.",
+                        "AI-Friendliness: Consider adding a batch UPDATE"
+                            + " endpoint for /%s. Example: POST"
+                            + " /%s/batch-update with body: {\"updates\":"
+                            + " [{\"id\": ..., \"data\": ...}, ...]}\n\n"
+                            + "WHY: Bulk update operations are common in"
+                            + " automation workflows (e.g., updating status"
+                            + " for multiple records, applying changes"
+                            + " across a dataset). Sequential updates"
+                            + " create race conditions, consistency issues,"
+                            + " and performance bottlenecks. Batch updates"
+                            + " allow agents to apply changes atomically"
+                            + " and efficiently, ensuring data"
+                            + " consistency.",
                         resource, resource),
                     RULE_ID,
                     "info",
@@ -158,10 +171,10 @@ public class BatchEndpointSuggestionRule implements LinterRule {
                         "operation",
                         "batch-update",
                         "benefit",
-                        "Allows AI agents to update multiple items in one request",
+                        "Allows AI agents to update multiple items in one" + " request",
                         "why",
-                        "Ensures consistency and prevents race conditions in bulk update"
-                            + " workflows"),
+                        "Ensures consistency and prevents race conditions"
+                            + " in bulk update workflows"),
                     true));
           }
         });
@@ -169,9 +182,7 @@ public class BatchEndpointSuggestionRule implements LinterRule {
     return suggestions;
   }
 
-  /**
-   * Group paths by their base resource (e.g., /users/{id} -> users).
-   */
+  /** Group paths by their base resource (e.g., /users/{id} -> users). */
   private Map<String, List<PathInfo>> groupPathsByResource(OpenAPI openApi) {
     Map<String, List<PathInfo>> grouped = new HashMap<>();
 
@@ -190,9 +201,7 @@ public class BatchEndpointSuggestionRule implements LinterRule {
     return grouped;
   }
 
-  /**
-   * Extract resource name from path (e.g., /users/{id} -> users).
-   */
+  /** Extract resource name from path (e.g., /users/{id} -> users). */
   private String extractResourceName(String path) {
     // Remove leading slash and split by /
     String[] parts = path.substring(1).split("/");
@@ -207,9 +216,7 @@ public class BatchEndpointSuggestionRule implements LinterRule {
     return null;
   }
 
-  /**
-   * Helper class to track path information.
-   */
+  /** Helper class to track path information. */
   private static class PathInfo {
     final String path;
     final boolean hasPathParam;

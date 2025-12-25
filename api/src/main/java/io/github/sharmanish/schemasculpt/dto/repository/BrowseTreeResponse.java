@@ -5,9 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response with repository tree contents
- */
+/** Response with repository tree contents */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

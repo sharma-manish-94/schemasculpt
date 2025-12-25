@@ -10,13 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DiffRequest {
-  /**
-   * The original (baseline) OpenAPI specification content (JSON or YAML string).
-   */
+  /** The original (baseline) OpenAPI specification content (JSON or YAML string). */
   private String oldSpec;
 
-  /**
-   * The new (proposed) OpenAPI specification content (JSON or YAML string).
-   */
+  /** The new (proposed) OpenAPI specification content (JSON or YAML string). */
   private String newSpec;
 }

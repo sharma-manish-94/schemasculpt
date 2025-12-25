@@ -25,7 +25,7 @@ public class SchemaNamingConventionRule implements LinterRule {
             schemaName ->
                 new ValidationSuggestion(
                     String.format(
-                        "Schema name '%s' does not follow PascalCase convention.", schemaName),
+                        "Schema name '%s' does not follow PascalCase" + " convention.", schemaName),
                     "use-pascal-case",
                     "warning",
                     "general",

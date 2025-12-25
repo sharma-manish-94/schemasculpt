@@ -16,9 +16,9 @@ import reactor.core.publisher.Mono;
 
 /**
  * Service for repository operations.
- * <p>
- * This service proxies repository requests to the AI Service which handles
- * MCP integration with repository providers (GitHub, GitLab, etc.)
+ *
+ * <p>This service proxies repository requests to the AI Service which handles MCP integration with
+ * repository providers (GitHub, GitLab, etc.)
  */
 @Service
 @Slf4j
@@ -27,8 +27,7 @@ public class RepositoryService {
   private final WebClient webClient;
 
   public RepositoryService(
-      WebClient.Builder webClientBuilder,
-      @Value("${ai.service.url}") String aiServiceUrl) {
+      WebClient.Builder webClientBuilder, @Value("${ai.service.url}") String aiServiceUrl) {
     this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
   }
 
@@ -36,35 +35,47 @@ public class RepositoryService {
    * Connect to a repository provider.
    *
    * @param sessionId Session ID
-   * @param request   Connection request with provider and access token
+   * @param request Connection request with provider and access token
    * @return Connection response
    */
-  public Mono<RepositoryConnectionResponse> connect(String sessionId,
-                                                    RepositoryConnectionRequest request) {
-    log.info("Connecting to repository provider: {} for session: {}", request.getProvider(),
-        sessionId);
-    log.debug("Request payload - provider: {}, accessToken: {}", request.getProvider(),
+  public Mono<RepositoryConnectionResponse> connect(
+      String sessionId, RepositoryConnectionRequest request) {
+    log.info(
+        "Connecting to repository provider: {} for session: {}", request.getProvider(), sessionId);
+    log.debug(
+        "Request payload - provider: {}, accessToken: {}",
+        request.getProvider(),
         request.getAccessToken() != null ? "***" : "null");
 
-    return webClient.post()
+    return webClient
+        .post()
         .uri("/api/repository/connect")
         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .header("X-Session-ID", sessionId)
         .bodyValue(request)
         .retrieve()
-        .onStatus(status -> status.value() == 422, response -> {
-          return response.bodyToMono(String.class).flatMap(body -> {
-            log.error("422 Validation error from AI service: {}", body);
-            return Mono.error(new RuntimeException("Validation failed: " + body));
-          });
-        })
+        .onStatus(
+            status -> status.value() == 422,
+            response -> {
+              return response
+                  .bodyToMono(String.class)
+                  .flatMap(
+                      body -> {
+                        log.error("422 Validation error from AI service: {}", body);
+                        return Mono.error(new RuntimeException("Validation failed: " + body));
+                      });
+            })
         .bodyToMono(RepositoryConnectionResponse.class)
-        .doOnSuccess(response ->
-            log.info("Successfully connected to {} for session: {}", request.getProvider(),
-                sessionId))
-        .doOnError(error ->
-            log.error("Failed to connect to repository provider for session: {}", sessionId,
-                error));
+        .doOnSuccess(
+            response ->
+                log.info(
+                    "Successfully connected to {} for session: {}",
+                    request.getProvider(),
+                    sessionId))
+        .doOnError(
+            error ->
+                log.error(
+                    "Failed to connect to repository provider for session: {}", sessionId, error));
   }
 
   /**
@@ -76,7 +87,8 @@ public class RepositoryService {
   public Mono<Void> disconnect(String sessionId) {
     log.info("Disconnecting session: {} from repository provider", sessionId);
 
-    return webClient.post()
+    return webClient
+        .post()
         .uri("/api/repository/disconnect")
         .header("X-Session-ID", sessionId)
         .retrieve()
@@ -89,67 +101,89 @@ public class RepositoryService {
    * Browse repository tree.
    *
    * @param sessionId Session ID
-   * @param request   Browse request
+   * @param request Browse request
    * @return Tree contents
    */
   public Mono<BrowseTreeResponse> browseTree(String sessionId, BrowseTreeRequest request) {
-    log.debug("Browsing tree: {}/{}/{} for session: {}",
-        request.getOwner(), request.getRepo(), request.getPath(), sessionId);
-    log.debug("Browse request payload - owner: {}, repo: {}, path: {}, branch: {}",
-        request.getOwner(), request.getRepo(), request.getPath(), request.getBranch());
+    log.debug(
+        "Browsing tree: {}/{}/{} for session: {}",
+        request.getOwner(),
+        request.getRepo(),
+        request.getPath(),
+        sessionId);
+    log.debug(
+        "Browse request payload - owner: {}, repo: {}, path: {}, branch: {}",
+        request.getOwner(),
+        request.getRepo(),
+        request.getPath(),
+        request.getBranch());
 
-    return webClient.post()
+    return webClient
+        .post()
         .uri("/api/repository/browse")
         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .header("X-Session-ID", sessionId)
         .bodyValue(request)
         .retrieve()
-        .onStatus(status -> status.value() == 422, response -> {
-          return response.bodyToMono(String.class).flatMap(body -> {
-            log.error("422 Validation error from AI service: {}", body);
-            return Mono.error(new RuntimeException("Validation failed: " + body));
-          });
-        })
+        .onStatus(
+            status -> status.value() == 422,
+            response -> {
+              return response
+                  .bodyToMono(String.class)
+                  .flatMap(
+                      body -> {
+                        log.error("422 Validation error from AI service: {}", body);
+                        return Mono.error(new RuntimeException("Validation failed: " + body));
+                      });
+            })
         .bodyToMono(BrowseTreeResponse.class)
-        .doOnSuccess(response ->
-            log.debug("Retrieved {} files from {}/{}/{}",
-                response.getFiles().size(), request.getOwner(), request.getRepo(),
-                request.getPath()))
-        .doOnError(error ->
-            log.error("Error browsing tree for session: {}", sessionId, error));
+        .doOnSuccess(
+            response ->
+                log.debug(
+                    "Retrieved {} files from {}/{}/{}",
+                    response.getFiles().size(),
+                    request.getOwner(),
+                    request.getRepo(),
+                    request.getPath()))
+        .doOnError(error -> log.error("Error browsing tree for session: {}", sessionId, error));
   }
 
   /**
    * Read file from repository.
    *
    * @param sessionId Session ID
-   * @param request   Read file request
+   * @param request Read file request
    * @return File content
    */
   public Mono<ReadFileResponse> readFile(String sessionId, ReadFileRequest request) {
-    log.info("Reading file: {}/{}/{} for session: {}",
-        request.getOwner(), request.getRepo(), request.getPath(), sessionId);
+    log.info(
+        "Reading file: {}/{}/{} for session: {}",
+        request.getOwner(),
+        request.getRepo(),
+        request.getPath(),
+        sessionId);
 
-    return webClient.post()
+    return webClient
+        .post()
         .uri("/api/repository/file")
         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .header("X-Session-ID", sessionId)
         .bodyValue(request)
         .retrieve()
         .bodyToMono(ReadFileResponse.class)
-        .doOnSuccess(response ->
-            log.info("Successfully read file: {} ({} bytes)",
-                request.getPath(), response.getSize()))
-        .doOnError(error ->
-            log.error("Error reading file for session: {}", sessionId, error));
+        .doOnSuccess(
+            response ->
+                log.info(
+                    "Successfully read file: {} ({} bytes)", request.getPath(), response.getSize()))
+        .doOnError(error -> log.error("Error reading file for session: {}", sessionId, error));
   }
 
   /**
-   * Store repository connection info in session (Redis).
-   * This will be called after successful connection.
+   * Store repository connection info in session (Redis). This will be called after successful
+   * connection.
    *
-   * @param sessionId   Session ID
-   * @param provider    Provider name
+   * @param sessionId Session ID
+   * @param provider Provider name
    * @param accessToken Access token (encrypted)
    */
   public void storeRepositoryContext(String sessionId, String provider, String accessToken) {

@@ -6,23 +6,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Request to connect to a repository provider (GitHub, GitLab, etc.)
- */
+/** Request to connect to a repository provider (GitHub, GitLab, etc.) */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class RepositoryConnectionRequest {
 
-  /**
-   * Repository provider name (github, gitlab)
-   */
+  /** Repository provider name (github, gitlab) */
   private String provider;
 
   /**
-   * OAuth access token for authentication
-   * Accepts both camelCase (from UI) and snake_case (from AI service)
-   * Serializes as snake_case for AI service compatibility
+   * OAuth access token for authentication Accepts both camelCase (from UI) and snake_case (from AI
+   * service) Serializes as snake_case for AI service compatibility
    */
   @JsonProperty("access_token")
   @JsonAlias({"accessToken", "access_token"})

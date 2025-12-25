@@ -83,8 +83,8 @@ public class PathNamingRule implements LinterRule {
         suggestions.add(
             new ValidationSuggestion(
                 String.format(
-                    "Path segment '%s' in path '%s' should not use camelCase. Use kebab-case"
-                        + " instead.",
+                    "Path segment '%s' in path '%s' should not use camelCase."
+                        + " Use kebab-case instead.",
                     segment, path),
                 "convert-camelcase-to-kebab",
                 "warning",
@@ -96,7 +96,8 @@ public class PathNamingRule implements LinterRule {
         suggestions.add(
             new ValidationSuggestion(
                 String.format(
-                    "Path segment '%s' in path '%s' should use hyphens instead of underscores.",
+                    "Path segment '%s' in path '%s' should use hyphens instead"
+                        + " of underscores.",
                     segment, path),
                 "replace-underscores-with-hyphens",
                 "warning",
@@ -108,8 +109,8 @@ public class PathNamingRule implements LinterRule {
         suggestions.add(
             new ValidationSuggestion(
                 String.format(
-                    "Path segment '%s' in path '%s' should use kebab-case (lowercase with"
-                        + " hyphens).",
+                    "Path segment '%s' in path '%s' should use kebab-case"
+                        + " (lowercase with hyphens).",
                     segment, path),
                 "use-kebab-case",
                 "warning",
@@ -143,8 +144,8 @@ public class PathNamingRule implements LinterRule {
           suggestions.add(
               new ValidationSuggestion(
                   String.format(
-                      "Resource '%s' in path '%s' should likely be plural for collection"
-                          + " endpoints.",
+                      "Resource '%s' in path '%s' should likely be plural for"
+                          + " collection endpoints.",
                       segment, path),
                   "use-plural-resource-names",
                   "info",
@@ -186,7 +187,7 @@ public class PathNamingRule implements LinterRule {
 
     // Common irregular plurals
     String[] irregularPlurals = {
-        "children", "people", "men", "women", "feet", "teeth", "mice", "data"
+      "children", "people", "men", "women", "feet", "teeth", "mice", "data"
     };
     for (String plural : irregularPlurals) {
       if (segment.equals(plural)) {

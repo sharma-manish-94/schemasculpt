@@ -15,9 +15,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/**
- * JWT Authentication Filter that validates JWT tokens and sets authentication
- */
+/** JWT Authentication Filter that validates JWT tokens and sets authentication */
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

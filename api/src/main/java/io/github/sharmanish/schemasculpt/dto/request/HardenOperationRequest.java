@@ -15,6 +15,5 @@ public record HardenOperationRequest(
       boolean addErrorHandling,
       String rateLimitPolicy,
       String cacheTTL,
-      String securityScheme) {
-  }
+      String securityScheme) {}
 }

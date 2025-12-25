@@ -1,6 +1,5 @@
 package io.github.sharmanish.schemasculpt.controller.auth;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.config.JacksonConfig;
@@ -31,30 +30,26 @@ import org.springframework.web.context.WebApplicationContext;
 @WebMvcTest(
     controllers = AuthController.class,
     excludeAutoConfiguration = {
-        org.springframework.boot.security.oauth2.client.autoconfigure.servlet
-            .OAuth2ClientWebSecurityAutoConfiguration.class,
-        org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration
-            .class
+      org.springframework.boot.security.oauth2.client.autoconfigure.servlet
+          .OAuth2ClientWebSecurityAutoConfiguration.class,
+      org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration
+          .class
     })
 @Import({WebMvcConfig.class, JacksonConfig.class, AuthControllerTest.TestConfig.class})
 @TestPropertySource(properties = {"app.jwt.expiration=3600000"})
 class AuthControllerTest {
 
   private final long jwtExpirationMs = 3600000;
-  @Autowired
-  private MockMvc mockMvc;
-  @Autowired
-  private WebApplicationContext context;
+  @Autowired private MockMvc mockMvc;
+  @Autowired private WebApplicationContext context;
 
   @Autowired
   @Qualifier("cleanObjectMapper")
   private ObjectMapper cleanObjectMapper;
 
-  @Autowired
-  private JwtTokenProvider tokenProvider;
+  @Autowired private JwtTokenProvider tokenProvider;
 
-  @Autowired
-  private UserRepository userRepository;
+  @Autowired private UserRepository userRepository;
 
   private User user;
 
@@ -107,16 +102,13 @@ class AuthControllerTest {
   }
 
   @Test
-  void getToken() {
-  }
+  void getToken() {}
 
   @Test
-  void logout() {
-  }
+  void logout() {}
 
   @Test
-  void health() {
-  }
+  void health() {}
 
   @TestConfiguration
   static class TestConfig {

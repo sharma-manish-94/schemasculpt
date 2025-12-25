@@ -137,7 +137,7 @@ tasks.check {
 spotless {
     java {
         target("src/**/*.java")
-        googleJavaFormat("1.25.2").aosp().reflowLongStrings()
+        googleJavaFormat("1.25.2").reflowLongStrings()
         endWithNewline()
         importOrder()
     }

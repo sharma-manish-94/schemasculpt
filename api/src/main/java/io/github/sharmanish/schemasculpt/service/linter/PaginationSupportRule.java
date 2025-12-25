@@ -38,7 +38,8 @@ public class PaginationSupportRule implements LinterRule {
                   .readOperationsMap()
                   .forEach(
                       (httpMethod, operation) -> {
-                        // Focus on GET operations that likely return collections
+                        // Focus on GET operations that likely return
+                        // collections
                         if (httpMethod.toString().equalsIgnoreCase("GET")
                             && isCollectionEndpoint(path, operation)) {
 
@@ -48,18 +49,59 @@ public class PaginationSupportRule implements LinterRule {
                             suggestions.add(
                                 new ValidationSuggestion(
                                     String.format(
-                                        "AI-Friendliness: %s %s appears to return a collection but"
-                                            + " lacks pagination parameters. Add limit/offset or"
-                                            + " cursor-based pagination to prevent AI agents from"
-                                            + " inefficiently fetching all data.\n\n"
-                                            + "WHY: AI agents have limited token/memory budgets and"
-                                            + " request timeouts. Without pagination, agents must"
-                                            + " fetch entire collections at once, which can cause"
-                                            + " timeouts, memory exhaustion, or excessive costs."
-                                            + " Pagination allows agents to retrieve data in"
-                                            + " manageable chunks and stop when they have enough"
-                                            + " information, dramatically improving performance and"
-                                            + " reliability.",
+                                        "AI-Friendliness:"
+                                            + " %s %s"
+                                            + " appears to"
+                                            + " return a"
+                                            + " collection"
+                                            + " but lacks"
+                                            + " pagination"
+                                            + " parameters."
+                                            + " Add limit/offset"
+                                            + " or cursor-based"
+                                            + " pagination"
+                                            + " to prevent"
+                                            + " AI agents"
+                                            + " from"
+                                            + " inefficiently"
+                                            + " fetching"
+                                            + " all data.\n\n"
+                                            + "WHY: AI"
+                                            + " agents have"
+                                            + " limited"
+                                            + " token/memory"
+                                            + " budgets and"
+                                            + " request"
+                                            + " timeouts."
+                                            + " Without"
+                                            + " pagination,"
+                                            + " agents must"
+                                            + " fetch"
+                                            + " entire"
+                                            + " collections"
+                                            + " at once,"
+                                            + " which can"
+                                            + " cause"
+                                            + " timeouts,"
+                                            + " memory"
+                                            + " exhaustion,"
+                                            + " or excessive"
+                                            + " costs."
+                                            + " Pagination"
+                                            + " allows"
+                                            + " agents to"
+                                            + " retrieve"
+                                            + " data in"
+                                            + " manageable"
+                                            + " chunks and"
+                                            + " stop when"
+                                            + " they have"
+                                            + " enough"
+                                            + " information,"
+                                            + " dramatically"
+                                            + " improving"
+                                            + " performance"
+                                            + " and reliability.",
                                         httpMethod, path),
                                     RULE_ID,
                                     "warning",
@@ -70,12 +112,20 @@ public class PaginationSupportRule implements LinterRule {
                                         "method",
                                         httpMethod.toString(),
                                         "recommendation",
-                                        "Add pagination parameters: limit, offset, or cursor",
+                                        "Add pagination"
+                                            + " parameters:"
+                                            + " limit,"
+                                            + " offset, or"
+                                            + " cursor",
                                         "example_params",
                                         List.of("limit", "offset", "page", "cursor", "next_token"),
                                         "why",
-                                        "Prevents timeouts and memory issues when agents work with"
-                                            + " large datasets"),
+                                        "Prevents timeouts"
+                                            + " and memory"
+                                            + " issues when"
+                                            + " agents work"
+                                            + " with large"
+                                            + " datasets"),
                                     true));
                           }
                         }
@@ -95,9 +145,12 @@ public class PaginationSupportRule implements LinterRule {
     boolean pathIndicatesCollection = lowerPath.matches(".*(s|list|all|search|query)(/.*)?$");
 
     // Check operation summary/description
-    String summary = operation.getSummary() != null ? operation.getSummary().toLowerCase(Locale.ROOT) : "";
+    String summary =
+        operation.getSummary() != null ? operation.getSummary().toLowerCase(Locale.ROOT) : "";
     String description =
-        operation.getDescription() != null ? operation.getDescription().toLowerCase(Locale.ROOT) : "";
+        operation.getDescription() != null
+            ? operation.getDescription().toLowerCase(Locale.ROOT)
+            : "";
     boolean descIndicatesCollection =
         summary.contains("list")
             || summary.contains("all")
@@ -121,9 +174,7 @@ public class PaginationSupportRule implements LinterRule {
     return pathIndicatesCollection || descIndicatesCollection || responseIsArray;
   }
 
-  /**
-   * Check if operation has pagination parameters.
-   */
+  /** Check if operation has pagination parameters. */
   private boolean checkPaginationSupport(Operation operation) {
     if (operation.getParameters() == null || operation.getParameters().isEmpty()) {
       return false;

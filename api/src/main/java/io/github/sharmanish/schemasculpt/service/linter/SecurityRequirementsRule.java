@@ -72,7 +72,7 @@ public class SecurityRequirementsRule implements LinterRule {
             suggestions.add(
                 new ValidationSuggestion(
                     String.format(
-                        "Operation '%s %s' should have security requirements defined.",
+                        "Operation '%s %s' should have security" + " requirements defined.",
                         method, path),
                     "add-operation-security",
                     "error",
@@ -90,7 +90,7 @@ public class SecurityRequirementsRule implements LinterRule {
                 suggestions.add(
                     new ValidationSuggestion(
                         String.format(
-                            "Operation '%s %s' references undefined security scheme '%s'.",
+                            "Operation '%s %s' references undefined" + " security scheme '%s'.",
                             method, path, schemeName),
                         "invalid-security-reference",
                         "error",

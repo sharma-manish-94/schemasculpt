@@ -18,9 +18,9 @@ public class DiffEntry {
   private String newValue;
 
   public enum ChangeType {
-    BREAKING,   // Will definitely break clients (e.g., removing required field)
-    DANGEROUS,  // Might break clients (e.g., loosening validation)
-    SAFE,       // Backward compatible (e.g., adding optional field)
-    INFO        // Documentation updates
+    BREAKING, // Will definitely break clients (e.g., removing required field)
+    DANGEROUS, // Might break clients (e.g., loosening validation)
+    SAFE, // Backward compatible (e.g., adding optional field)
+    INFO // Documentation updates
   }
 }

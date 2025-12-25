@@ -37,7 +37,8 @@ public class ResponseSuccessRule implements LinterRule {
           suggestions.add(
               new ValidationSuggestion(
                   String.format(
-                      "Operation '%s %s' must have at least one success response (2xx or 3xx).",
+                      "Operation '%s %s' must have at least one success"
+                          + " response (2xx or 3xx).",
                       method, path),
                   "add-success-response",
                   "error",

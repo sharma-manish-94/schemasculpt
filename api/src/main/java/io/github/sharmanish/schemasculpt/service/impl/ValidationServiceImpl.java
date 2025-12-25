@@ -62,7 +62,7 @@ public class ValidationServiceImpl implements ValidationService {
         errors =
             List.of(
                 new ValidationError(
-                    "Could not parse OpenAPI specification - check format and syntax"));
+                    "Could not parse OpenAPI specification - check format and" + " syntax"));
       }
 
       return new ValidationResult(errors, suggestions);
@@ -70,15 +70,14 @@ public class ValidationServiceImpl implements ValidationService {
     } catch (Exception e) {
       ValidationError criticalError =
           new ValidationError(
-              "Failed to parse the specification. Please check for syntax errors. Details: "
+              "Failed to parse the specification. Please check for syntax errors."
+                  + " Details: "
                   + e.getMessage());
       return new ValidationResult(List.of(criticalError), Collections.emptyList());
     }
   }
 
-  /**
-   * Cleans up validation messages from the Swagger parser to make them more user-friendly
-   */
+  /** Cleans up validation messages from the Swagger parser to make them more user-friendly */
   private String cleanUpValidationMessage(String message) {
     if (message == null) {
       return "Unknown validation error";

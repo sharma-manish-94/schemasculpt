@@ -61,7 +61,9 @@ public class TestDataService {
       Optional<OperationTestCases> cachedTests =
           testCasesRepository.findByProject_IdAndPathAndMethod(project.getId(), path, method);
 
-      if (cachedTests.isPresent() && MessageDigest.isEqual(cachedTests.get().getSpecHash().getBytes(), specHash.getBytes())) {
+      if (cachedTests.isPresent()
+          && MessageDigest.isEqual(
+              cachedTests.get().getSpecHash().getBytes(), specHash.getBytes())) {
         log.info(
             "Found cached test cases in DB for {}/{} (project: {})", method, path, project.getId());
 
@@ -144,9 +146,7 @@ public class TestDataService {
     }
   }
 
-  /**
-   * Calculate SHA-256 hash of specification text for change detection.
-   */
+  /** Calculate SHA-256 hash of specification text for change detection. */
   private String calculateSpecHash(String specText) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -157,9 +157,7 @@ public class TestDataService {
     }
   }
 
-  /**
-   * Record test data generation attempt in history for analytics.
-   */
+  /** Record test data generation attempt in history for analytics. */
   private void recordGenerationHistory(
       Project project,
       User user,
@@ -325,9 +323,7 @@ public class TestDataService {
     return Map.of("variations", "[]", "count", request.getOrDefault("count", 3), "cached", false);
   }
 
-  /**
-   * Invalidate cached test data when specification changes.
-   */
+  /** Invalidate cached test data when specification changes. */
   @Transactional
   public void invalidateCache(Long projectId, String specText) {
     String newSpecHash = calculateSpecHash(specText);

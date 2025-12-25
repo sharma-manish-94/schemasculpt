@@ -215,15 +215,17 @@ public class QuickFixService {
 
   private void generateOperationId(OpenAPI openApi, String path, String method) {
     PathItem pathItem = openApi.getPaths().get(path);
-      if (pathItem == null) {
-          return;
-      }
+    if (pathItem == null) {
+      return;
+    }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
-      if (operation == null) {
-          return;
-      }
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+    if (operation == null) {
+      return;
+    }
 
     // Build the new operationId (e.g., "getUsersById")
     String generatedId = buildIdFromPath(method.toLowerCase(Locale.ROOT), path);
@@ -273,15 +275,17 @@ public class QuickFixService {
 
   private void addSuccessResponse(OpenAPI openApi, String path, String method) {
     PathItem pathItem = openApi.getPaths().get(path);
-      if (pathItem == null) {
-          return;
-      }
+    if (pathItem == null) {
+      return;
+    }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
-      if (operation == null) {
-          return;
-      }
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+    if (operation == null) {
+      return;
+    }
 
     if (operation.getResponses() == null) {
       operation.responses(new io.swagger.v3.oas.models.responses.ApiResponses());
@@ -309,8 +313,8 @@ public class QuickFixService {
   }
 
   /**
-   * Create a missing schema component with basic properties.
-   * Generates a stub schema that can be filled in later.
+   * Create a missing schema component with basic properties. Generates a stub schema that can be
+   * filled in later.
    */
   private void createMissingSchema(OpenAPI openApi, String schemaName) {
     // Ensure components section exists
@@ -351,34 +355,39 @@ public class QuickFixService {
   }
 
   /**
-   * Add a missing description to a response.
-   * Provides sensible defaults based on HTTP status code.
+   * Add a missing description to a response. Provides sensible defaults based on HTTP status code.
    */
-  private void addMissingDescription(OpenAPI openApi, String path, String method,
-                                     String responseCode) {
+  private void addMissingDescription(
+      OpenAPI openApi, String path, String method, String responseCode) {
     PathItem pathItem = openApi.getPaths().get(path);
-      if (pathItem == null) {
-          return;
-      }
+    if (pathItem == null) {
+      return;
+    }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
-      if (operation == null || operation.getResponses() == null) {
-          return;
-      }
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+    if (operation == null || operation.getResponses() == null) {
+      return;
+    }
 
     io.swagger.v3.oas.models.responses.ApiResponse response =
         operation.getResponses().get(responseCode);
-      if (response == null) {
-          return;
-      }
+    if (response == null) {
+      return;
+    }
 
     // Only add description if missing
     if (response.getDescription() == null || response.getDescription().trim().isEmpty()) {
       String description = getDefaultDescription(responseCode, method);
       response.setDescription(description);
-      log.info("Added description for {} {} response {}: {}", method.toUpperCase(Locale.ROOT), path,
-          responseCode, description);
+      log.info(
+          "Added description for {} {} response {}: {}",
+          method.toUpperCase(Locale.ROOT),
+          path,
+          responseCode,
+          description);
     }
   }
 
@@ -395,9 +404,7 @@ public class QuickFixService {
         + CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, cleanPath.replace(" ", "-"));
   }
 
-  /**
-   * Get a sensible default description based on HTTP status code and method.
-   */
+  /** Get a sensible default description based on HTTP status code and method. */
   private String getDefaultDescription(String responseCode, String method) {
     try {
       int code = Integer.parseInt(responseCode);

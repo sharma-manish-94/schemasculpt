@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Information about a repository
- */
+/** Information about a repository */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

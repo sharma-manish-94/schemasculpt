@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response after connecting to a repository provider
- */
+/** Response after connecting to a repository provider */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
