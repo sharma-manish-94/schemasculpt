@@ -23,4 +23,10 @@ Desktop.ini
 !format-all.sh
 !IDE-SETUP.md
 !FORMATTING-SETUP.md
+!docker-compose.yml
+!.env.docker
+.env.docker.local
+!test-deployment.sh
+!test-deployment.bat
+!check-health.sh
 !/*/
