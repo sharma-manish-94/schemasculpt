@@ -5,9 +5,19 @@ FROM gradle:8.14-jdk21-alpine AS builder
 WORKDIR /app
 
 # Copy Gradle configuration files
-COPY build.gradle.kts settings.gradle.kts gradle.properties ./
+COPY build.gradle.kts settings.gradle.kts ./
 COPY gradlew ./
 COPY gradle ./gradle
+
+# Create Docker-friendly gradle.properties (without Windows JAVA_HOME)
+RUN echo "org.gradle.caching=true" > gradle.properties && \
+    echo "org.gradle.parallel=true" >> gradle.properties && \
+    echo "org.gradle.jvmargs=-Xmx2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> gradle.properties && \
+    echo "org.gradle.configuration-cache=true" >> gradle.properties && \
+    echo "kotlin.incremental=true" >> gradle.properties && \
+    echo "org.gradle.dependency.verification=lenient" >> gradle.properties && \
+    echo "org.gradle.console=plain" >> gradle.properties && \
+    echo "org.gradle.warning.mode=all" >> gradle.properties
 
 # Download dependencies (cached layer)
 RUN gradle dependencies --no-daemon || true
