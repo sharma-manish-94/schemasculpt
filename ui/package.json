@@ -14,7 +14,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-resizable-panels": "^3.0.6",
-    "react-router-dom": "^7.9.1",
+    "react-router-dom": "^7.10.1",
     "react-scripts": "5.0.1",
     "redoc": "^2.5.2",
     "sockjs-client": "^1.6.1",
