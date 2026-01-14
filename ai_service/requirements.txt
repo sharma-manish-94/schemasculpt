@@ -61,7 +61,7 @@ html2text>=2020.1.16
 # For HuggingFace Provider (Optional)
 # Install if using HuggingFace:
 # pip install "schemasculpt-ai[huggingface]"
-torch>=2.1.0; platform_machine != "aarch64"  # GPU acceleration
+torch>=2.9.0; platform_machine != "aarch64"  # GPU acceleration
 transformers>=4.35.0  # HuggingFace transformers
 
 # ---------------------------------------------------------------------
@@ -75,3 +75,5 @@ psutil>=5.9.0
 mcp>=0.9.0  # MCP SDK for Python
 aiofiles>=23.2.1  # Async file operations for MCP
 marshmallow>=3.26.2 # not directly required, pinned by Snyk to avoid a vulnerability
+urllib3>=2.6.3 # not directly required, pinned by Snyk to avoid a vulnerability
+filelock>=3.20.3 # not directly required, pinned by Snyk to avoid a vulnerability
