@@ -81,7 +81,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/ai/health"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -111,10 +111,13 @@ services:
       # Application configuration
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SERVER_PORT: 8080
-      # GitHub OAuth (optional - set in .env.docker)
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      # JPA Configuration - Let Flyway manage schema
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      # Actuator health endpoint for Docker
+      MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: true
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      # JWT Configuration
+      APP_JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       # CORS
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://ui
     ports:
@@ -129,11 +132,11 @@ services:
       ai-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
+      test: ["CMD", "sh", "-c", "nc -z localhost 8080 || exit 1"]
+      interval: 10s
       timeout: 3s
       retries: 3
-      start_period: 60s
+      start_period: 40s
 
   # UI (React/Nginx)
   ui:
@@ -153,7 +156,7 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 3s
       retries: 3

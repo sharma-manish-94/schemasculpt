@@ -30,3 +30,4 @@ Desktop.ini
 !test-deployment.bat
 !check-health.sh
 !/*/
+api/.env.docker

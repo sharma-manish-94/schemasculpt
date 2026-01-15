@@ -119,6 +119,9 @@ val integrationTest by tasks.registering(Test::class) {
     description = "Runs integration tests"
     group = "verification"
 
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+
     useJUnitPlatform {
         includeTags("integration")
     }

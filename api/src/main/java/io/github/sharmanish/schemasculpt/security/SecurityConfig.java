@@ -46,6 +46,8 @@ public class SecurityConfig {
                         "/api/v1/sessions/**",
                         "/api/v1/explanations/**",
                         "/api/v1/repository/**",
+                        "/api/v1/projects/**",
+                        "/api/v1/specifications/**",
                         "/proxy/**"))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

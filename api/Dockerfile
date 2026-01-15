@@ -29,18 +29,18 @@ COPY src ./src
 RUN gradle bootJar --no-daemon -x test
 
 # Stage 2: Runtime image
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
+# Install netcat for healthcheck
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user for security
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN groupadd -r spring && useradd -r -g spring -m spring
 
 # Copy the built JAR from builder stage
-COPY --from=builder /app/build/libs/*.jar app.jar
-
-# Change ownership to non-root user
-RUN chown -R spring:spring /app
+COPY --from=builder --chown=spring:spring /app/build/libs/*.jar app.jar
 
 USER spring
 
