@@ -3,7 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import endpoints, repository_endpoints
+from app.api.deps import cleanup_dependencies
+from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.providers.provider_factory import initialize_provider
@@ -53,8 +54,10 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown: Cleanup
+    # Shutdown: Cleanup dependencies
     logger.info("Shutting down AI service...")
+    await cleanup_dependencies()
+    logger.info("Cleanup complete")
 
 
 app = FastAPI(
@@ -73,8 +76,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-app.include_router(endpoints.router)
-app.include_router(repository_endpoints.router)
+# Include the aggregated v1 API router
+# This includes all domain-specific routers plus legacy endpoints
+app.include_router(api_router)
 
 
 @app.get("/")

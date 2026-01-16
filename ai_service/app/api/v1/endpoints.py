@@ -15,10 +15,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from prance import ResolvingParser
 
-from ..core.config import settings
-from ..core.exceptions import SchemaSculptException
-from ..core.logging import get_logger, set_correlation_id
-from ..schemas.ai_schemas import (
+from app.core.config import settings
+from app.core.exceptions import SchemaSculptException
+from app.core.logging import get_logger, set_correlation_id
+from app.schemas.ai_schemas import (
     AIRequest,
     AIResponse,
     GenerateSpecRequest,
@@ -29,15 +29,15 @@ from ..schemas.ai_schemas import (
     OperationType,
     StreamingMode,
 )
-from ..schemas.description_schemas import (
+from app.schemas.description_schemas import (
     DescriptionAnalysisRequest,
     DescriptionAnalysisResponse,
 )
-from ..schemas.meta_analysis_schemas import (
+from app.schemas.meta_analysis_schemas import (
     AIMetaAnalysisRequest,
     AIMetaAnalysisResponse,
 )
-from ..schemas.patch_schemas import (
+from app.schemas.patch_schemas import (
     PatchApplicationRequest,
     PatchApplicationResponse,
     PatchGenerationRequest,
@@ -45,21 +45,21 @@ from ..schemas.patch_schemas import (
     SmartAIFixRequest,
     SmartAIFixResponse,
 )
-from ..schemas.security_schemas import SecurityAnalysisReport, SecurityAnalysisRequest
-from ..services.agent_manager import AgentManager
-from ..services.cache_service import cache_service
-from ..services.context_manager import ContextManager
-from ..services.description_analysis_service import DescriptionAnalysisService
-from ..services.llm_adapter import LLMAdapter
-from ..services.llm_service import LLMService
-from ..services.meta_analysis_service import MetaAnalysisService
-from ..services.mock_data_service import MockDataService
-from ..services.patch_generator import PatchGenerator, apply_json_patch
-from ..services.prompt_engine import PromptEngine
-from ..services.rag_service import RAGService
-from ..services.security import SecurityAnalysisWorkflow
-from ..services.smart_fix_service import SmartFixService
-from ..services.test_case_generator import TestCaseGeneratorService
+from app.schemas.security_schemas import SecurityAnalysisReport, SecurityAnalysisRequest
+from app.services.agent_manager import AgentManager
+from app.services.cache_service import cache_service
+from app.services.context_manager import ContextManager
+from app.services.description_analysis_service import DescriptionAnalysisService
+from app.services.llm_adapter import LLMAdapter
+from app.services.llm_service import LLMService
+from app.services.meta_analysis_service import MetaAnalysisService
+from app.services.mock_data_service import MockDataService
+from app.services.patch_generator import PatchGenerator, apply_json_patch
+from app.services.prompt_engine import PromptEngine
+from app.services.rag_service import RAGService
+from app.services.security import SecurityAnalysisWorkflow
+from app.services.smart_fix_service import SmartFixService
+from app.services.test_case_generator import TestCaseGeneratorService
 
 # Initialize services
 router = APIRouter()
