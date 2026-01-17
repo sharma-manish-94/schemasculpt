@@ -10,14 +10,15 @@ import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/analysis")
