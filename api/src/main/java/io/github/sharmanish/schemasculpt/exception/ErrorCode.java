@@ -23,7 +23,15 @@ public enum ErrorCode {
 
   // Service errors (502/503)
   AI_SERVICE_ERROR(HttpStatus.BAD_GATEWAY),
-  PROXY_SERVICE_ERROR(HttpStatus.BAD_GATEWAY);
+  AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE),
+  AI_INVALID_RESPONSE(HttpStatus.BAD_GATEWAY),
+  TEST_GENERATION_ERROR(HttpStatus.BAD_GATEWAY),
+  MOCK_DATA_GENERATION_ERROR(HttpStatus.BAD_GATEWAY),
+  PROXY_SERVICE_ERROR(HttpStatus.BAD_GATEWAY),
+
+  // Client errors - processing failures (400)
+  ENUM_FIXING_ERROR(HttpStatus.BAD_REQUEST),
+  SPECIFICATION_PROCESSING_ERROR(HttpStatus.BAD_REQUEST);
 
   private final HttpStatus httpStatus;
 

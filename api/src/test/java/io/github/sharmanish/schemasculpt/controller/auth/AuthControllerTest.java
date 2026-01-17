@@ -121,5 +121,10 @@ class AuthControllerTest {
     public UserRepository userRepository() {
       return Mockito.mock(UserRepository.class);
     }
+
+    @Bean("cleanObjectMapper")
+    public ObjectMapper cleanObjectMapper() {
+      return new ObjectMapper();
+    }
   }
 }

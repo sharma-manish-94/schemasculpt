@@ -37,7 +37,7 @@ class ValidationServiceImplTest {
     ValidationResult validationResult = validationService.analyze(specWithUnusedComponent);
     assertThat(validationResult).isNotNull();
     assertThat(validationResult.errors()).isEmpty();
-    assertThat(validationResult.suggestions()).hasSize(11);
+    assertThat(validationResult.suggestions()).hasSize(12);
   }
 
   @Test

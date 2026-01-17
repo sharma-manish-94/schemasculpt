@@ -224,6 +224,6 @@ public class AnalysisController {
   @PostMapping("/diff")
   public ResponseEntity<DiffResult> diffSpecs(@RequestBody DiffRequest request) {
     // DiffRequest contains String oldSpec, String newSpec
-    return ResponseEntity.ok(diffService.compareSpecs(request.getOldSpec(), request.getNewSpec()));
+    return ResponseEntity.ok(diffService.compareSpecs(request.oldSpec(), request.newSpec()));
   }
 }

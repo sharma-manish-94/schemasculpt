@@ -3,6 +3,7 @@ package io.github.sharmanish.schemasculpt.service.impl;
 import io.github.sharmanish.schemasculpt.dto.ValidationError;
 import io.github.sharmanish.schemasculpt.dto.ValidationResult;
 import io.github.sharmanish.schemasculpt.dto.ValidationSuggestion;
+import io.github.sharmanish.schemasculpt.exception.SpecificationProcessingException;
 import io.github.sharmanish.schemasculpt.service.SpecParsingService;
 import io.github.sharmanish.schemasculpt.service.ValidationService;
 import io.github.sharmanish.schemasculpt.service.linter.SpecificationLinter;
@@ -115,7 +116,7 @@ public class ValidationServiceImpl implements ValidationService {
       final String specContent = serializeOpenApiToString(openApi);
       return this.analyze(specContent);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new SpecificationProcessingException("Failed to serialize specification", e);
     }
   }
 

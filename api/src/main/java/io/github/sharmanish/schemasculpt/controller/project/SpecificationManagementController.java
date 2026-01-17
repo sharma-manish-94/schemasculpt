@@ -9,7 +9,6 @@ import io.github.sharmanish.schemasculpt.service.SpecificationService;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -82,7 +81,7 @@ public class SpecificationManagementController {
     List<SpecificationDTO> versions =
         specificationService.getSpecificationVersions(projectId, principal.getUserId()).stream()
             .map(SpecificationDTO::new)
-            .collect(Collectors.toList());
+            .toList();
 
     return ResponseEntity.ok(versions);
   }

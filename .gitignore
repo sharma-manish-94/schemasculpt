@@ -15,6 +15,13 @@ Desktop.ini
 # Claude Code configuration
 .claude/
 
+# PM2 configuration
+.pm2/
+
+# Pending tasks file
+pending.txt
+**/pending.txt
+
 # Root level files - ignore everything except specific config files
 /*
 !README.md

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -42,7 +43,8 @@ public class FindingEnrichmentService {
   private final AnalysisService analysisService;
 
   public FindingEnrichmentService(AnalysisService analysisService) {
-    this.analysisService = analysisService;
+    this.analysisService =
+        Objects.requireNonNull(analysisService, "analysisService must not be null");
   }
 
   /**
@@ -253,8 +255,8 @@ public class FindingEnrichmentService {
     // Check properties
     if (schema.getProperties() != null) {
       for (Object prop : schema.getProperties().values()) {
-        if (prop instanceof Schema) {
-          extractSchemaDependencies((Schema<?>) prop, dependencies);
+        if (prop instanceof Schema<?> propSchema) {
+          extractSchemaDependencies(propSchema, dependencies);
         }
       }
     }
@@ -267,8 +269,8 @@ public class FindingEnrichmentService {
     // Check allOf, anyOf, oneOf
     if (schema.getAllOf() != null) {
       for (Object s : schema.getAllOf()) {
-        if (s instanceof Schema) {
-          extractSchemaDependencies((Schema<?>) s, dependencies);
+        if (s instanceof Schema<?> schemaItem) {
+          extractSchemaDependencies(schemaItem, dependencies);
         }
       }
     }

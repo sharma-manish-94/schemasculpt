@@ -45,21 +45,14 @@ public class SchemaDiffService {
     compareComponentSchemas(oldSpec, newSpec, diffs);
 
     int breaking =
-        (int) diffs.stream().filter(d -> d.getType() == DiffEntry.ChangeType.BREAKING).count();
+        (int) diffs.stream().filter(d -> d.type() == DiffEntry.ChangeType.BREAKING).count();
     int dangerous =
-        (int) diffs.stream().filter(d -> d.getType() == DiffEntry.ChangeType.DANGEROUS).count();
-    int safe = (int) diffs.stream().filter(d -> d.getType() == DiffEntry.ChangeType.SAFE).count();
+        (int) diffs.stream().filter(d -> d.type() == DiffEntry.ChangeType.DANGEROUS).count();
+    int safe = (int) diffs.stream().filter(d -> d.type() == DiffEntry.ChangeType.SAFE).count();
 
     double distance = treeDistanceService.calculateSpecDistance(oldSpec, newSpec);
     String summary = classifyEvolution(breaking, distance);
-    return DiffResult.builder()
-        .changes(diffs)
-        .breakingCount(breaking)
-        .dangerousCount(dangerous)
-        .safeCount(safe)
-        .structuralDriftScore(distance)
-        .evolutionSummary(summary)
-        .build();
+    return new DiffResult(diffs, breaking, dangerous, safe, distance, summary);
   }
 
   private String classifyEvolution(int breakingCount, double distance) {
@@ -523,13 +516,6 @@ public class SchemaDiffService {
       final String msg,
       final String oldValue,
       final String newValue) {
-    return DiffEntry.builder()
-        .id(id)
-        .type(type)
-        .category(category)
-        .message(msg)
-        .oldValue(oldValue)
-        .newValue(newValue)
-        .build();
+    return new DiffEntry(id, type, category, msg, oldValue, newValue);
   }
 }

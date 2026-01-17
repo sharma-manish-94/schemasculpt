@@ -13,15 +13,20 @@ import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.SpecParsingService;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
+import io.github.sharmanish.schemasculpt.exception.AIServiceException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
+import io.github.sharmanish.schemasculpt.util.VirtualThreads;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
@@ -34,15 +39,22 @@ public class AIService {
   private final WebClient webClient;
   private final SessionService sessionService;
   private final SpecParsingService specParsingService;
+  private final ExecutorService virtualThreadExecutor;
 
   public AIService(
       WebClient.Builder webClientBuilder,
       @Value("${ai.service.url}") String aiServiceUrl,
       SessionService sessionService,
-      SpecParsingService specParsingService) {
+      SpecParsingService specParsingService,
+      @Qualifier("virtualThreadExecutor") ExecutorService virtualThreadExecutor) {
+    Objects.requireNonNull(webClientBuilder, "webClientBuilder must not be null");
+    Objects.requireNonNull(aiServiceUrl, "aiServiceUrl must not be null");
     this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
-    this.sessionService = sessionService;
-    this.specParsingService = specParsingService;
+    this.sessionService = Objects.requireNonNull(sessionService, "sessionService must not be null");
+    this.specParsingService =
+        Objects.requireNonNull(specParsingService, "specParsingService must not be null");
+    this.virtualThreadExecutor =
+        Objects.requireNonNull(virtualThreadExecutor, "virtualThreadExecutor must not be null");
   }
 
   public String processSpecification(String sessionId, String userPrompt) {
@@ -68,14 +80,17 @@ public class AIService {
 
     try {
       SmartAIFixResponse response =
-          this.webClient
-              .post()
-              .uri("/ai/fix/smart")
-              .contentType(MediaType.APPLICATION_JSON)
-              .bodyValue(request)
-              .retrieve()
-              .bodyToMono(SmartAIFixResponse.class)
-              .block();
+          VirtualThreads.executeBlocking(
+              virtualThreadExecutor,
+              () ->
+                  this.webClient
+                      .post()
+                      .uri("/ai/fix/smart")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .bodyValue(request)
+                      .retrieve()
+                      .bodyToMono(SmartAIFixResponse.class)
+                      .block());
 
       if (response != null && response.updatedSpecText() != null) {
         log.info(
@@ -86,7 +101,7 @@ public class AIService {
         return formatSpec(response.updatedSpecText());
       } else {
         log.warn("Smart AI fix returned null or empty response, response: {}", response);
-        throw new RuntimeException("AI service returned invalid response");
+        throw new AIServiceException("AI service returned invalid response");
       }
     } catch (Exception e) {
       log.error("Smart AI fix failed, falling back to legacy endpoint: {}", e.getMessage());
@@ -120,16 +135,19 @@ public class AIService {
    */
   @Deprecated
   private String callAIService(AIProxyRequest aiRequest) {
-    return this.webClient
-        .post()
-        .uri("/process")
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(aiRequest)
-        .retrieve()
-        .bodyToMono(AIResponse.class)
-        .map(AIResponse::updatedSpecText)
-        .map(this::formatSpec)
-        .block();
+    return VirtualThreads.executeBlocking(
+        virtualThreadExecutor,
+        () ->
+            this.webClient
+                .post()
+                .uri("/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(aiRequest)
+                .retrieve()
+                .bodyToMono(AIResponse.class)
+                .map(AIResponse::updatedSpecText)
+                .map(this::formatSpec)
+                .block());
   }
 
   public String processSpecification(OpenAPI openApi, String userPrompt) {
@@ -142,17 +160,20 @@ public class AIService {
     log.info("Requesting explanation for validation issue");
 
     try {
-      return this.webClient
-          .post()
-          .uri("/ai/explain")
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(request)
-          .retrieve()
-          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-          .block();
+      return VirtualThreads.executeBlocking(
+          virtualThreadExecutor,
+          () ->
+              this.webClient
+                  .post()
+                  .uri("/ai/explain")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .bodyValue(request)
+                  .retrieve()
+                  .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                  .block());
     } catch (Exception e) {
       log.error("Failed to get explanation from AI service: {}", e.getMessage(), e);
-      throw new RuntimeException("AI explanation service unavailable", e);
+      throw new AIServiceException("AI explanation service unavailable", e);
     }
   }
 
@@ -160,17 +181,20 @@ public class AIService {
     log.info("Requesting test case generation for operation: {}", request.get("operation_summary"));
 
     try {
-      return this.webClient
-          .post()
-          .uri("/ai/test-cases/generate")
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(request)
-          .retrieve()
-          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-          .block();
+      return VirtualThreads.executeBlocking(
+          virtualThreadExecutor,
+          () ->
+              this.webClient
+                  .post()
+                  .uri("/ai/test-cases/generate")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .bodyValue(request)
+                  .retrieve()
+                  .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                  .block());
     } catch (Exception e) {
       log.error("Failed to generate test cases from AI service: {}", e.getMessage(), e);
-      throw new RuntimeException("AI test generation service unavailable", e);
+      throw new AIServiceException("AI test generation service unavailable", e);
     }
   }
 
@@ -178,17 +202,20 @@ public class AIService {
     log.info("Requesting complete test suite generation");
 
     try {
-      return this.webClient
-          .post()
-          .uri("/ai/test-suite/generate")
-          .contentType(MediaType.APPLICATION_JSON)
-          .bodyValue(request)
-          .retrieve()
-          .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-          .block();
+      return VirtualThreads.executeBlocking(
+          virtualThreadExecutor,
+          () ->
+              this.webClient
+                  .post()
+                  .uri("/ai/test-suite/generate")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .bodyValue(request)
+                  .retrieve()
+                  .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                  .block());
     } catch (Exception e) {
       log.error("Failed to generate test suite from AI service: {}", e.getMessage(), e);
-      throw new RuntimeException("AI test suite generation service unavailable", e);
+      throw new AIServiceException("AI test suite generation service unavailable", e);
     }
   }
 
@@ -204,14 +231,17 @@ public class AIService {
 
     try {
       AIMetaAnalysisResponse response =
-          this.webClient
-              .post()
-              .uri("/ai/meta-analysis")
-              .contentType(MediaType.APPLICATION_JSON)
-              .bodyValue(request)
-              .retrieve()
-              .bodyToMono(AIMetaAnalysisResponse.class)
-              .block();
+          VirtualThreads.executeBlocking(
+              virtualThreadExecutor,
+              () ->
+                  this.webClient
+                      .post()
+                      .uri("/ai/meta-analysis")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .bodyValue(request)
+                      .retrieve()
+                      .bodyToMono(AIMetaAnalysisResponse.class)
+                      .block());
 
       if (response != null) {
         log.info(
@@ -221,11 +251,11 @@ public class AIService {
         return response;
       } else {
         log.warn("Meta-analysis returned null response");
-        throw new RuntimeException("AI meta-analysis service returned invalid response");
+        throw new AIServiceException("AI meta-analysis service returned invalid response");
       }
     } catch (Exception e) {
       log.error("Failed to perform AI meta-analysis: {}", e.getMessage(), e);
-      throw new RuntimeException("AI meta-analysis service unavailable", e);
+      throw new AIServiceException("AI meta-analysis service unavailable", e);
     }
   }
 
@@ -321,14 +351,17 @@ public class AIService {
 
     try {
       DescriptionAnalysisResponse response =
-          this.webClient
-              .post()
-              .uri("/ai/analyze-descriptions")
-              .contentType(MediaType.APPLICATION_JSON)
-              .bodyValue(request)
-              .retrieve()
-              .bodyToMono(DescriptionAnalysisResponse.class)
-              .block();
+          VirtualThreads.executeBlocking(
+              virtualThreadExecutor,
+              () ->
+                  this.webClient
+                      .post()
+                      .uri("/ai/analyze-descriptions")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .bodyValue(request)
+                      .retrieve()
+                      .bodyToMono(DescriptionAnalysisResponse.class)
+                      .block());
 
       if (response != null) {
         log.info(
@@ -338,11 +371,11 @@ public class AIService {
         return response;
       } else {
         log.warn("Description analysis returned null response");
-        throw new RuntimeException("AI description analysis service returned invalid response");
+        throw new AIServiceException("AI description analysis service returned invalid response");
       }
     } catch (Exception e) {
       log.error("Failed to analyze description quality: {}", e.getMessage(), e);
-      throw new RuntimeException("AI description analysis service unavailable", e);
+      throw new AIServiceException("AI description analysis service unavailable", e);
     }
   }
 }

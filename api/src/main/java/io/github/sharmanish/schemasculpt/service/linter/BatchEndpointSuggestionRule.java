@@ -44,12 +44,12 @@ public class BatchEndpointSuggestionRule implements LinterRule {
           List<PathInfo> singleItemGets =
               paths.stream()
                   .filter(p -> p.hasPathParam && p.methods.contains("GET"))
-                  .collect(Collectors.toList());
+                  .toList();
 
           List<PathInfo> singleItemDeletes =
               paths.stream()
                   .filter(p -> p.hasPathParam && p.methods.contains("DELETE"))
-                  .collect(Collectors.toList());
+                  .toList();
 
           List<PathInfo> singleItemUpdates =
               paths.stream()
@@ -57,7 +57,7 @@ public class BatchEndpointSuggestionRule implements LinterRule {
                       p ->
                           p.hasPathParam
                               && (p.methods.contains("PUT") || p.methods.contains("PATCH")))
-                  .collect(Collectors.toList());
+                  .toList();
 
           // Check if batch endpoints exist
           boolean hasBatchGet =

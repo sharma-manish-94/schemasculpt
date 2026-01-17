@@ -54,16 +54,16 @@ public class RepositoryController {
     log.info(
         "Connection request for session: {} to provider: {}",
         LogSanitizer.sanitize(sessionId),
-        LogSanitizer.sanitize(request.getProvider()));
+        LogSanitizer.sanitize(request.provider()));
 
     return repositoryService
         .connect(sessionId, request)
         .map(
             response -> {
               // Store context in session after successful connection
-              if (response.isSuccess()) {
+              if (response.success()) {
                 repositoryService.storeRepositoryContext(
-                    sessionId, request.getProvider(), request.getAccessToken());
+                    sessionId, request.provider(), request.accessToken());
               }
               return ResponseEntity.ok(response);
             })
@@ -76,7 +76,7 @@ public class RepositoryController {
                           new RepositoryConnectionResponse(
                               false,
                               "Failed to connect: " + error.getMessage(),
-                              request.getProvider())));
+                              request.provider())));
             });
   }
 
@@ -122,9 +122,9 @@ public class RepositoryController {
     log.info(
         "Browse tree request for session: {} - {}/{}/{}",
         LogSanitizer.sanitize(sessionId),
-        LogSanitizer.sanitize(request.getOwner()),
-        LogSanitizer.sanitize(request.getRepo()),
-        LogSanitizer.sanitize(request.getPath()));
+        LogSanitizer.sanitize(request.owner()),
+        LogSanitizer.sanitize(request.repo()),
+        LogSanitizer.sanitize(request.path()));
 
     return repositoryService
         .browseTree(sessionId, request)
@@ -151,9 +151,9 @@ public class RepositoryController {
     log.info(
         "Read file request for session: {} - {}/{}/{}",
         LogSanitizer.sanitize(sessionId),
-        LogSanitizer.sanitize(request.getOwner()),
-        LogSanitizer.sanitize(request.getRepo()),
-        LogSanitizer.sanitize(request.getPath()));
+        LogSanitizer.sanitize(request.owner()),
+        LogSanitizer.sanitize(request.repo()),
+        LogSanitizer.sanitize(request.path()));
 
     return repositoryService
         .readFile(sessionId, request)

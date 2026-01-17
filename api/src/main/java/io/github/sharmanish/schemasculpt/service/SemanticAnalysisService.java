@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -52,8 +53,8 @@ public class SemanticAnalysisService {
    */
   private double calculateRelevance(String propName, String description) {
     // 1. Normalize: "creationDate" -> "creation date"
-    String normalizedName = splitCamelCase(propName).toLowerCase();
-    String normalizedDesc = description.toLowerCase();
+    String normalizedName = splitCamelCase(propName).toLowerCase(Locale.ROOT);
+    String normalizedDesc = description.toLowerCase(Locale.ROOT);
 
     // 2. Tokenize
     Map<CharSequence, Integer> nameVector = tokenize(normalizedName);

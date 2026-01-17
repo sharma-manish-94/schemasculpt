@@ -9,12 +9,16 @@ import io.github.sharmanish.schemasculpt.entity.User;
 import io.github.sharmanish.schemasculpt.repository.OperationMockDataRepository;
 import io.github.sharmanish.schemasculpt.repository.OperationTestCasesRepository;
 import io.github.sharmanish.schemasculpt.repository.TestDataGenerationHistoryRepository;
+import io.github.sharmanish.schemasculpt.exception.MockDataGenerationException;
+import io.github.sharmanish.schemasculpt.exception.SpecificationProcessingException;
+import io.github.sharmanish.schemasculpt.exception.TestGenerationException;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,10 +38,13 @@ public class TestDataService {
       OperationTestCasesRepository testCasesRepository,
       OperationMockDataRepository mockDataRepository,
       TestDataGenerationHistoryRepository historyRepository) {
-    this.aiService = aiService;
-    this.testCasesRepository = testCasesRepository;
-    this.mockDataRepository = mockDataRepository;
-    this.historyRepository = historyRepository;
+    this.aiService = Objects.requireNonNull(aiService, "aiService must not be null");
+    this.testCasesRepository =
+        Objects.requireNonNull(testCasesRepository, "testCasesRepository must not be null");
+    this.mockDataRepository =
+        Objects.requireNonNull(mockDataRepository, "mockDataRepository must not be null");
+    this.historyRepository =
+        Objects.requireNonNull(historyRepository, "historyRepository must not be null");
   }
 
   /**
@@ -142,7 +149,7 @@ public class TestDataService {
           System.currentTimeMillis() - startTime,
           false);
 
-      throw new RuntimeException("Test case generation failed", e);
+      throw new TestGenerationException("Test case generation failed", e);
     }
   }
 
@@ -153,7 +160,7 @@ public class TestDataService {
       byte[] hash = digest.digest(specText.getBytes(StandardCharsets.UTF_8));
       return HexFormat.of().formatHex(hash);
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("SHA-256 algorithm not available", e);
+      throw new SpecificationProcessingException("SHA-256 algorithm not available", e);
     }
   }
 
@@ -308,7 +315,7 @@ public class TestDataService {
           System.currentTimeMillis() - startTime,
           false);
 
-      throw new RuntimeException("Mock data generation failed", e);
+      throw new MockDataGenerationException("Mock data generation failed", e);
     }
   }
 

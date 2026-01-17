@@ -1,5 +1,6 @@
 package io.github.sharmanish.schemasculpt.service.analyzer.security;
 
+import io.github.sharmanish.schemasculpt.dto.analysis.Severity;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -83,14 +84,10 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
                                                             new TaintAnalysisResponse
                                                                 .TaintVulnerability(
                                                                 method.name() + " " + path,
-                                                                "CRITICAL",
-                                                                "Public"
-                                                                    + " endpoint"
-                                                                    + " returning"
-                                                                    + " sensitive"
-                                                                    + " data"
-                                                                    + " (Data"
-                                                                    + " Leakage)",
+                                                                Severity.CRITICAL,
+                                                                "Public endpoint returning"
+                                                                    + " sensitive data"
+                                                                    + " (Data Leakage)",
                                                                 trailString));
                                                       } else {
                                                         // WARNING: Sensitive data returned,
@@ -100,12 +97,9 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
                                                             new TaintAnalysisResponse
                                                                 .TaintVulnerability(
                                                                 method.name() + " " + path,
-                                                                "WARNING",
-                                                                "Sensitive"
-                                                                    + " data"
-                                                                    + " exposure"
-                                                                    + " (Verify"
-                                                                    + " necessity)",
+                                                                Severity.WARNING,
+                                                                "Sensitive data exposure"
+                                                                    + " (Verify necessity)",
                                                                 trailString));
                                                       }
                                                     }

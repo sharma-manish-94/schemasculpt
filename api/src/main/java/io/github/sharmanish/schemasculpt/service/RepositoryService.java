@@ -6,6 +6,7 @@ import io.github.sharmanish.schemasculpt.dto.repository.ReadFileRequest;
 import io.github.sharmanish.schemasculpt.dto.repository.ReadFileResponse;
 import io.github.sharmanish.schemasculpt.dto.repository.RepositoryConnectionRequest;
 import io.github.sharmanish.schemasculpt.dto.repository.RepositoryConnectionResponse;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,8 @@ public class RepositoryService {
 
   public RepositoryService(
       WebClient.Builder webClientBuilder, @Value("${ai.service.url}") String aiServiceUrl) {
+    Objects.requireNonNull(webClientBuilder, "webClientBuilder must not be null");
+    Objects.requireNonNull(aiServiceUrl, "aiServiceUrl must not be null");
     this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
   }
 
@@ -41,11 +44,11 @@ public class RepositoryService {
   public Mono<RepositoryConnectionResponse> connect(
       String sessionId, RepositoryConnectionRequest request) {
     log.info(
-        "Connecting to repository provider: {} for session: {}", request.getProvider(), sessionId);
+        "Connecting to repository provider: {} for session: {}", request.provider(), sessionId);
     log.debug(
         "Request payload - provider: {}, accessToken: {}",
-        request.getProvider(),
-        request.getAccessToken() != null ? "***" : "null");
+        request.provider(),
+        request.accessToken() != null ? "***" : "null");
 
     return webClient
         .post()
@@ -70,7 +73,7 @@ public class RepositoryService {
             response ->
                 log.info(
                     "Successfully connected to {} for session: {}",
-                    request.getProvider(),
+                    request.provider(),
                     sessionId))
         .doOnError(
             error ->
@@ -107,16 +110,16 @@ public class RepositoryService {
   public Mono<BrowseTreeResponse> browseTree(String sessionId, BrowseTreeRequest request) {
     log.debug(
         "Browsing tree: {}/{}/{} for session: {}",
-        request.getOwner(),
-        request.getRepo(),
-        request.getPath(),
+        request.owner(),
+        request.repo(),
+        request.path(),
         sessionId);
     log.debug(
         "Browse request payload - owner: {}, repo: {}, path: {}, branch: {}",
-        request.getOwner(),
-        request.getRepo(),
-        request.getPath(),
-        request.getBranch());
+        request.owner(),
+        request.repo(),
+        request.path(),
+        request.branch());
 
     return webClient
         .post()
@@ -141,10 +144,10 @@ public class RepositoryService {
             response ->
                 log.debug(
                     "Retrieved {} files from {}/{}/{}",
-                    response.getFiles().size(),
-                    request.getOwner(),
-                    request.getRepo(),
-                    request.getPath()))
+                    response.files().size(),
+                    request.owner(),
+                    request.repo(),
+                    request.path()))
         .doOnError(error -> log.error("Error browsing tree for session: {}", sessionId, error));
   }
 
@@ -158,9 +161,9 @@ public class RepositoryService {
   public Mono<ReadFileResponse> readFile(String sessionId, ReadFileRequest request) {
     log.info(
         "Reading file: {}/{}/{} for session: {}",
-        request.getOwner(),
-        request.getRepo(),
-        request.getPath(),
+        request.owner(),
+        request.repo(),
+        request.path(),
         sessionId);
 
     return webClient
@@ -174,7 +177,7 @@ public class RepositoryService {
         .doOnSuccess(
             response ->
                 log.info(
-                    "Successfully read file: {} ({} bytes)", request.getPath(), response.getSize()))
+                    "Successfully read file: {} ({} bytes)", request.path(), response.size()))
         .doOnError(error -> log.error("Error reading file for session: {}", sessionId, error));
   }
 

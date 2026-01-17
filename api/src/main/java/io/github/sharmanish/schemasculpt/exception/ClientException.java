@@ -5,7 +5,8 @@ package io.github.sharmanish.schemasculpt.exception;
  * Maps to HTTP 400 or 409.
  */
 public sealed class ClientException extends SchemaSculptException
-    permits InvalidSpecificationException, ValidationException, ProjectAlreadyExistsException {
+    permits InvalidSpecificationException, ValidationException, ProjectAlreadyExistsException,
+        EnumFixingException, SpecificationProcessingException {
 
   protected ClientException(ErrorCode errorCode, String message) {
     super(errorCode, message);

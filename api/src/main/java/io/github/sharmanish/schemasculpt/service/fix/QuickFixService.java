@@ -5,8 +5,10 @@ import com.google.common.base.CaseFormat;
 import io.github.sharmanish.schemasculpt.dto.QuickFixRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationResponse;
+import io.github.sharmanish.schemasculpt.exception.AIServiceException;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
+import io.github.sharmanish.schemasculpt.util.VirtualThreads;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -18,10 +20,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -54,16 +59,22 @@ public class QuickFixService {
   private final JsonPatchService jsonPatchService;
   private final JsonMapper jsonMapper;
   private final WebClient aiServiceClient;
+  private final ExecutorService virtualThreadExecutor;
 
   public QuickFixService(
       SessionService sessionService,
       JsonPatchService jsonPatchService,
       JsonMapper jsonMapper,
-      @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl) {
-    this.sessionService = sessionService;
-    this.jsonPatchService = jsonPatchService;
-    this.jsonMapper = jsonMapper;
+      @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl,
+      @Qualifier("virtualThreadExecutor") ExecutorService virtualThreadExecutor) {
+    this.sessionService = Objects.requireNonNull(sessionService, "sessionService must not be null");
+    this.jsonPatchService =
+        Objects.requireNonNull(jsonPatchService, "jsonPatchService must not be null");
+    this.jsonMapper = Objects.requireNonNull(jsonMapper, "jsonMapper must not be null");
+    Objects.requireNonNull(aiServiceUrl, "aiServiceUrl must not be null");
     this.aiServiceClient = WebClient.builder().baseUrl(aiServiceUrl).build();
+    this.virtualThreadExecutor =
+        Objects.requireNonNull(virtualThreadExecutor, "virtualThreadExecutor must not be null");
   }
 
   public OpenAPI applyFix(String sessionId, QuickFixRequest request) {
@@ -179,13 +190,16 @@ public class QuickFixService {
 
       // Call AI service to generate JSON Patch
       PatchGenerationResponse patchResponse =
-          aiServiceClient
-              .post()
-              .uri("/ai/patch/generate")
-              .bodyValue(patchRequest)
-              .retrieve()
-              .bodyToMono(PatchGenerationResponse.class)
-              .block();
+          VirtualThreads.executeBlocking(
+              virtualThreadExecutor,
+              () ->
+                  aiServiceClient
+                      .post()
+                      .uri("/ai/patch/generate")
+                      .bodyValue(patchRequest)
+                      .retrieve()
+                      .bodyToMono(PatchGenerationResponse.class)
+                      .block());
 
       if (patchResponse == null || patchResponse.patches().isEmpty()) {
         log.warn("AI service returned no patch operations for rule: {}", request.ruleId());
@@ -206,10 +220,10 @@ public class QuickFixService {
 
     } catch (JsonPatchException e) {
       log.error("Failed to apply AI-generated patch: {}", e.getMessage());
-      throw new RuntimeException("AI fix failed: " + e.getMessage(), e);
+      throw new AIServiceException("AI fix failed: " + e.getMessage(), e);
     } catch (Exception e) {
       log.error("AI service call failed: {}", e.getMessage());
-      throw new RuntimeException("AI service error: " + e.getMessage(), e);
+      throw new AIServiceException("AI service error: " + e.getMessage(), e);
     }
   }
 

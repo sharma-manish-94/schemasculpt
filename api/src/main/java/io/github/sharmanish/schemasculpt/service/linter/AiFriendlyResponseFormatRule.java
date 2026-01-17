@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -231,7 +232,7 @@ which increases token usage and the risk of hallucination.\
     }
     Map<String, Schema> schemas = openApi.getComponents().getSchemas();
     for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
-      String schemaName = entry.getKey().toLowerCase();
+      String schemaName = entry.getKey().toLowerCase(Locale.ROOT);
       Schema schema = entry.getValue();
       Map properties = schema.getProperties();
       if (null == properties) {
