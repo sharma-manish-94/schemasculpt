@@ -17,29 +17,36 @@ import hashlib
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import get_llm_service, get_rag_service, get_security_workflow
+from app.api.deps import (
+    get_cache_repository,
+    get_context_manager,
+    get_llm_service,
+    get_rag_service,
+    get_security_workflow,
+)
 from app.core.config import settings
 from app.core.logging import set_correlation_id
 from app.schemas.ai_schemas import AIRequest, AIResponse, OperationType
 from app.schemas.security_schemas import SecurityAnalysisRequest
-from app.services.context_manager import ContextManager
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
 from app.services.security.security_workflow import SecurityAnalysisWorkflow
+
+if TYPE_CHECKING:
+    from app.domain.interfaces.cache_repository import ICacheRepository
+    from app.services.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/ai/security", tags=["Security Analysis"])
 
-# Shared context manager
-context_manager = ContextManager()
-
-# Security analysis cache (will be migrated to ICacheRepository)
-SECURITY_ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
+# Cache key prefix and TTL for security analysis
+_SECURITY_CACHE_PREFIX = "security:"
+_ATTACK_PATH_CACHE_PREFIX = "attack_path:"
 SECURITY_CACHE_TTL = timedelta(hours=24)
 
 
@@ -52,6 +59,7 @@ SECURITY_CACHE_TTL = timedelta(hours=24)
 async def run_comprehensive_security_analysis(
     request: SecurityAnalysisRequest,
     security_workflow: SecurityAnalysisWorkflow = Depends(get_security_workflow),
+    cache: "ICacheRepository" = Depends(get_cache_repository),
 ) -> Dict[str, Any]:
     """
     Run comprehensive security analysis on an OpenAPI specification.
@@ -66,6 +74,7 @@ async def run_comprehensive_security_analysis(
     Args:
         request: Security analysis request containing the spec and options.
         security_workflow: Injected security analysis workflow service.
+        cache: Injected cache repository for caching results.
 
     Returns:
         Comprehensive security report with findings, scores, and recommendations.
@@ -85,10 +94,10 @@ async def run_comprehensive_security_analysis(
         cache_key = _generate_cache_key_for_spec(request.spec_text)
 
         if not request.force_refresh:
-            cached_report = _get_cached_security_report(cache_key)
+            cached_report = await _get_cached_security_report(cache, cache_key)
             if cached_report:
                 logger.info(
-                    f"Returning cached security report for key: {cache_key[:16]}..."
+                    f"Returning cached security report for key: {cache_key[:32]}..."
                 )
                 return {
                     "cached": True,
@@ -120,7 +129,7 @@ async def run_comprehensive_security_analysis(
         report_as_dict = security_report.model_dump()
 
         # Cache the report for future requests
-        _cache_security_report(cache_key, report_as_dict)
+        await _cache_security_report(cache, cache_key, report_as_dict)
 
         logger.info(
             f"Security analysis complete. Score: {security_report.overall_score:.1f}, "
@@ -332,12 +341,14 @@ async def analyze_data_exposure_risks(
 @router.get("/report/{spec_hash}")
 async def get_cached_security_report_by_hash(
     spec_hash: str,
+    cache: "ICacheRepository" = Depends(get_cache_repository),
 ) -> Dict[str, Any]:
     """
     Retrieve a cached security analysis report by its specification hash.
 
     Args:
         spec_hash: The SHA-256 hash of the specification text.
+        cache: Injected cache repository.
 
     Returns:
         The cached security report if found.
@@ -347,7 +358,9 @@ async def get_cached_security_report_by_hash(
     """
     logger.info(f"Retrieving cached security report for hash: {spec_hash[:16]}...")
 
-    cached_report = _get_cached_security_report(spec_hash)
+    # Build the cache key with prefix
+    cache_key = f"{_SECURITY_CACHE_PREFIX}{spec_hash}"
+    cached_report = await _get_cached_security_report(cache, cache_key)
 
     if cached_report:
         return {
@@ -375,6 +388,7 @@ async def get_cached_security_report_by_hash(
 async def run_attack_path_simulation(
     request: Dict[str, Any],
     llm_service: LLMService = Depends(get_llm_service),
+    cache: "ICacheRepository" = Depends(get_cache_repository),
 ) -> Dict[str, Any]:
     """
     AI-powered attack path simulation - discovers multi-step attack chains.
@@ -398,6 +412,7 @@ async def run_attack_path_simulation(
             - max_chain_length (int): Maximum steps in an attack chain (default: 5)
             - exclude_low_severity (bool): Skip low-severity chains (default: false)
             - focus_areas (list): Specific areas to focus on
+        cache: Injected cache repository.
 
     Returns:
         Comprehensive attack path report including:
@@ -441,13 +456,14 @@ async def run_attack_path_simulation(
         )
 
         # Check cache first
-        spec_hash = hashlib.sha256(spec_text.encode()).hexdigest()
-        cache_key = f"attack_path_{spec_hash}_{analysis_request.analysis_depth}"
+        cache_key = _generate_attack_path_cache_key(
+            spec_text, analysis_request.analysis_depth
+        )
 
-        cached_data = SECURITY_ANALYSIS_CACHE.get(cache_key)
-        if cached_data and datetime.utcnow() < cached_data["expires_at"]:
+        cached_report = await _get_cached_security_report(cache, cache_key)
+        if cached_report:
             logger.info(f"Returning cached attack path report: {cache_key[:32]}...")
-            return cached_data["report"]
+            return cached_report
 
         # Run the attack path simulation
         orchestrator = AttackPathOrchestrator(llm_service)
@@ -459,11 +475,7 @@ async def run_attack_path_simulation(
         report_as_dict = attack_path_report.model_dump()
 
         # Cache the report
-        SECURITY_ANALYSIS_CACHE[cache_key] = {
-            "report": report_as_dict,
-            "created_at": datetime.utcnow(),
-            "expires_at": datetime.utcnow() + SECURITY_CACHE_TTL,
-        }
+        await _cache_security_report(cache, cache_key, report_as_dict)
         logger.info(f"Cached attack path report: {cache_key[:32]}...")
 
         return report_as_dict
@@ -686,42 +698,53 @@ Provide specific, actionable recommendations."""
 
 def _generate_cache_key_for_spec(spec_text: str) -> str:
     """Generate a cache key from the specification text."""
-    return hashlib.sha256(spec_text.encode()).hexdigest()
+    spec_hash = hashlib.sha256(spec_text.encode()).hexdigest()
+    return f"{_SECURITY_CACHE_PREFIX}{spec_hash}"
 
 
-def _get_cached_security_report(cache_key: str) -> Optional[Dict[str, Any]]:
+def _generate_attack_path_cache_key(spec_text: str, analysis_depth: str) -> str:
+    """Generate a cache key for attack path analysis."""
+    spec_hash = hashlib.sha256(spec_text.encode()).hexdigest()
+    return f"{_ATTACK_PATH_CACHE_PREFIX}{spec_hash}_{analysis_depth}"
+
+
+async def _get_cached_security_report(
+    cache: "ICacheRepository",
+    cache_key: str,
+) -> Optional[Dict[str, Any]]:
     """
-    Get cached security report if available and not expired.
+    Get cached security report if available.
 
     Args:
+        cache: The cache repository.
         cache_key: The cache key to look up.
 
     Returns:
-        The cached report dictionary if found and valid, None otherwise.
+        The cached report dictionary if found, None otherwise.
     """
-    cached_data = SECURITY_ANALYSIS_CACHE.get(cache_key)
+    cached_data = await cache.get(cache_key)
 
-    if not cached_data:
-        return None
+    if cached_data and isinstance(cached_data, dict):
+        return cached_data.get("report")
 
-    # Check if expired
-    if datetime.utcnow() >= cached_data.get("expires_at", datetime.min):
-        del SECURITY_ANALYSIS_CACHE[cache_key]
-        return None
-
-    return cached_data.get("report")
+    return None
 
 
-def _cache_security_report(cache_key: str, report: Dict[str, Any]) -> None:
+async def _cache_security_report(
+    cache: "ICacheRepository",
+    cache_key: str,
+    report: Dict[str, Any],
+) -> None:
     """
     Store a security report in the cache.
 
     Args:
+        cache: The cache repository.
         cache_key: The cache key to store under.
         report: The report dictionary to cache.
     """
-    SECURITY_ANALYSIS_CACHE[cache_key] = {
+    cache_data = {
         "report": report,
-        "cached_at": datetime.utcnow(),
-        "expires_at": datetime.utcnow() + SECURITY_CACHE_TTL,
+        "cached_at": datetime.utcnow().isoformat(),
     }
+    await cache.set(cache_key, cache_data, ttl=SECURITY_CACHE_TTL)

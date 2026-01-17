@@ -164,43 +164,43 @@ async def invalidate_cache_for_specification(
 # Explanation Cache Operations
 # =============================================================================
 
-# Note: During migration, this uses global dict. Will be migrated to ICacheRepository.
-EXPLANATION_CACHE: Dict[str, Dict[str, Any]] = {}
+# Cache key prefix for explanation cache
+_EXPLANATION_CACHE_PREFIX = "explanation:"
 
 
 @router.get("/ai/cache/stats")
-async def get_explanation_cache_statistics() -> Dict[str, Any]:
+async def get_explanation_cache_statistics(
+    cache: ICacheRepository = Depends(get_cache_repository),
+) -> Dict[str, Any]:
     """
     Get statistics for the AI explanation cache.
 
     The explanation cache stores AI-generated explanations for
     validation issues to avoid redundant LLM calls.
 
+    Args:
+        cache: Injected cache repository.
+
     Returns:
         Cache size, TTL, and cleanup statistics.
     """
-    # Clean up expired entries while getting stats
     current_time = datetime.utcnow()
-    expired_keys = [
-        key
-        for key, value in EXPLANATION_CACHE.items()
-        if current_time - value["timestamp"] > EXPLANATION_CACHE_TTL
-    ]
 
-    expired_entries_cleaned = len(expired_keys)
-    for key in expired_keys:
-        del EXPLANATION_CACHE[key]
+    # Get overall cache stats (includes all cache types)
+    cache_stats = await cache.get_stats()
 
     return {
-        "cache_size": len(EXPLANATION_CACHE),
-        "expired_entries_cleaned": expired_entries_cleaned,
+        "cache_prefix": _EXPLANATION_CACHE_PREFIX,
         "ttl_hours": EXPLANATION_CACHE_TTL.total_seconds() / 3600,
+        "repository_stats": cache_stats,
         "timestamp": current_time.isoformat(),
     }
 
 
 @router.delete("/ai/cache/clear")
-async def clear_explanation_cache() -> Dict[str, Any]:
+async def clear_explanation_cache(
+    cache: ICacheRepository = Depends(get_cache_repository),
+) -> Dict[str, Any]:
     """
     Clear all cached AI explanations.
 
@@ -209,11 +209,14 @@ async def clear_explanation_cache() -> Dict[str, Any]:
     - Clearing memory during high load
     - Testing fresh explanations
 
+    Args:
+        cache: Injected cache repository.
+
     Returns:
         Number of entries cleared and timestamp.
     """
-    entries_cleared = len(EXPLANATION_CACHE)
-    EXPLANATION_CACHE.clear()
+    # Clear all explanation cache entries using pattern matching
+    entries_cleared = await cache.clear(f"{_EXPLANATION_CACHE_PREFIX}*")
 
     logger.info(f"Cleared {entries_cleared} cached explanations")
 
@@ -228,56 +231,45 @@ async def clear_explanation_cache() -> Dict[str, Any]:
 # Security Analysis Cache Operations
 # =============================================================================
 
-# Note: During migration, this uses global dict. Will be migrated to ICacheRepository.
-SECURITY_ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
+# Cache key prefixes for security caches
+_SECURITY_CACHE_PREFIX = "security:"
+_ATTACK_PATH_CACHE_PREFIX = "attack_path:"
 
 
 @router.get("/ai/security/cache/stats")
-async def get_security_analysis_cache_statistics() -> Dict[str, Any]:
+async def get_security_analysis_cache_statistics(
+    cache: ICacheRepository = Depends(get_cache_repository),
+) -> Dict[str, Any]:
     """
     Get statistics for the security analysis cache.
 
     The security cache stores completed security analysis reports
     to avoid redundant scans of unchanged specifications.
 
+    Args:
+        cache: Injected cache repository.
+
     Returns:
         Total entries, valid/expired counts, and entry details.
     """
     current_time = datetime.utcnow()
 
-    valid_entries = 0
-    expired_entries = 0
-
-    for cached_data in SECURITY_ANALYSIS_CACHE.values():
-        if current_time < cached_data["expires_at"]:
-            valid_entries += 1
-        else:
-            expired_entries += 1
-
-    cache_entry_details = [
-        {
-            "spec_hash": key,
-            "cached_at": data["cached_at"].isoformat(),
-            "expires_at": data["expires_at"].isoformat(),
-            "is_expired": current_time >= data["expires_at"],
-            "overall_score": data["report"].get("overall_score"),
-            "risk_level": data["report"].get("risk_level"),
-        }
-        for key, data in SECURITY_ANALYSIS_CACHE.items()
-    ]
+    # Get overall cache stats
+    cache_stats = await cache.get_stats()
 
     return {
-        "total_entries": len(SECURITY_ANALYSIS_CACHE),
-        "valid_entries": valid_entries,
-        "expired_entries": expired_entries,
+        "security_cache_prefix": _SECURITY_CACHE_PREFIX,
+        "attack_path_cache_prefix": _ATTACK_PATH_CACHE_PREFIX,
         "ttl_hours": SECURITY_CACHE_TTL.total_seconds() / 3600,
-        "cache_details": cache_entry_details,
+        "repository_stats": cache_stats,
         "timestamp": current_time.isoformat(),
     }
 
 
 @router.delete("/ai/security/cache/clear")
-async def clear_security_analysis_cache() -> Dict[str, Any]:
+async def clear_security_analysis_cache(
+    cache: ICacheRepository = Depends(get_cache_repository),
+) -> Dict[str, Any]:
     """
     Clear all cached security analysis reports.
 
@@ -286,17 +278,24 @@ async def clear_security_analysis_cache() -> Dict[str, Any]:
     - Forcing fresh analysis for all specifications
     - Clearing memory during high load
 
+    Args:
+        cache: Injected cache repository.
+
     Returns:
         Number of entries cleared and timestamp.
     """
-    entries_cleared = len(SECURITY_ANALYSIS_CACHE)
-    SECURITY_ANALYSIS_CACHE.clear()
+    # Clear both security and attack path caches
+    security_entries_cleared = await cache.clear(f"{_SECURITY_CACHE_PREFIX}*")
+    attack_path_entries_cleared = await cache.clear(f"{_ATTACK_PATH_CACHE_PREFIX}*")
+    total_cleared = security_entries_cleared + attack_path_entries_cleared
 
-    logger.info(f"Cleared security analysis cache ({entries_cleared} entries)")
+    logger.info(f"Cleared security analysis cache ({total_cleared} entries)")
 
     return {
         "success": True,
-        "cleared_entries": entries_cleared,
-        "message": f"Cleared {entries_cleared} cached security analysis reports",
+        "cleared_entries": total_cleared,
+        "security_entries_cleared": security_entries_cleared,
+        "attack_path_entries_cleared": attack_path_entries_cleared,
+        "message": f"Cleared {total_cleared} cached security analysis reports",
         "timestamp": datetime.utcnow().isoformat(),
     }

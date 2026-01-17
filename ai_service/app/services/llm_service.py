@@ -60,42 +60,52 @@ class LLMService:
             "patch": self._get_patch_system_prompt(),
         }
 
-        def run_security_analysis(self, spec_text: str, context: str) -> str:
-            """Performs a security analysis of a spec using the provided RAG context."""
-            messages = self._build_rag_security_prompt(spec_text, context)
+    async def run_security_analysis(self, spec_text: str, context: str) -> str:
+        """Performs a security analysis of a spec using the provided RAG context."""
+        messages = self._build_rag_security_prompt(spec_text, context)
 
-            payload = {
-                "model": "codellama:13b-instruct-q4_K_M",
-                "messages": messages,
-                "stream": False,
-                "options": {"temperature": 0.2},
-            }
-            response = requests.post(OLLAMA_URL, json=payload)
+        payload = {
+            "model": "codellama:13b-instruct-q4_K_M",
+            "messages": messages,
+            "stream": False,
+            "options": {"temperature": 0.2},
+        }
+
+        try:
+            response = await self.client.post(self.chat_endpoint, json=payload)
 
             if response.status_code == 200:
-                return self._extract_generated_text(response.json())
+                return self._extract_and_clean_response(response.json())
             else:
                 return f"Error from Ollama service: {response.status_code} - {response.text}"
+        except Exception as e:
+            self.logger.error(f"Security analysis failed: {str(e)}")
+            raise LLMError(f"Failed to run security analysis: {str(e)}")
 
-        def _build_rag_security_prompt(self, spec: str, context: str) -> list:
-            """Builds a prompt that includes the retrieved context."""
-            system_prompt = "You are an expert API security auditor..."
-            user_prompt = f"""Please analyze the following OpenAPI specification.
-    <SPECIFICATION>
-    {spec}
-    </SPECIFICATION>
+    def _build_rag_security_prompt(
+        self, spec: str, context: str
+    ) -> List[Dict[str, str]]:
+        """Builds a prompt that includes the retrieved context."""
+        system_prompt = """You are an expert API security auditor. Your role is to analyze OpenAPI specifications
+for security vulnerabilities, misconfigurations, and compliance issues. Provide detailed, actionable recommendations
+based on OWASP API Security Top 10 and industry best practices."""
 
-    Use the following security best practices as your primary reference.
-    <CONTEXT>
-    {context}
-    </CONTEXT>
+        user_prompt = f"""Please analyze the following OpenAPI specification.
+<SPECIFICATION>
+{spec}
+</SPECIFICATION>
 
-    Based ONLY on the provided context, list any potential security issues in the specification."""
+Use the following security best practices as your primary reference.
+<CONTEXT>
+{context}
+</CONTEXT>
 
-            return [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]
+Based ONLY on the provided context, list any potential security issues in the specification."""
+
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
 
     async def process_ai_request(
         self, request: AIRequest

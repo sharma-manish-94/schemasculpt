@@ -30,11 +30,13 @@ from app.domain.interfaces.spec_validator import ISpecValidator
 
 if TYPE_CHECKING:
     from app.services.agent_manager import AgentManager
+    from app.services.context_manager import ContextManager
     from app.services.description_analysis_service import DescriptionAnalysisService
     from app.services.llm_service import LLMService
     from app.services.meta_analysis_service import MetaAnalysisService
     from app.services.mock_data_service import MockDataService
     from app.services.patch_generator import PatchGenerator
+    from app.services.prompt_engine import PromptEngine
     from app.services.rag_service import RAGService
     from app.services.security.security_workflow import SecurityAnalysisWorkflow
     from app.services.smart_fix_service import SmartFixService
@@ -244,6 +246,38 @@ def get_rag_service() -> "RAGService":
     from app.services.rag_service import RAGService
 
     return RAGService()
+
+
+@lru_cache()
+def get_context_manager() -> "ContextManager":
+    """
+    Get the ContextManager instance (singleton).
+
+    The ContextManager maintains conversation sessions and context
+    across multiple AI requests.
+
+    Returns:
+        ContextManager: The shared context manager instance.
+    """
+    from app.services.context_manager import ContextManager
+
+    return ContextManager()
+
+
+@lru_cache()
+def get_prompt_engine() -> "PromptEngine":
+    """
+    Get the PromptEngine instance (singleton).
+
+    The PromptEngine generates optimized prompts based on
+    request analysis and context.
+
+    Returns:
+        PromptEngine: The shared prompt engine instance.
+    """
+    from app.services.prompt_engine import PromptEngine
+
+    return PromptEngine()
 
 
 # =============================================================================

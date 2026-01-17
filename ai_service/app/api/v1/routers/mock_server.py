@@ -10,13 +10,13 @@ for OpenAPI specifications. This module enables:
 - Mock data generation for testing purposes
 
 Architecture:
-- Mock servers are stored in-memory with configurable lifecycle
+- Mock servers are stored in-memory using AsyncMockStorage (thread-safe)
 - Each mock server is identified by a UUID
 - Response generation uses LLM for realistic data when enabled
 
 Thread Safety:
-- MOCKED_APIS dictionary should be replaced with a thread-safe cache
-  in production (Redis or similar)
+- All operations use AsyncMockStorage with asyncio locks for thread safety
+- For horizontal scaling, consider replacing with Redis-backed ICacheRepository
 """
 
 import asyncio
@@ -292,7 +292,8 @@ async def get_mock_server_info(mock_id: str) -> Dict[str, Any]:
     Raises:
         HTTPException 404: If mock server not found.
     """
-    if mock_id not in MOCKED_APIS:
+    mock_data = await mock_storage.get(mock_id)
+    if not mock_data:
         raise HTTPException(
             status_code=404,
             detail={
@@ -301,7 +302,6 @@ async def get_mock_server_info(mock_id: str) -> Dict[str, Any]:
             },
         )
 
-    mock_data = MOCKED_APIS[mock_id]
     spec_info = mock_data["specification"].get("info", {})
     paths = mock_data["specification"].get("paths", {})
 
@@ -337,7 +337,8 @@ async def delete_mock_server(mock_id: str) -> Dict[str, Any]:
     """
     correlation_id = set_correlation_id()
 
-    if mock_id not in MOCKED_APIS:
+    mock_data = await mock_storage.delete(mock_id)
+    if not mock_data:
         raise HTTPException(
             status_code=404,
             detail={
@@ -345,8 +346,6 @@ async def delete_mock_server(mock_id: str) -> Dict[str, Any]:
                 "message": f"Mock server {mock_id} not found",
             },
         )
-
-    mock_data = MOCKED_APIS.pop(mock_id)
 
     logger.info(
         f"Mock server deleted",
@@ -399,7 +398,8 @@ async def handle_mock_request(
         HTTPException 404: If mock server or endpoint not found.
         HTTPException 500: For simulated errors when error_rate is configured.
     """
-    if mock_id not in MOCKED_APIS:
+    mock_data = await mock_storage.get(mock_id)
+    if not mock_data:
         raise HTTPException(
             status_code=404,
             detail={
@@ -408,13 +408,12 @@ async def handle_mock_request(
             },
         )
 
-    mock_data = MOCKED_APIS[mock_id]
     spec = mock_data["specification"]
     config = mock_data.get("config", {})
     http_method = request.method.lower()
 
-    # Increment request counter
-    MOCKED_APIS[mock_id]["request_count"] = mock_data.get("request_count", 0) + 1
+    # Increment request counter atomically
+    await mock_storage.increment_request_count(mock_id)
 
     # Add artificial delay if configured
     response_delay_ms = config.get("response_delay_ms", 0)

@@ -2,9 +2,12 @@
 RAG Knowledge Base Router.
 
 Provides endpoints for RAG (Retrieval-Augmented Generation) operations:
-- Get knowledge base status and statistics
-- Explain validation issues using knowledge base context
 - Query the knowledge base for relevant security information
+- Retrieve knowledge base statistics
+
+NOTE: The /ai/rag/status and /ai/explain endpoints in this router are DEPRECATED.
+Use the endpoints from app/api/v1/routers/explanation.py instead, which use
+ICacheRepository for proper cache management.
 
 The RAG system enhances AI responses by retrieving relevant context from:
 - OWASP security guidelines
@@ -13,26 +16,30 @@ The RAG system enhances AI responses by retrieving relevant context from:
 - Attack technique descriptions
 """
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import get_llm_service, get_rag_service
+from app.api.deps import get_cache_repository, get_llm_service, get_rag_service
 from app.core.config import settings
 from app.core.logging import set_correlation_id
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
 
+if TYPE_CHECKING:
+    from app.domain.interfaces.cache_repository import ICacheRepository
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["RAG Knowledge Base"])
 
-# Explanation cache (will be migrated to ICacheRepository)
-EXPLANATION_CACHE: Dict[str, Dict[str, Any]] = {}
-EXPLANATION_CACHE_TTL = timedelta(hours=settings.explanation_cache_ttl_hours)
+# Cache key prefix and TTL for explanations
+_EXPLANATION_CACHE_PREFIX = "explanation:"
+_EXPLANATION_CACHE_TTL = timedelta(hours=settings.explanation_cache_ttl_hours)
 
 
 # =============================================================================
@@ -83,12 +90,16 @@ async def explain_validation_issue(
     request_data: Dict[str, Any],
     llm_service: LLMService = Depends(get_llm_service),
     rag_service: RAGService = Depends(get_rag_service),
+    cache: "ICacheRepository" = Depends(get_cache_repository),
 ) -> Dict[str, Any]:
     """
     Provide detailed AI-powered explanations for validation issues.
 
     Uses RAG to find relevant context and best practices from the
-    knowledge base. Responses are cached for 24 hours to improve performance.
+    knowledge base. Responses are cached for performance optimization.
+
+    NOTE: This endpoint duplicates functionality in explanation.py router.
+    Consider using /ai/explain from explanation.py for the authoritative implementation.
 
     Args:
         request_data: Dictionary containing:
@@ -97,6 +108,7 @@ async def explain_validation_issue(
             - category (str): Category of the issue (e.g., "security", "style")
             - spec_text (str, optional): Relevant spec excerpt
             - context (dict, optional): Additional context information
+        cache: Injected cache repository.
 
     Returns:
         Dictionary with:
@@ -123,7 +135,9 @@ async def explain_validation_issue(
 
     try:
         # Check cache first
-        cached_explanation = _get_cached_explanation(rule_id, message, category)
+        cached_explanation = await _get_cached_explanation(
+            cache, rule_id, message, category
+        )
         if cached_explanation:
             logger.info(f"Returning cached explanation for rule: {rule_id}")
             return cached_explanation
@@ -154,7 +168,9 @@ async def explain_validation_issue(
         )
 
         # Cache the explanation
-        _cache_explanation(rule_id, message, category, explanation_response)
+        await _cache_explanation(
+            cache, rule_id, message, category, explanation_response
+        )
 
         return explanation_response
 
@@ -268,36 +284,34 @@ async def _generate_explanation(llm_service: LLMService, prompt: str) -> Dict[st
 
 def _generate_explanation_cache_key(rule_id: str, message: str, category: str) -> str:
     """Generate a unique cache key for an explanation."""
-    import hashlib
-
     key_data = f"{rule_id}:{category}:{message}"
-    return hashlib.md5(key_data.encode()).hexdigest()
+    return f"{_EXPLANATION_CACHE_PREFIX}{hashlib.md5(key_data.encode()).hexdigest()}"
 
 
-def _get_cached_explanation(
-    rule_id: str, message: str, category: str
-) -> Dict[str, Any] | None:
-    """Get cached explanation if available and not expired."""
+async def _get_cached_explanation(
+    cache: "ICacheRepository",
+    rule_id: str,
+    message: str,
+    category: str,
+) -> Optional[Dict[str, Any]]:
+    """Get cached explanation if available."""
     cache_key = _generate_explanation_cache_key(rule_id, message, category)
-    cached = EXPLANATION_CACHE.get(cache_key)
+    cached = await cache.get(cache_key)
 
-    if not cached:
-        return None
+    if cached:
+        logger.info(f"Returning cached explanation for rule {rule_id}")
+        return cached
 
-    # Check if expired
-    if datetime.utcnow() - cached["timestamp"] > EXPLANATION_CACHE_TTL:
-        del EXPLANATION_CACHE[cache_key]
-        return None
-
-    return cached["data"]
+    return None
 
 
-def _cache_explanation(
-    rule_id: str, message: str, category: str, data: Dict[str, Any]
+async def _cache_explanation(
+    cache: "ICacheRepository",
+    rule_id: str,
+    message: str,
+    category: str,
+    data: Dict[str, Any],
 ) -> None:
     """Store explanation in cache."""
     cache_key = _generate_explanation_cache_key(rule_id, message, category)
-    EXPLANATION_CACHE[cache_key] = {
-        "data": data,
-        "timestamp": datetime.utcnow(),
-    }
+    await cache.set(cache_key, data, ttl=_EXPLANATION_CACHE_TTL)
