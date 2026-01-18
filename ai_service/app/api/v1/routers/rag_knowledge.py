@@ -74,7 +74,7 @@ async def get_rag_knowledge_base_status(
         return {
             "rag_service": {
                 "available": False,
-                "error": str(error),
+                "error": "An internal error occurred while retrieving the RAG knowledge base status.",
             },
             "timestamp": datetime.utcnow().isoformat(),
         }
