@@ -70,11 +70,12 @@ async def get_rag_knowledge_base_status(
             "timestamp": datetime.utcnow().isoformat(),
         }
     except Exception as error:
-        logger.error(f"Failed to get RAG knowledge base status: {str(error)}")
+        # Log full details server-side but return a generic error message to the client
+        logger.error("Failed to get RAG knowledge base status", exc_info=True)
         return {
             "rag_service": {
                 "available": False,
-                "error": "An internal error occurred while retrieving the RAG knowledge base status.",
+                "error": "Failed to retrieve RAG knowledge base status",
             },
             "timestamp": datetime.utcnow().isoformat(),
         }
