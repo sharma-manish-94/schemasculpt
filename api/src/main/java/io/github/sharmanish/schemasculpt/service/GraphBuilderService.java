@@ -3,17 +3,15 @@ package io.github.sharmanish.schemasculpt.service;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 
 @Service
 public class GraphBuilderService {
@@ -22,77 +20,100 @@ public class GraphBuilderService {
   public static final String ENDPOINT = "ENDPOINT";
 
   public Graph<ApiNode, DefaultEdge> buildDependencyGraph(OpenAPI openApi) {
-    Graph<ApiNode, DefaultEdge> graph =
-        new DefaultDirectedGraph<>(DefaultEdge.class);
+    Graph<ApiNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
     if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
-      openApi.getComponents().getSchemas().keySet()
+      openApi
+          .getComponents()
+          .getSchemas()
+          .keySet()
           .forEach(name -> graph.addVertex(new ApiNode(name, SCHEMA)));
     }
-    if (openApi.getComponents() != null
-        && openApi.getComponents().getSchemas() != null) {
+    if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
       createGraphOfSharedSchemas(openApi, graph);
     }
     updateGraphWithOperationDetails(openApi, graph);
     return graph;
   }
 
-  private void updateGraphWithOperationDetails(OpenAPI openApi,
-                                               Graph<ApiNode, DefaultEdge> graph) {
+  private void updateGraphWithOperationDetails(OpenAPI openApi, Graph<ApiNode, DefaultEdge> graph) {
     if (openApi.getPaths() != null) {
-      openApi.getPaths().forEach((path, pathItem) ->
-          pathItem.readOperationsMap().forEach((method, operation) -> {
-            ApiNode operNode = new ApiNode(method + " " + path, ENDPOINT);
-            graph.addVertex(operNode);
-            updateGraphWithRequestBody(graph, operation, operNode);
-            updateGraphWithResponses(graph, operation, operNode);
-          }));
+      openApi
+          .getPaths()
+          .forEach(
+              (path, pathItem) ->
+                  pathItem
+                      .readOperationsMap()
+                      .forEach(
+                          (method, operation) -> {
+                            ApiNode operNode = new ApiNode(method + " " + path, ENDPOINT);
+                            graph.addVertex(operNode);
+                            updateGraphWithRequestBody(graph, operation, operNode);
+                            updateGraphWithResponses(graph, operation, operNode);
+                          }));
     }
   }
 
-  private void updateGraphWithResponses(Graph<ApiNode, DefaultEdge> graph,
-                                        Operation operation, ApiNode operNode) {
+  private void updateGraphWithResponses(
+      Graph<ApiNode, DefaultEdge> graph, Operation operation, ApiNode operNode) {
     if (operation.getResponses() != null) {
-      operation.getResponses().values().forEach(response -> {
-        if (response.getContent() != null) {
-          response.getContent().values().forEach(mediaType -> {
-            List<String> refs = findRefs(mediaType.getSchema());
-            refs.forEach(refName -> addEdgeSafely(graph, operNode, refName));
-          });
-        }
-      });
+      operation
+          .getResponses()
+          .values()
+          .forEach(
+              response -> {
+                if (response.getContent() != null) {
+                  response
+                      .getContent()
+                      .values()
+                      .forEach(
+                          mediaType -> {
+                            List<String> refs = findRefs(mediaType.getSchema());
+                            refs.forEach(refName -> addEdgeSafely(graph, operNode, refName));
+                          });
+                }
+              });
     }
   }
 
-  private void updateGraphWithRequestBody(Graph<ApiNode, DefaultEdge> graph, Operation operation,
-                                          ApiNode operNode) {
-    if (operation.getRequestBody() != null
-        && operation.getRequestBody().getContent() != null) {
-      operation.getRequestBody().getContent().values().forEach(mediaType -> {
-        List<String> refs = findRefs(mediaType.getSchema());
-        refs.forEach(refName -> addEdgeSafely(graph, operNode, refName));
-      });
+  private void updateGraphWithRequestBody(
+      Graph<ApiNode, DefaultEdge> graph, Operation operation, ApiNode operNode) {
+    if (operation.getRequestBody() != null && operation.getRequestBody().getContent() != null) {
+      operation
+          .getRequestBody()
+          .getContent()
+          .values()
+          .forEach(
+              mediaType -> {
+                List<String> refs = findRefs(mediaType.getSchema());
+                refs.forEach(refName -> addEdgeSafely(graph, operNode, refName));
+              });
     }
   }
 
   private void createGraphOfSharedSchemas(OpenAPI openApi, Graph<ApiNode, DefaultEdge> graph) {
-    openApi.getComponents().getSchemas().forEach((name, schema) -> {
-      ApiNode source = new ApiNode(name, SCHEMA);
-      findRefs(schema).forEach(refName -> {
-        ApiNode target = new ApiNode(refName, SCHEMA);
-        if (!graph.containsVertex(target)) {
-          graph.addVertex(target);
-        }
-        if (!graph.containsVertex(source)) {
-          graph.addVertex(source);
-        }
-        graph.addEdge(source, target);
-      });
-    });
+    openApi
+        .getComponents()
+        .getSchemas()
+        .forEach(
+            (name, schema) -> {
+              ApiNode source = new ApiNode(name, SCHEMA);
+              findRefs(schema)
+                  .forEach(
+                      refName -> {
+                        ApiNode target = new ApiNode(refName, SCHEMA);
+                        if (!graph.containsVertex(target)) {
+                          graph.addVertex(target);
+                        }
+                        if (!graph.containsVertex(source)) {
+                          graph.addVertex(source);
+                        }
+                        graph.addEdge(source, target);
+                      });
+            });
   }
 
-  private void addEdgeSafely(Graph<ApiNode, DefaultEdge> graph,
-                             ApiNode source,
-                             String targetSchemaName) {
+  private void addEdgeSafely(
+      Graph<ApiNode, DefaultEdge> graph, ApiNode source, String targetSchemaName) {
     ApiNode target = new ApiNode(targetSchemaName, SCHEMA);
     if (!graph.containsVertex(target)) {
       graph.addVertex(target);

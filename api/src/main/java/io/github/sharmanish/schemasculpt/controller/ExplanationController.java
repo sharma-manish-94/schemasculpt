@@ -56,7 +56,10 @@ public class ExplanationController {
             specText = jsonMapper.writeValueAsString(openAPI);
           }
         } catch (Exception e) {
-          log.warn("Could not retrieve spec from session {}: {}", LogSanitizer.sanitize(sessionId), e.getMessage());
+          log.warn(
+              "Could not retrieve spec from session {}: {}",
+              LogSanitizer.sanitize(sessionId),
+              e.getMessage());
         }
       }
 
@@ -82,12 +85,17 @@ public class ExplanationController {
               (List<String>) aiResponse.getOrDefault("additional_resources", List.of()),
               (Map<String, Object>) aiResponse.getOrDefault("metadata", Map.of()));
 
-      log.info("Successfully generated explanation for rule: {}", LogSanitizer.sanitize(request.ruleId()));
+      log.info(
+          "Successfully generated explanation for rule: {}",
+          LogSanitizer.sanitize(request.ruleId()));
       return ResponseEntity.ok(response);
 
     } catch (Exception e) {
       log.error(
-          "Failed to generate explanation for rule {}: {}", LogSanitizer.sanitize(request.ruleId()), e.getMessage(), e);
+          "Failed to generate explanation for rule {}: {}",
+          LogSanitizer.sanitize(request.ruleId()),
+          e.getMessage(),
+          e);
 
       // Return a fallback explanation
       ExplanationResponse fallbackResponse =

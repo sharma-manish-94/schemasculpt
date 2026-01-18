@@ -3,18 +3,17 @@ package io.github.sharmanish.schemasculpt.service.analyzer.base;
 import io.github.sharmanish.schemasculpt.service.analyzer.Analyzer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Abstract base class for OpenAPI analyzers providing common utilities.
  *
- * <p>Implements template method pattern with final {@code analyze()} method
- * that performs validation before delegating to {@code performAnalysis()}.
+ * <p>Implements template method pattern with final {@code analyze()} method that performs
+ * validation before delegating to {@code performAnalysis()}.
  *
  * @param <T> The type of analysis result
  */

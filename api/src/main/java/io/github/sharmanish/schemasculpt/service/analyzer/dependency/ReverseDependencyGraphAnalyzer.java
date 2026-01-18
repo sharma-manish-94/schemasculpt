@@ -6,14 +6,13 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.RequestBody;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that builds a reverse dependency graph showing which operations and schemas depend on
@@ -62,7 +61,8 @@ public class ReverseDependencyGraphAnalyzer
     allSchemas.forEach(
         (schemaName, schema) -> {
           String dependentName = SCHEMA_PREFIX + schemaName;
-          SchemaTraversalUtil.findRefsInSchema(schema, dependentName, reverseGraph, new HashSet<>());
+          SchemaTraversalUtil.findRefsInSchema(
+              schema, dependentName, reverseGraph, new HashSet<>());
         });
 
     return reverseGraph;
@@ -87,7 +87,10 @@ public class ReverseDependencyGraphAnalyzer
                     .forEach(
                         mediaType ->
                             SchemaTraversalUtil.findRefsInSchema(
-                                mediaType.getSchema(), dependentName, reverseGraph, new HashSet<>())));
+                                mediaType.getSchema(),
+                                dependentName,
+                                reverseGraph,
+                                new HashSet<>())));
     Optional.ofNullable(operation.getResponses())
         .ifPresent(
             apiResponses ->

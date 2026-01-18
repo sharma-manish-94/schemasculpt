@@ -3,15 +3,14 @@ package io.github.sharmanish.schemasculpt.service.analyzer.dependency;
 import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that calculates the blast radius of a schema change.
@@ -58,11 +57,13 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
     if (openApi.getComponents() == null
         || openApi.getComponents().getSchemas() == null
         || !openApi.getComponents().getSchemas().containsKey(targetSchema)) {
-      return BlastRadiusResponse.builder()
-          .targetSchema(targetSchema)
-          .riskLevel("UNKNOWN_SCHEMA")
-          .affectedPaths(List.of("Schema '" + targetSchema + "' not found in components/schemas"))
-          .build();
+      return new BlastRadiusResponse(
+          targetSchema,
+          0,
+          0,
+          0.0,
+          null,
+          List.of("Schema '" + targetSchema + "' not found in components/schemas"));
     }
 
     // Build dependency graph
@@ -83,19 +84,22 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
     double percentage = totalOps == 0 ? 0.0 : ((double) affectedRaw.size() / totalOps) * 100;
 
     // Determine risk level
-    String risk = "LOW";
-    if (percentage > 50) risk = "CRITICAL";
-    else if (percentage > 20) risk = "HIGH";
-    else if (percentage > 0) risk = "MEDIUM";
+    BlastRadiusResponse.RiskLevel risk = BlastRadiusResponse.RiskLevel.LOW;
+    if (percentage > 50) {
+      risk = BlastRadiusResponse.RiskLevel.CRITICAL;
+    } else if (percentage > 20) {
+      risk = BlastRadiusResponse.RiskLevel.MEDIUM;
+    } else if (percentage > 0) {
+      risk = BlastRadiusResponse.RiskLevel.MEDIUM;
+    }
 
-    return BlastRadiusResponse.builder()
-        .targetSchema(targetSchema)
-        .totalEndpoints(totalOps)
-        .affectedCount(affectedRaw.size())
-        .impactPercentage(Math.round(percentage * 100.0) / 100.0) // round to 2 decimals
-        .riskLevel(risk)
-        .affectedPaths(new ArrayList<>(affectedRaw))
-        .build();
+    return new BlastRadiusResponse(
+        targetSchema,
+        totalOps,
+        affectedRaw.size(),
+        Math.round(percentage * 100.0) / 100.0, // round to 2 decimals
+        risk,
+        new ArrayList<>(affectedRaw));
   }
 
   /**

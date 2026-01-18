@@ -3,14 +3,13 @@ package io.github.sharmanish.schemasculpt.service.analyzer.security;
 import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that generates an authorization matrix showing required scopes for each operation.
@@ -54,7 +53,8 @@ public class AuthorizationMatrixAnalyzer extends AbstractSchemaAnalyzer<AuthzMat
                                           });
                                     });
                           }
-                          // 2. Fallback to Global security if operation level is missing
+                          // 2. Fallback to Global security if operation
+                          // level is missing
                           else if (openApi.getSecurity() != null
                               && !openApi.getSecurity().isEmpty()) {
                             openApi
@@ -68,7 +68,8 @@ public class AuthorizationMatrixAnalyzer extends AbstractSchemaAnalyzer<AuthzMat
                                           });
                                     });
                           } else {
-                            opScopes.add("PUBLIC"); // Mark as public if no security
+                            opScopes.add("PUBLIC"); // Mark as public if no
+                            // security
                             allUniqueScopes.add("PUBLIC");
                           }
 

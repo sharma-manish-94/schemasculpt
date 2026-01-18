@@ -24,8 +24,8 @@ import reactor.core.publisher.Mono;
 
 /**
  * REST controller for repository operations.
- * <p>
- * Provides endpoints for connecting to and browsing repositories via MCP.
+ *
+ * <p>Provides endpoints for connecting to and browsing repositories via MCP.
  */
 @RestController
 @RequestMapping("/api/v1/repository")
@@ -43,7 +43,7 @@ public class RepositoryController {
    * Connect to a repository provider (GitHub, GitLab, etc.)
    *
    * @param sessionId Session ID from header
-   * @param request   Connection request with provider and access token
+   * @param request Connection request with provider and access token
    * @return Connection response
    */
   @PostMapping("/connect")
@@ -51,30 +51,33 @@ public class RepositoryController {
       @RequestHeader("X-Session-ID") @NotBlank String sessionId,
       @Valid @RequestBody RepositoryConnectionRequest request) {
 
-    log.info("Connection request for session: {} to provider: {}", LogSanitizer.sanitize(sessionId),
-        LogSanitizer.sanitize(request.getProvider()));
+    log.info(
+        "Connection request for session: {} to provider: {}",
+        LogSanitizer.sanitize(sessionId),
+        LogSanitizer.sanitize(request.provider()));
 
-    return repositoryService.connect(sessionId, request)
-        .map(response -> {
-          // Store context in session after successful connection
-          if (response.isSuccess()) {
-            repositoryService.storeRepositoryContext(
-                sessionId,
-                request.getProvider(),
-                request.getAccessToken()
-            );
-          }
-          return ResponseEntity.ok(response);
-        })
-        .onErrorResume(error -> {
-          log.error("Error connecting to repository provider: {}", error.getMessage());
-          return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-              .body(new RepositoryConnectionResponse(
-                  false,
-                  "Failed to connect: " + error.getMessage(),
-                  request.getProvider()
-              )));
-        });
+    return repositoryService
+        .connect(sessionId, request)
+        .map(
+            response -> {
+              // Store context in session after successful connection
+              if (response.success()) {
+                repositoryService.storeRepositoryContext(
+                    sessionId, request.provider(), request.accessToken());
+              }
+              return ResponseEntity.ok(response);
+            })
+        .onErrorResume(
+            error -> {
+              log.error("Error connecting to repository provider: {}", error.getMessage());
+              return Mono.just(
+                  ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                      .body(
+                          new RepositoryConnectionResponse(
+                              false,
+                              "Failed to connect: " + error.getMessage(),
+                              request.provider())));
+            });
   }
 
   /**
@@ -89,21 +92,26 @@ public class RepositoryController {
 
     log.info("Disconnect request for session: {}", LogSanitizer.sanitize(sessionId));
 
-    return repositoryService.disconnect(sessionId)
-        .then(Mono.just(
-            ResponseEntity.ok("{\"success\": true, \"message\": \"Disconnected successfully\"}")))
-        .onErrorResume(error -> {
-          log.error("Error disconnecting from repository: {}", error.getMessage());
-          return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-              .body("{\"success\": false, \"message\": \"" + error.getMessage() + "\"}"));
-        });
+    return repositoryService
+        .disconnect(sessionId)
+        .then(
+            Mono.just(
+                ResponseEntity.ok(
+                    "{\"success\": true, \"message\": \"Disconnected" + " successfully\"}")))
+        .onErrorResume(
+            error -> {
+              log.error("Error disconnecting from repository: {}", error.getMessage());
+              return Mono.just(
+                  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                      .body("{\"success\": false, \"message\": \"" + error.getMessage() + "\"}"));
+            });
   }
 
   /**
    * Browse repository tree
    *
    * @param sessionId Session ID from header
-   * @param request   Browse request
+   * @param request Browse request
    * @return Tree contents
    */
   @PostMapping("/browse")
@@ -111,22 +119,28 @@ public class RepositoryController {
       @RequestHeader("X-Session-ID") @NotBlank String sessionId,
       @Valid @RequestBody BrowseTreeRequest request) {
 
-    log.info("Browse tree request for session: {} - {}/{}/{}",
-        LogSanitizer.sanitize(sessionId), LogSanitizer.sanitize(request.getOwner()), LogSanitizer.sanitize(request.getRepo()), LogSanitizer.sanitize(request.getPath()));
+    log.info(
+        "Browse tree request for session: {} - {}/{}/{}",
+        LogSanitizer.sanitize(sessionId),
+        LogSanitizer.sanitize(request.owner()),
+        LogSanitizer.sanitize(request.repo()),
+        LogSanitizer.sanitize(request.path()));
 
-    return repositoryService.browseTree(sessionId, request)
+    return repositoryService
+        .browseTree(sessionId, request)
         .map(ResponseEntity::ok)
-        .onErrorResume(error -> {
-          log.error("Error browsing tree: {}", error.getMessage());
-          return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
-        });
+        .onErrorResume(
+            error -> {
+              log.error("Error browsing tree: {}", error.getMessage());
+              return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
+            });
   }
 
   /**
    * Read file from repository
    *
    * @param sessionId Session ID from header
-   * @param request   Read file request
+   * @param request Read file request
    * @return File content
    */
   @PostMapping("/file")
@@ -134,15 +148,21 @@ public class RepositoryController {
       @RequestHeader("X-Session-ID") @NotBlank String sessionId,
       @Valid @RequestBody ReadFileRequest request) {
 
-    log.info("Read file request for session: {} - {}/{}/{}",
-        LogSanitizer.sanitize(sessionId), LogSanitizer.sanitize(request.getOwner()), LogSanitizer.sanitize(request.getRepo()), LogSanitizer.sanitize(request.getPath()));
+    log.info(
+        "Read file request for session: {} - {}/{}/{}",
+        LogSanitizer.sanitize(sessionId),
+        LogSanitizer.sanitize(request.owner()),
+        LogSanitizer.sanitize(request.repo()),
+        LogSanitizer.sanitize(request.path()));
 
-    return repositoryService.readFile(sessionId, request)
+    return repositoryService
+        .readFile(sessionId, request)
         .map(ResponseEntity::ok)
-        .onErrorResume(error -> {
-          log.error("Error reading file: {}", error.getMessage());
-          return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-        });
+        .onErrorResume(
+            error -> {
+              log.error("Error reading file: {}", error.getMessage());
+              return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+            });
   }
 
   /**
@@ -155,18 +175,17 @@ public class RepositoryController {
   public ResponseEntity<RepositoryConnectionResponse> getConnectionStatus(
       @RequestHeader("X-Session-ID") @NotBlank String sessionId) {
 
-    log.debug("Checking repository connection status for session: {}", LogSanitizer.sanitize(sessionId));
+    log.debug(
+        "Checking repository connection status for session: {}", LogSanitizer.sanitize(sessionId));
 
     RepositoryConnectionResponse context = repositoryService.getRepositoryContext(sessionId);
 
     if (context != null) {
       return ResponseEntity.ok(context);
     } else {
-      return ResponseEntity.ok(new RepositoryConnectionResponse(
-          false,
-          "Not connected to any repository provider",
-          null
-      ));
+      return ResponseEntity.ok(
+          new RepositoryConnectionResponse(
+              false, "Not connected to any repository provider", null));
     }
   }
 }

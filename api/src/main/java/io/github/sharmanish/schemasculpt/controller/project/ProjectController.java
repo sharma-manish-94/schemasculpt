@@ -33,15 +33,16 @@ public class ProjectController {
     this.projectService = projectService;
   }
 
-  /**
-   * Create a new project
-   */
+  /** Create a new project */
   @PostMapping
   public ResponseEntity<ProjectDTO> createProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
       @Valid @RequestBody CreateProjectRequest request) {
 
-    log.info("Creating project '{}' for user {}", LogSanitizer.sanitize(request.name()), LogSanitizer.sanitize(principal.getUserId()));
+    log.info(
+        "Creating project '{}' for user {}",
+        LogSanitizer.sanitize(request.name()),
+        LogSanitizer.sanitize(principal.getUserId()));
 
     Project project =
         projectService.createProject(
@@ -50,9 +51,7 @@ public class ProjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDTO(project));
   }
 
-  /**
-   * Get all projects for the authenticated user
-   */
+  /** Get all projects for the authenticated user */
   @GetMapping
   public ResponseEntity<List<ProjectDTO>> getUserProjects(
       @AuthenticationPrincipal CustomOAuth2User principal) {
@@ -67,29 +66,31 @@ public class ProjectController {
     return ResponseEntity.ok(projects);
   }
 
-  /**
-   * Get a specific project
-   */
+  /** Get a specific project */
   @GetMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> getProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
 
-    log.debug("Fetching project {} for user {}", LogSanitizer.sanitize(projectId), LogSanitizer.sanitize(principal.getUserId()));
+    log.debug(
+        "Fetching project {} for user {}",
+        LogSanitizer.sanitize(projectId),
+        LogSanitizer.sanitize(principal.getUserId()));
 
     Project project = projectService.getProject(projectId, principal.getUserId());
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /**
-   * Update a project
-   */
+  /** Update a project */
   @PutMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> updateProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
       @PathVariable Long projectId,
       @Valid @RequestBody UpdateProjectRequest request) {
 
-    log.info("Updating project {} for user {}", LogSanitizer.sanitize(projectId), LogSanitizer.sanitize(principal.getUserId()));
+    log.info(
+        "Updating project {} for user {}",
+        LogSanitizer.sanitize(projectId),
+        LogSanitizer.sanitize(principal.getUserId()));
 
     Project project =
         projectService.updateProject(
@@ -102,14 +103,15 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /**
-   * Delete a project
-   */
+  /** Delete a project */
   @DeleteMapping("/{projectId}")
   public ResponseEntity<Void> deleteProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
 
-    log.info("Deleting project {} for user {}", LogSanitizer.sanitize(projectId), LogSanitizer.sanitize(principal.getUserId()));
+    log.info(
+        "Deleting project {} for user {}",
+        LogSanitizer.sanitize(projectId),
+        LogSanitizer.sanitize(principal.getUserId()));
 
     projectService.deleteProject(projectId, principal.getUserId());
     return ResponseEntity.noContent().build();

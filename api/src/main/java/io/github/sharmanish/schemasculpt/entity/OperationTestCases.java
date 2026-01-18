@@ -11,24 +11,30 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.Objects;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * Entity storing cached test cases for API operations.
+ */
 @Entity
 @Table(
     name = "operation_test_cases",
     uniqueConstraints =
-    @UniqueConstraint(
-        name = "unique_project_operation_tests",
-        columnNames = {"project_id", "path", "method"}))
-@Data
+        @UniqueConstraint(
+            name = "unique_project_operation_tests",
+            columnNames = {"project_id", "path", "method"}))
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString(exclude = {"project", "specification", "createdBy"})
 public class OperationTestCases {
 
   @Id
@@ -76,4 +82,17 @@ public class OperationTestCases {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by")
   private User createdBy;
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    OperationTestCases that = (OperationTestCases) o;
+    return id != null && Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
+  }
 }

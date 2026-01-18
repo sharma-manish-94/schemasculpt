@@ -2,7 +2,6 @@ package io.github.sharmanish.schemasculpt.service;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
@@ -35,8 +34,7 @@ class AnalysisServiceTest {
   void setUp() {
     // Create all analyzers
     JsonMapper jsonMapper = new JsonMapper();
-    ReverseDependencyGraphAnalyzer dependencyGraphAnalyzer =
-        new ReverseDependencyGraphAnalyzer();
+    ReverseDependencyGraphAnalyzer dependencyGraphAnalyzer = new ReverseDependencyGraphAnalyzer();
     BlastRadiusAnalyzer blastRadiusAnalyzer = new BlastRadiusAnalyzer(dependencyGraphAnalyzer);
     NestingDepthAnalyzer nestingDepthAnalyzer = new NestingDepthAnalyzer(jsonMapper);
     TaintAnalyzer taintAnalyzer = new TaintAnalyzer();
@@ -57,8 +55,7 @@ class AnalysisServiceTest {
   }
 
   @AfterEach
-  void tearDown() {
-  }
+  void tearDown() {}
 
   @Test
   void buildReverseDependencyGraph_shouldCorrectlyIdentifyDependents() {
@@ -141,6 +138,4 @@ class AnalysisServiceTest {
         analysisService.analyzeSchemaSimilarity(openAPI);
     assertThat(schemaSimilarityResponse).isNotNull();
   }
-
-
 }

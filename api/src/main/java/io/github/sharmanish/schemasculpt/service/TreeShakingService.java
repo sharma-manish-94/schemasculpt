@@ -36,7 +36,9 @@ public class TreeShakingService {
     }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
     if (null == operation) {
       return null;
     }
@@ -57,7 +59,8 @@ public class TreeShakingService {
       // Create clean paths with only the requested operation
       Paths cleanPaths = new Paths();
       PathItem cleanPathItem = new PathItem();
-      cleanPathItem.operation(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), operation);
+      cleanPathItem.operation(
+          PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)), operation);
       cleanPaths.addPathItem(path, cleanPathItem);
       miniSpec.setPaths(cleanPaths);
 

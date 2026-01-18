@@ -62,8 +62,8 @@ public class SessionServiceImpl implements SessionService {
 
     } catch (Exception e) {
       log.error("Failed to create session: {}", e.getMessage(), e);
-      if (e instanceof InvalidSpecificationException) {
-        throw e;
+      if (e instanceof InvalidSpecificationException ise) {
+        throw ise;
       }
       throw new InvalidSpecificationException("Failed to create session: " + e.getMessage(), e);
     }
@@ -106,8 +106,11 @@ public class SessionServiceImpl implements SessionService {
 
     } catch (Exception e) {
       log.error("Failed to update session spec for session {}: {}", sessionId, e.getMessage(), e);
-      if (e instanceof InvalidSpecificationException || e instanceof SessionNotFoundException) {
-        throw e;
+      if (e instanceof InvalidSpecificationException ise) {
+        throw ise;
+      }
+      if (e instanceof SessionNotFoundException snfe) {
+        throw snfe;
       }
       throw new InvalidSpecificationException(
           "Failed to update session spec: " + e.getMessage(), e);
@@ -169,8 +172,8 @@ public class SessionServiceImpl implements SessionService {
       // Convert OpenAPI object to JSON string
       return jsonMapper.writeValueAsString(openAPI);
     } catch (Exception e) {
-      log.error("Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(),
-          e);
+      log.error(
+          "Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(), e);
       throw new InvalidSpecificationException(
           "Failed to serialize specification: " + e.getMessage(), e);
     }

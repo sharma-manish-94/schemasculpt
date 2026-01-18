@@ -52,7 +52,10 @@ public class HardeningController {
       @PathVariable String sessionId, @RequestBody HardenOperationRequest request) {
 
     log.info(
-        "Hardening operation {} {} for session {}", LogSanitizer.sanitize(request.method()), LogSanitizer.sanitize(request.path()), LogSanitizer.sanitize(sessionId));
+        "Hardening operation {} {} for session {}",
+        LogSanitizer.sanitize(request.method()),
+        LogSanitizer.sanitize(request.path()),
+        LogSanitizer.sanitize(sessionId));
 
     try {
       HardeningResponse response = hardeningService.hardenOperation(sessionId, request);
@@ -196,17 +199,16 @@ public class HardeningController {
             patterns,
             "recommendations",
             Map.of(
-                "GET", List.of("oauth2", "rate-limiting", "caching", "error-handling"),
+                "GET",
+                List.of("oauth2", "rate-limiting", "caching", "error-handling"),
                 "POST",
-                List.of(
-                    "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
+                List.of("oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
                 "PUT",
-                List.of(
-                    "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
+                List.of("oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
                 "PATCH",
-                List.of(
-                    "oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
-                "DELETE", List.of("oauth2", "rate-limiting", "error-handling"))));
+                List.of("oauth2", "rate-limiting", "idempotency", "validation", "error-handling"),
+                "DELETE",
+                List.of("oauth2", "rate-limiting", "error-handling"))));
   }
 
   @GetMapping("/health")

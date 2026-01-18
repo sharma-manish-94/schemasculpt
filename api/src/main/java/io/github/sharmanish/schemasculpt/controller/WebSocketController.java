@@ -28,16 +28,20 @@ public class WebSocketController {
 
       if (message.content() == null || message.content().trim().isEmpty()) {
         logger.debug(
-            "Received spec edit request with empty content for sessionId: {}", LogSanitizer.sanitize(message.sessionId()));
+            "Received spec edit request with empty content for sessionId: {}",
+            LogSanitizer.sanitize(message.sessionId()));
         return;
       }
 
-      logger.debug("Processing spec edit for sessionId: {}", LogSanitizer.sanitize(message.sessionId()));
+      logger.debug(
+          "Processing spec edit for sessionId: {}", LogSanitizer.sanitize(message.sessionId()));
       sessionService.updateSessionSpec(message.sessionId(), message.content());
 
     } catch (Exception e) {
       logger.error(
-          "Unexpected error processing spec edit for sessionId: {}", LogSanitizer.sanitize(message.sessionId()), e);
+          "Unexpected error processing spec edit for sessionId: {}",
+          LogSanitizer.sanitize(message.sessionId()),
+          e);
       // Don't throw - this would disconnect the WebSocket
     }
   }

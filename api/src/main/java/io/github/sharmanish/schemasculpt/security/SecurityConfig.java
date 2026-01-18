@@ -12,22 +12,20 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRepository;
-import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * Security Configuration for OAuth2 and JWT
- */
+/** Security Configuration for OAuth2 and JWT */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
   private final CustomOAuth2UserService customOAuth2UserService;
+
   @Value("${app.cors.allowed-origins}")
   private String allowedOrigins;
+
   @Value("${app.frontend.url}")
   private String frontendUrl;
 
@@ -37,13 +35,20 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(
-      HttpSecurity http,
-      JwtAuthenticationFilter jwtAuthenticationFilter) {
+      HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-            .ignoringRequestMatchers("/ws/**", "/api/v1/auth/**", "/api/v1/sessions/**",
-                "/api/v1/explanations/**", "/api/v1/repository/**", "/proxy/**"))
+        .csrf(
+            csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .ignoringRequestMatchers(
+                        "/ws/**",
+                        "/api/v1/auth/**",
+                        "/api/v1/sessions/**",
+                        "/api/v1/explanations/**",
+                        "/api/v1/repository/**",
+                        "/api/v1/projects/**",
+                        "/api/v1/specifications/**",
+                        "/proxy/**"))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(
@@ -67,7 +72,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/specifications/**")
                     .authenticated()
 
-                    // Temporary: keep existing session endpoints public during migration
+                    // Temporary: keep existing session endpoints public during
+                    // migration
                     .requestMatchers("/api/v1/sessions/**")
                     .permitAll()
                     .requestMatchers("/api/v1/explanations/**")
@@ -116,9 +122,7 @@ public class SecurityConfig {
 
   @Bean
   public JwtAuthenticationFilter jwtAuthenticationFilter(
-      JwtTokenProvider tokenProvider,
-      UserRepository userRepository
-  ) {
+      JwtTokenProvider tokenProvider, UserRepository userRepository) {
     return new JwtAuthenticationFilter(tokenProvider, userRepository);
   }
 }

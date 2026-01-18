@@ -73,7 +73,7 @@ repos:
 
       - id: checkstyle
         name: Checkstyle (Java)
-        entry: bash -c 'cd api && ./mvnw checkstyle:check -q'
+        entry: bash -c 'cd api && ./gradlew checkstyleMain checkstyleTest -q'
         language: system
         files: ^api/.*\.java$
         pass_filenames: false

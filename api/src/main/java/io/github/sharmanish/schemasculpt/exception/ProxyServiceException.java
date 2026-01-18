@@ -1,17 +1,15 @@
 package io.github.sharmanish.schemasculpt.exception;
 
 /**
- * Exception thrown when proxy service operations fail.
+ * Exception thrown when proxy service operations fail. Maps to HTTP 502 Bad Gateway.
  */
-public class ProxyServiceException extends SchemaSculptException {
-
-  private static final String ERROR_CODE = "PROXY_SERVICE_ERROR";
+public final class ProxyServiceException extends ServiceException {
 
   public ProxyServiceException(String message) {
-    super(ERROR_CODE, message);
+    super(ErrorCode.PROXY_SERVICE_ERROR, message);
   }
 
   public ProxyServiceException(String message, Throwable cause) {
-    super(ERROR_CODE, message, cause);
+    super(ErrorCode.PROXY_SERVICE_ERROR, message, cause);
   }
 }

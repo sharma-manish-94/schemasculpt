@@ -2,9 +2,7 @@ package io.github.sharmanish.schemasculpt.config;
 
 import java.time.Duration;
 
-/**
- * Application-wide constants.
- */
+/** Application-wide constants. */
 public final class ApplicationConstants {
 
   // Session Management

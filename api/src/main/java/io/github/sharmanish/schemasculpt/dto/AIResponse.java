@@ -1,4 +1,3 @@
 package io.github.sharmanish.schemasculpt.dto;
 
-public record AIResponse(String updatedSpecText) {
-}
+public record AIResponse(String updatedSpecText) {}

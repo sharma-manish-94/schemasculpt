@@ -64,17 +64,17 @@ cd ui && ./format-ui.sh             # React frontend
    - **Settings → Keymap → Main Menu → Code → Reformat Code**
    - Will now use Google Java Format
 
-**Option B: Using Spotless Maven Plugin**
+**Option B: Using Spotless Gradle Plugin**
 
-1. In IntelliJ, open the Maven tool window
-2. Navigate to: **schemasculpt_api → Plugins → spotless → spotless:apply**
-3. Right-click → **Create 'schemasculpt_api [spotless:apply]'...**
+1. In IntelliJ, open the Gradle tool window
+2. Navigate to: **schemasculpt-api → Tasks → formatting → spotlessApply**
+3. Double-click to run, or right-click → **Create Run Configuration**
 4. Save this configuration for quick access
 
 Run before committing:
 ```bash
 cd api
-./mvnw spotless:apply
+./gradlew spotlessApply
 ```
 
 #### 3. Configure Save Actions
@@ -301,8 +301,8 @@ The `.editorconfig` file will be automatically detected and applied.
 
 ### "Checkstyle errors in CI but local formatting looks fine"
 
-- Run `cd api && ./mvnw checkstyle:check` locally
-- Ensure you're using Spotless: `cd api && ./mvnw spotless:apply`
+- Run `cd api && ./gradlew checkstyleMain` locally
+- Ensure you're using Spotless: `cd api && ./gradlew spotlessApply`
 - Check that your IntelliJ is using Google Java Format (2 spaces, not 4)
 
 ### "Black/Flake8 errors in CI"

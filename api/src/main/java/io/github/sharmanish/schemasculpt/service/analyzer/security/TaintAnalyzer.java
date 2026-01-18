@@ -1,12 +1,11 @@
 package io.github.sharmanish.schemasculpt.service.analyzer.security;
 
+import io.github.sharmanish.schemasculpt.dto.analysis.Severity;
 import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -14,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that performs taint analysis to detect sensitive data leakage.
@@ -47,7 +47,8 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
                     .readOperationsMap()
                     .forEach(
                         (method, operation) -> {
-                          // Step B: Check Barriers (Is the endpoint secured?)
+                          // Step B: Check Barriers (Is the endpoint
+                          // secured?)
                           boolean isSecured = isOperationSecured(operation, openApi);
 
                           // Step C: Check Sinks (Responses)
@@ -83,18 +84,22 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
                                                             new TaintAnalysisResponse
                                                                 .TaintVulnerability(
                                                                 method.name() + " " + path,
-                                                                "CRITICAL",
-                                                                "Public endpoint returning sensitive data (Data Leakage)",
+                                                                Severity.CRITICAL,
+                                                                "Public endpoint returning"
+                                                                    + " sensitive data"
+                                                                    + " (Data Leakage)",
                                                                 trailString));
                                                       } else {
-                                                        // WARNING: Sensitive data returned, verified
+                                                        // WARNING: Sensitive data returned,
+                                                        // verified
                                                         // security needed
                                                         vulnerabilities.add(
                                                             new TaintAnalysisResponse
                                                                 .TaintVulnerability(
                                                                 method.name() + " " + path,
-                                                                "WARNING",
-                                                                "Sensitive data exposure (Verify necessity)",
+                                                                Severity.WARNING,
+                                                                "Sensitive data exposure"
+                                                                    + " (Verify necessity)",
                                                                 trailString));
                                                       }
                                                     }
@@ -203,7 +208,8 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
       // Otherwise, dig deeper into the ref
       visited.add(schemaName);
       Schema<?> resolvedSchema = openApi.getComponents().getSchemas().get(schemaName);
-      List<String> childLeak = findSensitiveLeak(resolvedSchema, sensitiveSchemas, openApi, visited);
+      List<String> childLeak =
+          findSensitiveLeak(resolvedSchema, sensitiveSchemas, openApi, visited);
       visited.remove(schemaName);
 
       if (!childLeak.isEmpty()) {
@@ -216,7 +222,8 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
 
     // 2. Check Array Items
     if (schema.getItems() != null) {
-      List<String> itemsLeak = findSensitiveLeak(schema.getItems(), sensitiveSchemas, openApi, visited);
+      List<String> itemsLeak =
+          findSensitiveLeak(schema.getItems(), sensitiveSchemas, openApi, visited);
       if (!itemsLeak.isEmpty()) {
         return itemsLeak;
       }
@@ -236,7 +243,8 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
         }
 
         // Recursive property check
-        List<String> propLeak = findSensitiveLeak(entry.getValue(), sensitiveSchemas, openApi, visited);
+        List<String> propLeak =
+            findSensitiveLeak(entry.getValue(), sensitiveSchemas, openApi, visited);
         if (!propLeak.isEmpty()) {
           List<String> path = new ArrayList<>();
           path.add("Property: " + propName);

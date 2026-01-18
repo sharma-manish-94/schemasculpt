@@ -11,17 +11,26 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.Objects;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**
+ * User entity representing authenticated users.
+ *
+ * <p>Note: equals/hashCode are based on the business key (githubId) to ensure proper JPA identity
+ * semantics across entity state transitions.
+ */
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString(exclude = "projects") // Exclude lazy collections from toString
 public class User {
 
   @Id
@@ -52,5 +61,26 @@ public class User {
 
   public User(Long id) {
     this.id = id;
+  }
+
+  /**
+   * Equals based on business key (githubId) for proper JPA identity.
+   * Per Hibernate best practices: use business key, not generated ID.
+   */
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    User user = (User) o;
+    return githubId != null && Objects.equals(githubId, user.githubId);
+  }
+
+  /**
+   * HashCode based on business key for consistency with equals.
+   * Returns constant when githubId is null to maintain contract.
+   */
+  @Override
+  public int hashCode() {
+    return githubId != null ? Objects.hash(githubId) : getClass().hashCode();
   }
 }

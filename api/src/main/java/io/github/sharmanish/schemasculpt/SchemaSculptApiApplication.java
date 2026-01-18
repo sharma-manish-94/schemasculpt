@@ -9,7 +9,7 @@ public class SchemaSculptApiApplication {
 
   private SchemaSculptApiApplication() {}
 
-  static void main(String[] args) {
+  public static void main(String[] args) {
     SpringApplication.run(SchemaSculptApiApplication.class, args);
   }
 }

@@ -321,8 +321,12 @@ class RAGService:
             return stats
 
         except Exception as e:
-            self.logger.error(f"Error getting knowledge base stats: {e}")
-            return {"available": False, "error": str(e)}
+            # Log full exception details on the server, but do not expose them to clients
+            self.logger.error("Error getting knowledge base stats", exc_info=True)
+            return {
+                "available": False,
+                "error": "Internal error while getting knowledge base stats",
+            }
 
     def ingest_documents(
         self,

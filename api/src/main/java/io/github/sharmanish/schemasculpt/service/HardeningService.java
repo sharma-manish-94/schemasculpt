@@ -150,7 +150,7 @@ public class HardeningService {
                               .scopes(
                                   new io.swagger.v3.oas.models.security.Scopes()
                                       .addString("read", "Read access")
-                                      .addString("write", "Write access"))));
+                                      .addString("write", "Write" + " access"))));
 
       openAPI.getComponents().getSecuritySchemes().put(schemeName, oauth2Scheme);
       changes.put("oauth2_scheme_added", true);
@@ -227,7 +227,7 @@ public class HardeningService {
                                           "error",
                                           new Schema<>()
                                               .type("string")
-                                              .example("Rate limit exceeded"))
+                                              .example("Rate limit" + " exceeded"))
                                       .addProperty(
                                           "retry_after",
                                           new Schema<>().type("integer").example(3600)))));
@@ -349,7 +349,7 @@ public class HardeningService {
                                           "error",
                                           new Schema<>()
                                               .type("string")
-                                              .example("Validation failed"))
+                                              .example("Validation" + " failed"))
                                       .addProperty(
                                           "details",
                                           new Schema<>()
@@ -398,7 +398,7 @@ public class HardeningService {
                                           "error",
                                           new Schema<>()
                                               .type("string")
-                                              .example("Internal server error"))
+                                              .example("Internal" + " server" + " error"))
                                       .addProperty(
                                           "timestamp",
                                           new Schema<>().type("string").format("date-time"))

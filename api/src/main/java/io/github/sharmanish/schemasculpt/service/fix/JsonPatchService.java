@@ -15,9 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.json.JsonMapper;
 
-/**
- * Service for applying JSON Patch (RFC 6902) operations to OpenAPI specifications.
- */
+/** Service for applying JSON Patch (RFC 6902) operations to OpenAPI specifications. */
 @Service
 public class JsonPatchService {
 
@@ -31,7 +29,7 @@ public class JsonPatchService {
   /**
    * Validate that patch operations can be applied to the spec without actually applying them.
    *
-   * @param openApi  The OpenAPI specification
+   * @param openApi The OpenAPI specification
    * @param patchOps The list of JSON Patch operations
    * @return true if patch can be applied, false otherwise
    */
@@ -48,7 +46,7 @@ public class JsonPatchService {
   /**
    * Apply JSON Patch operations to an OpenAPI specification.
    *
-   * @param openApi  The OpenAPI specification to patch
+   * @param openApi The OpenAPI specification to patch
    * @param patchOps The list of JSON Patch operations
    * @return The patched OpenAPI specification
    * @throws JsonPatchException if patch application fails
@@ -58,7 +56,8 @@ public class JsonPatchService {
     try {
       // CRITICAL: Use Swagger's Json.mapper() instead of Spring's ObjectMapper
       // Swagger's mapper correctly serializes enums as lowercase (oauth2, apiKey, header)
-      // Spring's ObjectMapper was configured with WRITE_ENUMS_USING_TO_STRING which uppercases them
+      // Spring's ObjectMapper was configured with WRITE_ENUMS_USING_TO_STRING which
+      // uppercases them
       ObjectMapper swaggerMapper = Json.mapper();
 
       // Convert OpenAPI to JsonNode using Swagger's mapper

@@ -1,8 +1,12 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-public class ProjectAlreadyExistsException extends SchemaSculptException {
+/**
+ * Exception thrown when attempting to create a project that already exists. Maps to HTTP 409
+ * Conflict.
+ */
+public final class ProjectAlreadyExistsException extends ClientException {
 
   public ProjectAlreadyExistsException(String projectName) {
-    super("PROJECT_ALREADY_EXISTS", "Project with name '" + projectName + "' already exists");
+    super(ErrorCode.PROJECT_ALREADY_EXISTS, "Project with name '" + projectName + "' already exists");
   }
 }
