@@ -340,6 +340,9 @@ async def get_rag_status(
     except Exception as e:
         logger.error(f"Failed to get RAG status: {str(e)}")
         return {
-            "rag_service": {"available": False, "error": str(e)},
+            "rag_service": {
+                "available": False,
+                "error": "RAG service status is currently unavailable.",
+            },
             "timestamp": datetime.utcnow().isoformat(),
         }
