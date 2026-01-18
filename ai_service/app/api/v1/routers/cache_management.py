@@ -13,7 +13,7 @@ These endpoints help with:
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -64,13 +64,13 @@ async def get_service_cache_statistics(
         return {
             "legacy_cache": legacy_cache_stats,
             "repository_cache": repository_cache_stats,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as error:
         logger.error(f"Failed to get cache statistics: {error}")
         return {
-            "error": str(error),
-            "timestamp": datetime.utcnow().isoformat(),
+            "error": "Failed to retrieve cache statistics",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
@@ -109,7 +109,7 @@ async def clear_service_cache(
         return {
             "success": True,
             "message": f"Successfully cleared {cache_type_description} cache(s)",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as error:
         logger.error(f"Failed to clear cache: {error}")
@@ -117,7 +117,7 @@ async def clear_service_cache(
             status_code=500,
             detail={
                 "error": "CACHE_CLEAR_FAILED",
-                "message": f"Failed to clear cache: {str(error)}",
+                "message": "Failed to clear cache",
             },
         )
 
@@ -156,7 +156,7 @@ async def invalidate_cache_for_specification(
     return {
         "success": True,
         "message": "Cache invalidated for the provided specification",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -184,7 +184,7 @@ async def get_explanation_cache_statistics(
     Returns:
         Cache size, TTL, and cleanup statistics.
     """
-    current_time = datetime.utcnow()
+    current_time = datetime.now(timezone.utc)
 
     # Get overall cache stats (includes all cache types)
     cache_stats = await cache.get_stats()
@@ -223,7 +223,7 @@ async def clear_explanation_cache(
     return {
         "success": True,
         "cleared_entries": entries_cleared,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -252,7 +252,7 @@ async def get_security_analysis_cache_statistics(
     Returns:
         Total entries, valid/expired counts, and entry details.
     """
-    current_time = datetime.utcnow()
+    current_time = datetime.now(timezone.utc)
 
     # Get overall cache stats
     cache_stats = await cache.get_stats()
@@ -297,5 +297,5 @@ async def clear_security_analysis_cache(
         "security_entries_cleared": security_entries_cleared,
         "attack_path_entries_cleared": attack_path_entries_cleared,
         "message": f"Cleared {total_cleared} cached security analysis reports",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }

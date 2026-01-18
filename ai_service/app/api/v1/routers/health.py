@@ -14,10 +14,9 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_agent_manager, get_cache_repository, get_llm_provider
+from app.api.deps import get_agent_manager, get_cache_repository
 from app.core.config import settings
 from app.domain.interfaces.cache_repository import ICacheRepository
-from app.domain.interfaces.llm_provider import ILLMProvider
 from app.schemas.ai_schemas import HealthResponse
 from app.services.agent_manager import AgentManager
 from app.services.context_manager import ContextManager
@@ -90,7 +89,7 @@ async def check_service_health(
             status="unhealthy",
             version=settings.app_version,
             uptime_seconds=uptime_seconds,
-            dependencies={"error": str(error)},
+            dependencies={"error": "An internal error occurred during health check."},
         )
 
 
@@ -120,7 +119,7 @@ async def get_all_agents_status(
         logger.error(f"Failed to get agent status: {str(error)}")
         return {
             "status": "error",
-            "message": f"Failed to retrieve agent status: {str(error)}",
+            "message": "Failed to retrieve agent status",
             "agents": {},
         }
 

@@ -19,7 +19,7 @@ The RAG system enhances AI responses by retrieving relevant context from:
 import hashlib
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -67,17 +67,16 @@ async def get_rag_knowledge_base_status(
         knowledge_base_stats = await rag_service.get_knowledge_base_stats()
         return {
             "rag_service": knowledge_base_stats,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
-    except Exception as error:
-        # Log full details server-side but return a generic error message to the client
+    except Exception:
         logger.error("Failed to get RAG knowledge base status", exc_info=True)
         return {
             "rag_service": {
                 "available": False,
                 "error": "Failed to retrieve RAG knowledge base status",
             },
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
