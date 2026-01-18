@@ -21,9 +21,9 @@ import org.springframework.stereotype.Component;
  * <p>Risk levels:
  *
  * <ul>
- *   <li>CRITICAL: >50% of endpoints affected
+ *   <li>CRITICAL: >50% of operations affected
  *   <li>HIGH: 20-50% affected
- *   <li>MEDIUM: 0-20% affected
+ *   <li>MEDIUM: 1-20% affected
  *   <li>LOW: 0% affected
  * </ul>
  */
@@ -49,7 +49,7 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
    *
    * @param openApi The OpenAPI specification
    * @param targetSchema The schema name to analyze
-   * @return Blast radius analysis result
+   * @return Blast radius analysis result with summary and detailed breakdown
    */
   public BlastRadiusResponse analyze(OpenAPI openApi, String targetSchema) {
     validateOpenApi(openApi);
@@ -63,16 +63,18 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
           0,
           0.0,
           null,
+          Set.of(),
+          Set.of(),
           List.of("Schema '" + targetSchema + "' not found in components/schemas"));
     }
 
     // Build dependency graph
     Map<String, Set<String>> dependencyGraph = graphAnalyzer.analyze(openApi);
 
-    // Calculate blast radius
-    Set<String> affectedRaw = calculateBlastRadius(targetSchema, dependencyGraph);
+    // Calculate blast radius with detailed breakdown
+    BlastRadiusResult result = calculateBlastRadius(targetSchema, dependencyGraph);
 
-    // Calculate metrics
+    // Calculate total operations
     int totalOps = 0;
     if (openApi.getPaths() != null) {
       for (var pathItem : openApi.getPaths().values()) {
@@ -80,26 +82,39 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
       }
     }
 
-    // Avoid divide by zero
-    double percentage = totalOps == 0 ? 0.0 : ((double) affectedRaw.size() / totalOps) * 100;
+    // Calculate percentage (avoid divide by zero)
+    double percentage =
+        totalOps == 0 ? 0.0 : ((double) result.affectedEndpoints.size() / totalOps) * 100;
 
-    // Determine risk level
-    BlastRadiusResponse.RiskLevel risk = BlastRadiusResponse.RiskLevel.LOW;
-    if (percentage > 50) {
-      risk = BlastRadiusResponse.RiskLevel.CRITICAL;
-    } else if (percentage > 20) {
-      risk = BlastRadiusResponse.RiskLevel.MEDIUM;
-    } else if (percentage > 0) {
-      risk = BlastRadiusResponse.RiskLevel.MEDIUM;
-    }
+    // Determine risk level based on percentage
+    BlastRadiusResponse.RiskLevel risk = determineRiskLevel(percentage);
 
     return new BlastRadiusResponse(
         targetSchema,
         totalOps,
-        affectedRaw.size(),
+        result.affectedEndpoints.size(),
         Math.round(percentage * 100.0) / 100.0, // round to 2 decimals
         risk,
-        new ArrayList<>(affectedRaw));
+        result.directDependents,
+        result.allAffectedSchemas,
+        new ArrayList<>(result.affectedEndpoints));
+  }
+
+  /**
+   * Determines risk level based on percentage of affected operations.
+   *
+   * @param percentage Percentage of operations affected
+   * @return Risk level classification
+   */
+  private BlastRadiusResponse.RiskLevel determineRiskLevel(double percentage) {
+    if (percentage > 50) {
+      return BlastRadiusResponse.RiskLevel.CRITICAL;
+    } else if (percentage > 20) {
+      return BlastRadiusResponse.RiskLevel.HIGH;
+    } else if (percentage > 0) {
+      return BlastRadiusResponse.RiskLevel.MEDIUM;
+    }
+    return BlastRadiusResponse.RiskLevel.LOW;
   }
 
   /**
@@ -107,11 +122,13 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
    *
    * @param schemaName The name of the schema being changed
    * @param reverseGraph The reverse dependency graph
-   * @return Set of all operations that depend on this schema
+   * @return BlastRadiusResult containing endpoints, direct dependents, and all affected schemas
    */
-  private Set<String> calculateBlastRadius(
+  private BlastRadiusResult calculateBlastRadius(
       String schemaName, Map<String, Set<String>> reverseGraph) {
     Set<String> affectedEndpoints = new HashSet<>();
+    Set<String> directDependents = new HashSet<>();
+    Set<String> allAffectedSchemas = new HashSet<>();
     Set<String> visited = new HashSet<>();
 
     // BFS Queue
@@ -119,24 +136,44 @@ public class BlastRadiusAnalyzer extends AbstractSchemaAnalyzer<BlastRadiusRespo
     queue.add(schemaName);
     visited.add(schemaName);
 
-    while (!queue.isEmpty()) {
-      String current = queue.removeFirst();
+    boolean isFirstLevel = true;
 
-      Set<String> dependents = reverseGraph.getOrDefault(current, Collections.emptySet());
-      for (String dep : dependents) {
-        if (dep.startsWith(OPERATION_PREFIX)) {
-          // We reached a leaf node (an Endpoint)
-          affectedEndpoints.add(dep);
-        } else if (dep.startsWith(SCHEMA_PREFIX)) {
-          // We reached an intermediate node (another Schema)
-          String nextSchema = dep.substring(SCHEMA_PREFIX.length());
-          if (!visited.contains(nextSchema)) {
-            visited.add(nextSchema);
-            queue.add(nextSchema);
+    while (!queue.isEmpty()) {
+      int levelSize = queue.size();
+
+      for (int i = 0; i < levelSize; i++) {
+        String current = queue.removeFirst();
+
+        Set<String> dependents = reverseGraph.getOrDefault(current, Collections.emptySet());
+        for (String dep : dependents) {
+          if (dep.startsWith(OPERATION_PREFIX)) {
+            // Leaf node: an endpoint/operation
+            affectedEndpoints.add(dep);
+          } else if (dep.startsWith(SCHEMA_PREFIX)) {
+            // Intermediate node: another schema
+            String nextSchema = dep.substring(SCHEMA_PREFIX.length());
+            if (!visited.contains(nextSchema)) {
+              visited.add(nextSchema);
+              queue.add(nextSchema);
+              allAffectedSchemas.add(nextSchema);
+
+              // Track direct dependents (first level only)
+              if (isFirstLevel) {
+                directDependents.add(nextSchema);
+              }
+            }
           }
         }
       }
+      isFirstLevel = false;
     }
-    return affectedEndpoints;
+
+    return new BlastRadiusResult(affectedEndpoints, directDependents, allAffectedSchemas);
   }
+
+  /** Internal record to hold blast radius calculation results. */
+  private record BlastRadiusResult(
+      Set<String> affectedEndpoints,
+      Set<String> directDependents,
+      Set<String> allAffectedSchemas) {}
 }

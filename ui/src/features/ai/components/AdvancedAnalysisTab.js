@@ -20,12 +20,13 @@ import {
   runZombieApiDetection,
   interpretZombieApis,
 } from "../../../api/analysisService";
+import BlastRadiusPanel from "./BlastRadiusPanel";
 import "./AdvancedAnalysisTab.css";
 
-const AdvancedAnalysisTab = ({ specContent }) => {
+const AdvancedAnalysisTab = ({ specContent, onHighlightSchemas }) => {
   const { sessionId } = useSpecStore();
   const [analyzing, setAnalyzing] = useState(false);
-  const [activeAnalyzer, setActiveAnalyzer] = useState("comprehensive"); // 'comprehensive', 'taint', 'authz', 'similarity', 'zombie'
+  const [activeAnalyzer, setActiveAnalyzer] = useState("comprehensive"); // 'comprehensive', 'taint', 'authz', 'similarity', 'zombie', 'blastRadius'
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'details'
@@ -205,6 +206,20 @@ const AdvancedAnalysisTab = ({ specContent }) => {
             <div className="analyzer-name">Zombie API</div>
             <div className="analyzer-desc">Dead code detection</div>
           </button>
+
+          <button
+            className={`btn-analyzer-card ${activeAnalyzer === "blastRadius" ? "active" : ""}`}
+            onClick={() => {
+              setActiveAnalyzer("blastRadius");
+              setResults(null);
+              setError(null);
+            }}
+            disabled={!specContent}
+          >
+            <div className="analyzer-icon">💥</div>
+            <div className="analyzer-name">Blast Radius</div>
+            <div className="analyzer-desc">Schema impact analysis</div>
+          </button>
         </div>
       </div>
 
@@ -222,7 +237,15 @@ const AdvancedAnalysisTab = ({ specContent }) => {
         </div>
       )}
 
-      {results && !analyzing && (
+      {/* Blast Radius Panel - separate component with its own state */}
+      {activeAnalyzer === "blastRadius" && (
+        <BlastRadiusPanel
+          specContent={specContent}
+          onHighlightSchemas={onHighlightSchemas}
+        />
+      )}
+
+      {results && !analyzing && activeAnalyzer !== "blastRadius" && (
         <div className="analysis-results">
           {/* Tabs */}
           <div className="results-tabs">
@@ -438,7 +461,7 @@ const AdvancedAnalysisTab = ({ specContent }) => {
         </div>
       )}
 
-      {!results && !analyzing && !error && (
+      {!results && !analyzing && !error && activeAnalyzer !== "blastRadius" && (
         <div className="analysis-empty-state">
           <div className="empty-icon">🔬</div>
           <h3>Advanced Architectural Analysis</h3>
@@ -459,6 +482,9 @@ const AdvancedAnalysisTab = ({ specContent }) => {
             <li>
               🧟 <strong>Zombie APIs:</strong> Detect unreachable endpoints and
               dead code
+            </li>
+            <li>
+              💥 <strong>Blast Radius:</strong> Analyze schema change impact
             </li>
           </ul>
         </div>
