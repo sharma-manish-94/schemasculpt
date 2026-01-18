@@ -73,19 +73,18 @@ def _extract_json_from_response(llm_response: str) -> Optional[Dict[str, Any]]:
         json_start = llm_response.find("{")
         json_end = llm_response.rfind("}") + 1
 
-        if json_start >= 0 and json_end > json_start:
+        if 0 <= json_start < json_end:
             json_str = llm_response[json_start:json_end]
 
             # Clean up common JSON issues
             json_str = re.sub(r",\s*]", "]", json_str)
             json_str = re.sub(r",\s*}", "}", json_str)
-            json_str = re.sub(r'"\s*\n\s*"', '",\n"', json_str)
 
             result = json.loads(json_str)
             if isinstance(result, dict):
                 return result
 
-    except (json.JSONDecodeError, ValueError) as e:
+    except ValueError as e:
         logger.warning(f"Failed to parse JSON: {str(e)}")
 
     return None
