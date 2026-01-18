@@ -25,10 +25,12 @@ Available Routers:
     - patch_operations: JSON patch generation, application, and smart fixes
     - rag_knowledge: RAG knowledge base status and explanations
     - cache_management: Cache statistics and management operations
-
-Future Routers (Post-Migration):
-    - ai_processing: Core AI processing and generation (from endpoints.py)
-    - workflows: Workflow execution and context management (from endpoints.py)
+    - ai_processing: Core AI processing and generation
+    - workflows: Workflow execution and context management
+    - context: Maintain context in chat and sessions
+    - explanation: AI powered explanation of validation errors and suggestions
+    - meta_analysis: Meta Analysis of OpenAPI specification
+    - prompt: Intelligent prompt generation and prompt engine statistics
 
 Usage:
     from app.api.v1.routers import health_router, security_router
@@ -45,6 +47,13 @@ from app.api.v1.routers.rag_knowledge import router as rag_router
 from app.api.v1.routers.security_analysis import router as security_router
 from app.api.v1.routers.spec_analysis import router as analysis_router
 from app.api.v1.routers.test_generation import router as testing_router
+from app.api.v1.routers.meta_analysis import router as meta_analysis_router
+from app.api.v1.routers.prompt import router as prompt_router
+from app.api.v1.routers.context import router as context_router
+from app.api.v1.routers.explanation import router as explanation_router
+from app.api.v1.routers.ai_processing import router as ai_processing_router
+from app.api.v1.routers.workflow import router as workflow_router
+
 
 __all__ = [
     "health_router",
@@ -56,4 +65,11 @@ __all__ = [
     "smart_fix_router",
     "rag_router",
     "cache_router",
+    "testing_router",
+    "meta_analysis_router",
+    "prompt_router",
+    "context_router",
+    "explanation_router",
+    "ai_processing_router",
+    "workflow_router"
 ]

@@ -79,6 +79,11 @@ class RequestAuthenticator(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
         """Process the request, validating authentication."""
+
+        # Allow OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
         # Skip authentication for excluded paths
         if self._path_does_not_require_authentication(request):
             return await call_next(request)
@@ -103,8 +108,11 @@ class RequestAuthenticator(BaseHTTPMiddleware):
 
     def _path_does_not_require_authentication(self, request: Request) -> bool:
         """Check if the request path is excluded from authentication."""
-        path = request.url.path.rstrip("/")
+        path = self._normalize_request_path(request)
         return path in self.paths_without_authentication or path == ""
+
+    def _normalize_request_path(self, request: Request):
+        return request.url.path.rstrip("/")
 
     async def _authenticate_request(self, request: Request) -> "AuthenticationResult":
         """
@@ -210,11 +218,18 @@ class RequestAuthenticator(BaseHTTPMiddleware):
                 token,
                 jwt_secret,
                 algorithms=["HS256"],
+                audience=settings.jwt_audience,
+                issuer=settings.jwt_issuer,
             )
+
+            if "sub" not in payload:
+                raise JWTValidationError("Missing subject claim.")
+
             return payload
 
         except JWTError as error:
-            raise JWTValidationError(str(error))
+            logger.error(f"JWT validation error: {error}")
+            raise JWTValidationError("Invalid or expired token")
         except ImportError:
             raise JWTValidationError("JWT library not installed")
 
