@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.local
+
+# Documentation
+*.md
+docs/
+
+# Test files
+tests/
+pytest_cache/
+
+# Logs
+*.log
+logs/
+
+# Data (keep vector store structure but ignore contents during build)
+data/vector_store/*.sqlite*
+data/vector_store/chroma.sqlite3
+
+# Model files (too large)
+*.pt
+*.pth
+*.bin

@@ -70,7 +70,9 @@ public class AnalysisController {
     }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
     if (operation == null) {
       return ResponseEntity.notFound().build();
     }
@@ -103,18 +105,21 @@ public class AnalysisController {
         .uri("/ai/security/attack-path-simulation")
         .bodyValue(requestBody)
         .retrieve()
-        .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
-        })
-        .timeout(java.time.Duration.ofMinutes(5))  // 5 minute timeout for complex analysis
+        .bodyToMono(
+            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+        .timeout(java.time.Duration.ofMinutes(5)) // 5 minute timeout for complex analysis
         .map(ResponseEntity::ok)
         .onErrorResume(
             error -> {
-              String errorMessage = error.getMessage() != null ? error.getMessage() :
-                  error.getClass().getSimpleName();
+              String errorMessage =
+                  error.getMessage() != null
+                      ? error.getMessage()
+                      : error.getClass().getSimpleName();
               return Mono.just(
                   ResponseEntity.status(500)
-                      .body(Map.of("error", "Attack path simulation failed", "message",
-                          errorMessage)));
+                      .body(
+                          Map.of(
+                              "error", "Attack path simulation failed", "message", errorMessage)));
             });
   }
 
@@ -136,12 +141,8 @@ public class AnalysisController {
 
     // Step 2: Build request with findings (NOT the full spec)
     // This payload is tiny compared to sending the entire 5MB spec!
-    SecurityFindingsRequest request = new SecurityFindingsRequest(
-        findings,
-        analysisDepth,
-        maxChainLength,
-        excludeLowSeverity
-    );
+    SecurityFindingsRequest request =
+        new SecurityFindingsRequest(findings, analysisDepth, maxChainLength, excludeLowSeverity);
 
     // Step 3: Send findings to AI for REASONING about attack chains
     // AI does what it's best at: Finding patterns and reasoning about security implications
@@ -150,20 +151,26 @@ public class AnalysisController {
         .uri("/ai/security/attack-path-findings")
         .bodyValue(request)
         .retrieve()
-        .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
-        })
-        .timeout(java.time.Duration.ofMinutes(2))  // Much faster than spec-based approach!
+        .bodyToMono(
+            new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+        .timeout(java.time.Duration.ofMinutes(2)) // Much faster than spec-based approach!
         .map(ResponseEntity::ok)
         .onErrorResume(
             error -> {
-              String errorMessage = error.getMessage() != null ? error.getMessage() :
-                  error.getClass().getSimpleName();
+              String errorMessage =
+                  error.getMessage() != null
+                      ? error.getMessage()
+                      : error.getClass().getSimpleName();
               return Mono.just(
                   ResponseEntity.status(500)
-                      .body(Map.of(
-                          "error", "Attack path analysis from findings failed",
-                          "message", errorMessage,
-                          "findings_count", findings.size())));
+                      .body(
+                          Map.of(
+                              "error",
+                              "Attack path analysis from findings" + " failed",
+                              "message",
+                              errorMessage,
+                              "findings_count",
+                              findings.size())));
             });
   }
 
@@ -208,8 +215,7 @@ public class AnalysisController {
 
   @PostMapping("/blast-radius")
   public ResponseEntity<BlastRadiusResponse> analyzeBlastRadius(
-      @RequestParam("schemaName") String schemaName,
-      @RequestBody String apiSpec) {
+      @RequestParam("schemaName") String schemaName, @RequestBody String apiSpec) {
 
     BlastRadiusResponse response = analysisService.performBlastRadiusAnalysis(apiSpec, schemaName);
     return ResponseEntity.ok(response);
@@ -218,6 +224,6 @@ public class AnalysisController {
   @PostMapping("/diff")
   public ResponseEntity<DiffResult> diffSpecs(@RequestBody DiffRequest request) {
     // DiffRequest contains String oldSpec, String newSpec
-    return ResponseEntity.ok(diffService.compareSpecs(request.getOldSpec(), request.getNewSpec()));
+    return ResponseEntity.ok(diffService.compareSpecs(request.oldSpec(), request.newSpec()));
   }
 }

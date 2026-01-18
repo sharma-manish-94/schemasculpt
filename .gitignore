@@ -15,6 +15,13 @@ Desktop.ini
 # Claude Code configuration
 .claude/
 
+# PM2 configuration
+.pm2/
+
+# Pending tasks file
+pending.txt
+**/pending.txt
+
 # Root level files - ignore everything except specific config files
 /*
 !README.md
@@ -23,4 +30,11 @@ Desktop.ini
 !format-all.sh
 !IDE-SETUP.md
 !FORMATTING-SETUP.md
+!docker-compose.yml
+!.env.docker
+.env.docker.local
+!test-deployment.sh
+!test-deployment.bat
+!check-health.sh
 !/*/
+api/.env.docker

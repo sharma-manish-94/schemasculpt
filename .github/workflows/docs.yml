@@ -17,19 +17,20 @@ jobs:
       # ---------------------------
       # 1. GENERATE SPRING DOCS
       # ---------------------------
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Build Spring & Generate OpenAPI
-        # This generates OpenAPI spec using springdoc-maven-plugin
+        # This generates OpenAPI spec using Gradle build
         working-directory: ./api
         run: |
-          mvn clean verify
+          chmod +x ./gradlew
+          ./gradlew clean build generateOpenApiDocs
           # Move the generated file to root for easy access
-          mv target/openapi.json ../openapi-spring.json
+          mv build/openapi/openapi.json ../openapi-spring.json
 
       # ---------------------------
       # 2. GENERATE FASTAPI DOCS

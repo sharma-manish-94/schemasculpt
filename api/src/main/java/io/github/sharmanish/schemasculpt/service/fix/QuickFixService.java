@@ -5,8 +5,10 @@ import com.google.common.base.CaseFormat;
 import io.github.sharmanish.schemasculpt.dto.QuickFixRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationRequest;
 import io.github.sharmanish.schemasculpt.dto.ai.PatchGenerationResponse;
+import io.github.sharmanish.schemasculpt.exception.AIServiceException;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
+import io.github.sharmanish.schemasculpt.util.VirtualThreads;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -18,10 +20,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -54,16 +59,22 @@ public class QuickFixService {
   private final JsonPatchService jsonPatchService;
   private final JsonMapper jsonMapper;
   private final WebClient aiServiceClient;
+  private final ExecutorService virtualThreadExecutor;
 
   public QuickFixService(
       SessionService sessionService,
       JsonPatchService jsonPatchService,
       JsonMapper jsonMapper,
-      @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl) {
-    this.sessionService = sessionService;
-    this.jsonPatchService = jsonPatchService;
-    this.jsonMapper = jsonMapper;
+      @Value("${ai.service.url:http://localhost:8000}") String aiServiceUrl,
+      @Qualifier("virtualThreadExecutor") ExecutorService virtualThreadExecutor) {
+    this.sessionService = Objects.requireNonNull(sessionService, "sessionService must not be null");
+    this.jsonPatchService =
+        Objects.requireNonNull(jsonPatchService, "jsonPatchService must not be null");
+    this.jsonMapper = Objects.requireNonNull(jsonMapper, "jsonMapper must not be null");
+    Objects.requireNonNull(aiServiceUrl, "aiServiceUrl must not be null");
     this.aiServiceClient = WebClient.builder().baseUrl(aiServiceUrl).build();
+    this.virtualThreadExecutor =
+        Objects.requireNonNull(virtualThreadExecutor, "virtualThreadExecutor must not be null");
   }
 
   public OpenAPI applyFix(String sessionId, QuickFixRequest request) {
@@ -179,13 +190,16 @@ public class QuickFixService {
 
       // Call AI service to generate JSON Patch
       PatchGenerationResponse patchResponse =
-          aiServiceClient
-              .post()
-              .uri("/ai/patch/generate")
-              .bodyValue(patchRequest)
-              .retrieve()
-              .bodyToMono(PatchGenerationResponse.class)
-              .block();
+          VirtualThreads.executeBlocking(
+              virtualThreadExecutor,
+              () ->
+                  aiServiceClient
+                      .post()
+                      .uri("/ai/patch/generate")
+                      .bodyValue(patchRequest)
+                      .retrieve()
+                      .bodyToMono(PatchGenerationResponse.class)
+                      .block());
 
       if (patchResponse == null || patchResponse.patches().isEmpty()) {
         log.warn("AI service returned no patch operations for rule: {}", request.ruleId());
@@ -206,24 +220,26 @@ public class QuickFixService {
 
     } catch (JsonPatchException e) {
       log.error("Failed to apply AI-generated patch: {}", e.getMessage());
-      throw new RuntimeException("AI fix failed: " + e.getMessage(), e);
+      throw new AIServiceException("AI fix failed: " + e.getMessage(), e);
     } catch (Exception e) {
       log.error("AI service call failed: {}", e.getMessage());
-      throw new RuntimeException("AI service error: " + e.getMessage(), e);
+      throw new AIServiceException("AI service error: " + e.getMessage(), e);
     }
   }
 
   private void generateOperationId(OpenAPI openApi, String path, String method) {
     PathItem pathItem = openApi.getPaths().get(path);
-      if (pathItem == null) {
-          return;
-      }
+    if (pathItem == null) {
+      return;
+    }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
-      if (operation == null) {
-          return;
-      }
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+    if (operation == null) {
+      return;
+    }
 
     // Build the new operationId (e.g., "getUsersById")
     String generatedId = buildIdFromPath(method.toLowerCase(Locale.ROOT), path);
@@ -273,15 +289,17 @@ public class QuickFixService {
 
   private void addSuccessResponse(OpenAPI openApi, String path, String method) {
     PathItem pathItem = openApi.getPaths().get(path);
-      if (pathItem == null) {
-          return;
-      }
+    if (pathItem == null) {
+      return;
+    }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
-      if (operation == null) {
-          return;
-      }
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+    if (operation == null) {
+      return;
+    }
 
     if (operation.getResponses() == null) {
       operation.responses(new io.swagger.v3.oas.models.responses.ApiResponses());
@@ -309,8 +327,8 @@ public class QuickFixService {
   }
 
   /**
-   * Create a missing schema component with basic properties.
-   * Generates a stub schema that can be filled in later.
+   * Create a missing schema component with basic properties. Generates a stub schema that can be
+   * filled in later.
    */
   private void createMissingSchema(OpenAPI openApi, String schemaName) {
     // Ensure components section exists
@@ -351,34 +369,39 @@ public class QuickFixService {
   }
 
   /**
-   * Add a missing description to a response.
-   * Provides sensible defaults based on HTTP status code.
+   * Add a missing description to a response. Provides sensible defaults based on HTTP status code.
    */
-  private void addMissingDescription(OpenAPI openApi, String path, String method,
-                                     String responseCode) {
+  private void addMissingDescription(
+      OpenAPI openApi, String path, String method, String responseCode) {
     PathItem pathItem = openApi.getPaths().get(path);
-      if (pathItem == null) {
-          return;
-      }
+    if (pathItem == null) {
+      return;
+    }
 
     Operation operation =
-        pathItem.readOperationsMap().get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
-      if (operation == null || operation.getResponses() == null) {
-          return;
-      }
+        pathItem
+            .readOperationsMap()
+            .get(PathItem.HttpMethod.valueOf(method.toUpperCase(Locale.ROOT)));
+    if (operation == null || operation.getResponses() == null) {
+      return;
+    }
 
     io.swagger.v3.oas.models.responses.ApiResponse response =
         operation.getResponses().get(responseCode);
-      if (response == null) {
-          return;
-      }
+    if (response == null) {
+      return;
+    }
 
     // Only add description if missing
     if (response.getDescription() == null || response.getDescription().trim().isEmpty()) {
       String description = getDefaultDescription(responseCode, method);
       response.setDescription(description);
-      log.info("Added description for {} {} response {}: {}", method.toUpperCase(Locale.ROOT), path,
-          responseCode, description);
+      log.info(
+          "Added description for {} {} response {}: {}",
+          method.toUpperCase(Locale.ROOT),
+          path,
+          responseCode,
+          description);
     }
   }
 
@@ -395,9 +418,7 @@ public class QuickFixService {
         + CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, cleanPath.replace(" ", "-"));
   }
 
-  /**
-   * Get a sensible default description based on HTTP status code and method.
-   */
+  /** Get a sensible default description based on HTTP status code and method. */
   private String getDefaultDescription(String responseCode, String method) {
     try {
       int code = Integer.parseInt(responseCode);

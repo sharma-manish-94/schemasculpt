@@ -10,18 +10,24 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.Objects;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * ValidationSnapshot entity storing validation results for a specification version.
+ */
 @Entity
 @Table(name = "validation_snapshots")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString(exclude = "specification")
 public class ValidationSnapshot {
 
   @Id
@@ -43,4 +49,17 @@ public class ValidationSnapshot {
   @Column(name = "created_at", updatable = false)
   @CreationTimestamp
   private LocalDateTime createdAt;
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ValidationSnapshot that = (ValidationSnapshot) o;
+    return id != null && Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
+  }
 }

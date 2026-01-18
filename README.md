@@ -409,23 +409,33 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 Before starting, ensure you have:
 
 - ✅ **Java 21+** ([Download](https://jdk.java.net/))
-- ✅ **Maven 3.9+** (included with `./mvnw`)
+- ✅ **Gradle 8.14+** (included with `./gradlew`)
 - ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
 - ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
-- ✅ **Docker** ([Download](https://www.docker.com/))
+- ✅ **Docker & Docker Compose** ([Download](https://www.docker.com/))
 - ✅ **Ollama** ([Download](https://ollama.com/))
 
 ### Quick Start (5 Minutes)
 
 Follow these steps in **separate terminal windows**:
 
-#### 1️⃣ Start Redis
+#### 1️⃣ Start Infrastructure Services
 
 ```bash
-docker run -d --name schemasculpt-redis -p 6379:6379 redis
+# Development Mode: Start infrastructure only (PostgreSQL + Redis)
+docker-compose up -d
+
+# OR
+
+# Full Deployment: Start entire stack in Docker (requires Ollama on host)
+docker-compose --profile full up -d --build
 ```
 
-Verify: `docker ps` should show the running container.
+Verify: `docker-compose ps` should show services as healthy.
+
+**Note:** For full deployment mode, skip to step 5 (all services run in Docker). For development mode (recommended), continue with steps 2-5 to run services locally with hot reloading.
+
+For detailed Docker setup instructions, see [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md).
 
 #### 2️⃣ Start Ollama & Pull Model
 
@@ -469,7 +479,7 @@ uvicorn app.main:app --reload
 cd api
 
 # Start Spring Boot application
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
 
 ✅ API Gateway running at `http://localhost:8080`

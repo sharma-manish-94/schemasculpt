@@ -1,18 +1,10 @@
 package io.github.sharmanish.schemasculpt.dto.repository;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
- * Response after connecting to a repository provider
+ * Response after connecting to a repository provider.
+ *
+ * @param success  Whether the connection was successful
+ * @param message  Status message or error description
+ * @param provider The repository provider that was connected to
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class RepositoryConnectionResponse {
-
-  private boolean success;
-  private String message;
-  private String provider;
-}
+public record RepositoryConnectionResponse(boolean success, String message, String provider) {}

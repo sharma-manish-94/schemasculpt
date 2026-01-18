@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Authentication Controller for OAuth2 and JWT
- */
+/** Authentication Controller for OAuth2 and JWT. */
 @RestController
 @RequestMapping("/api/v1/auth")
 @Slf4j
@@ -41,7 +39,10 @@ public class AuthController {
   }
 
   /**
-   * Get current authenticated user
+   * Get current authenticated user.
+   *
+   * @param principal the authenticated user principal
+   * @return the current user DTO
    */
   @GetMapping("/me")
   public ResponseEntity<UserDTO> getCurrentUser(
@@ -61,7 +62,11 @@ public class AuthController {
   }
 
   /**
-   * Generate JWT token after OAuth2 login Frontend calls this after OAuth redirect to get JWT token
+   * Generate JWT token after OAuth2 login. Frontend calls this after OAuth redirect to get JWT
+   * token.
+   *
+   * @param principal the authenticated user principal
+   * @return the token response
    */
   @PostMapping("/token")
   public ResponseEntity<TokenResponse> getToken(
@@ -94,7 +99,10 @@ public class AuthController {
   }
 
   /**
-   * Logout endpoint
+   * Logout endpoint.
+   *
+   * @param request the HTTP request
+   * @return response entity
    */
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(HttpServletRequest request) {
@@ -108,7 +116,9 @@ public class AuthController {
   }
 
   /**
-   * Health check endpoint (public)
+   * Health check endpoint (public).
+   *
+   * @return health status message
    */
   @GetMapping("/health")
   public ResponseEntity<String> health() {

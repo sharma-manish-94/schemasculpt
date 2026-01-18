@@ -2,12 +2,9 @@ package io.github.sharmanish.schemasculpt.dto.ai;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Single JSON Patch operation (RFC 6902).
- */
+/** Single JSON Patch operation (RFC 6902). */
 public record JsonPatchOperation(
     @JsonProperty("op") String op,
     @JsonProperty("path") String path,
     @JsonProperty("value") Object value,
-    @JsonProperty("from") String from) {
-}
+    @JsonProperty("from") String from) {}

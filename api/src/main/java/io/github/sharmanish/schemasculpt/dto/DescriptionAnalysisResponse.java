@@ -11,7 +11,7 @@ public record DescriptionAnalysisResponse(
     List<DescriptionQuality> results,
     int overallScore, // Average quality score across all items
     List<JsonPatchOperation> patches // JSON Patch operations to apply all improvements
-) {
+    ) {
   public enum QualityLevel {
     EXCELLENT, // 90-100
     GOOD, // 70-89
@@ -27,13 +27,11 @@ public record DescriptionAnalysisResponse(
       List<Issue> issues, // What's wrong with current description
       String suggestedDescription, // AI-improved description
       JsonPatchOperation patch // JSON Patch to apply this improvement
-  ) {
-  }
+      ) {}
 
   public record Issue(
       String type, // "completeness", "clarity", "accuracy", "best_practice"
       String severity, // "high", "medium", "low"
       String description // Human-readable issue description
-  ) {
-  }
+      ) {}
 }

@@ -11,6 +11,7 @@ import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.ValidationService;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
 import io.github.sharmanish.schemasculpt.service.fix.QuickFixService;
+import io.github.sharmanish.schemasculpt.exception.EnumFixingException;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
@@ -125,7 +126,7 @@ public class SpecificationController {
 
     } catch (Exception e) {
       log.error("Failed to convert OpenAPI to Map with fixed enums", e);
-      throw new RuntimeException("Enum fixing failed", e);
+      throw new EnumFixingException("Enum fixing failed", e);
     }
   }
 

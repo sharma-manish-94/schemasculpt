@@ -1,30 +1,29 @@
 package io.github.sharmanish.schemasculpt.service;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import io.github.sharmanish.schemasculpt.dto.diff.DiffResult;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 @ExtendWith(MockitoExtension.class)
 class SchemaDiffServiceTest {
 
   private SchemaDiffService schemaDiffService;
 
-  @Mock
-  private TreeDistanceService treeDistanceService;
+  @Mock private TreeDistanceService treeDistanceService;
 
   @BeforeEach
   void setUp() {
     schemaDiffService = new SchemaDiffService(treeDistanceService);
   }
+
   @Test
   void compareSpecs() {
     String specText1;
@@ -47,6 +46,5 @@ class SchemaDiffServiceTest {
     }
     DiffResult diffResult = schemaDiffService.compareSpecs(specText1, specText2);
     assertNotNull(diffResult);
-
   }
 }

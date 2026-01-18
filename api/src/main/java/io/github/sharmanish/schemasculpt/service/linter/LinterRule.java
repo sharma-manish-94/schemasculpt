@@ -4,9 +4,7 @@ import io.github.sharmanish.schemasculpt.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.List;
 
-/**
- * An interface representing a single linting rule to be applied to an OpenAPI specification.
- */
+/** An interface representing a single linting rule to be applied to an OpenAPI specification. */
 public interface LinterRule {
 
   /**

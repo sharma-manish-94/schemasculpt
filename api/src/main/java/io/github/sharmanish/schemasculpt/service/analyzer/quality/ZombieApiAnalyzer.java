@@ -3,10 +3,9 @@ package io.github.sharmanish.schemasculpt.service.analyzer.quality;
 import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that detects unreachable or dead API endpoints.
@@ -16,8 +15,7 @@ import java.util.List;
  * <ul>
  *   <li><b>Shadowed paths</b>: Static paths that are unreachable due to parameterized paths (e.g.,
  *       /users/{id} shadows /users/current)
- *   <li><b>Orphaned operations</b>: Endpoints with no parameters, request body, or response
- *       content
+ *   <li><b>Orphaned operations</b>: Endpoints with no parameters, request body, or response content
  * </ul>
  */
 @Component
@@ -49,7 +47,8 @@ public class ZombieApiAnalyzer extends AbstractSchemaAnalyzer<ZombieApiResponse>
                   pathA,
                   "Path "
                       + pathB
-                      + " may be unreachable because it is shadowed by the parameterized path "
+                      + " may be unreachable because it is shadowed by the"
+                      + " parameterized path "
                       + pathA));
         }
       }

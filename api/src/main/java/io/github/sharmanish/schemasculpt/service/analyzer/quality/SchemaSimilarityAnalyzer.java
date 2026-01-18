@@ -4,13 +4,12 @@ import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
 import io.github.sharmanish.schemasculpt.service.analyzer.base.AbstractSchemaAnalyzer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 /**
  * Analyzer that identifies duplicate or similar schemas using Jaccard similarity.
@@ -67,7 +66,7 @@ public class SchemaSimilarityAnalyzer extends AbstractSchemaAnalyzer<SchemaSimil
             new SchemaSimilarityResponse.SchemaCluster(
                 currentCluster,
                 SIMILARITY_THRESHOLD,
-                "These schemas share >80% structure. Consider creating a base schema."));
+                "These schemas share >80% structure. Consider creating a base" + " schema."));
       }
     }
     return new SchemaSimilarityResponse(clusters);

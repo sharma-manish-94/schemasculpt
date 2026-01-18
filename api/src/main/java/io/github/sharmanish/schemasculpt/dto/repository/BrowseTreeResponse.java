@@ -1,19 +1,20 @@
 package io.github.sharmanish.schemasculpt.dto.repository;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * Response with repository tree contents
+ * Response with repository tree contents.
+ *
+ * @param files  List of files and directories at the specified path
+ * @param path   Current path in the repository
+ * @param branch Current branch being viewed
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class BrowseTreeResponse {
+public record BrowseTreeResponse(List<FileInfo> files, String path, String branch) {
 
-  private List<FileInfo> files;
-  private String path;
-  private String branch;
+  /**
+   * Creates a BrowseTreeResponse with an immutable copy of the files list.
+   */
+  public BrowseTreeResponse {
+    files = files != null ? List.copyOf(files) : List.of();
+  }
 }

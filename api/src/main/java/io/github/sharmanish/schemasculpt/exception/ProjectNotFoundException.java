@@ -1,8 +1,11 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-public class ProjectNotFoundException extends SchemaSculptException {
+/**
+ * Exception thrown when a project cannot be found. Maps to HTTP 404 Not Found.
+ */
+public final class ProjectNotFoundException extends ResourceNotFoundException {
 
   public ProjectNotFoundException(Long projectId) {
-    super("PROJECT_NOT_FOUND", "Project not found with ID: " + projectId);
+    super(ErrorCode.PROJECT_NOT_FOUND, "Project not found with ID: " + projectId);
   }
 }

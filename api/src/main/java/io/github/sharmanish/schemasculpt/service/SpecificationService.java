@@ -15,9 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Service for managing specification versions
- */
+/** Service for managing specification versions */
 @Service
 @Slf4j
 public class SpecificationService {
@@ -35,9 +33,7 @@ public class SpecificationService {
     this.userRepository = userRepository;
   }
 
-  /**
-   * Get the current version of a specification
-   */
+  /** Get the current version of a specification */
   @Transactional(readOnly = true)
   public Specification getCurrentSpecification(Long projectId, Long userId) {
     log.debug("Fetching current specification for project {}", projectId);
@@ -55,9 +51,7 @@ public class SpecificationService {
     return specificationRepository.findByProjectIdAndIsCurrentTrue(projectId).orElse(null);
   }
 
-  /**
-   * Get all versions of a specification
-   */
+  /** Get all versions of a specification */
   @Transactional(readOnly = true)
   public List<Specification> getSpecificationVersions(Long projectId, Long userId) {
     log.debug("Fetching all specification versions for project {}", projectId);
@@ -75,9 +69,7 @@ public class SpecificationService {
     return specificationRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
   }
 
-  /**
-   * Revert to a previous version
-   */
+  /** Revert to a previous version */
   @Transactional
   public Specification revertToVersion(
       Long projectId, String version, Long userId, String commitMessage) {
@@ -93,9 +85,7 @@ public class SpecificationService {
         projectId, userId, targetSpec.getSpecContent(), targetSpec.getSpecFormat(), revertMessage);
   }
 
-  /**
-   * Get a specific version of a specification
-   */
+  /** Get a specific version of a specification */
   @Transactional(readOnly = true)
   public Specification getSpecificationByVersion(Long projectId, String version, Long userId) {
     log.debug("Fetching specification version {} for project {}", version, projectId);
@@ -115,9 +105,7 @@ public class SpecificationService {
         .orElseThrow(() -> new SpecificationNotFoundException(version));
   }
 
-  /**
-   * Save a new version of a specification
-   */
+  /** Save a new version of a specification */
   @Transactional
   public Specification saveSpecification(
       Long projectId, Long userId, String specContent, String specFormat, String commitMessage) {
@@ -163,9 +151,7 @@ public class SpecificationService {
     return saved;
   }
 
-  /**
-   * Generate version number in format v1, v2, v3, etc.
-   */
+  /** Generate version number in format v1, v2, v3, etc. */
   private String generateVersionNumber(int versionNum) {
     return "v" + versionNum;
   }

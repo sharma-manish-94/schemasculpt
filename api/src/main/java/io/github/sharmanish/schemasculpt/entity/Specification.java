@@ -10,16 +10,22 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.Objects;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
+/**
+ * Specification entity representing a versioned OpenAPI specification.
+ */
 @Entity
 @Table(name = "specifications")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString(exclude = {"project", "createdBy"})
 public class Specification {
 
   @Id
@@ -52,4 +58,17 @@ public class Specification {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by")
   private User createdBy;
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Specification that = (Specification) o;
+    return id != null && Objects.equals(id, that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
+  }
 }

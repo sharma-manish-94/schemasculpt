@@ -7,9 +7,7 @@ import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-/**
- * Custom OAuth2User that includes our User entity
- */
+/** Custom OAuth2User that includes our User entity */
 public class CustomOAuth2User implements OAuth2User {
 
   private final OAuth2User oauth2User;

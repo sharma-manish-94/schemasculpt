@@ -27,19 +27,18 @@ public class RedisConfig {
    * @return a configured {@link RedisTemplate} for String keys and OpenAPI values
    */
   @Bean
-  public RedisTemplate<String, OpenAPI> redisTemplate(RedisConnectionFactory connectionFactory,
-                                                      JsonMapper jsonMapper) {
+  public RedisTemplate<String, OpenAPI> redisTemplate(
+      RedisConnectionFactory connectionFactory, JsonMapper jsonMapper) {
     RedisTemplate<String, OpenAPI> template = new RedisTemplate<>();
     template.setConnectionFactory(connectionFactory);
     template.setKeySerializer(new StringRedisSerializer());
 
-    JsonMapper redisMapper = jsonMapper.rebuild()
+    JsonMapper redisMapper =
+        jsonMapper
+            .rebuild()
             .activateDefaultTyping(
-                    BasicPolymorphicTypeValidator.builder()
-                            .allowIfBaseType(Object.class)
-                            .build(),
-                    DefaultTyping.NON_FINAL
-            )
+                BasicPolymorphicTypeValidator.builder().allowIfBaseType(Object.class).build(),
+                DefaultTyping.NON_FINAL)
             .build();
 
     template.setValueSerializer(new GenericJacksonJsonRedisSerializer(redisMapper));
