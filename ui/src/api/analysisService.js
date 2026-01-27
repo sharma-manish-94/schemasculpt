@@ -316,3 +316,41 @@ export const runComprehensiveAnalysis = async (sessionId, specText) => {
     };
   }
 };
+
+/**
+ * Run Blast Radius Analysis for a specific schema
+ * Calculates the impact of changing a schema on endpoints and other schemas
+ * @param {string} sessionId - Session ID
+ * @param {string} schemaName - Name of the schema to analyze
+ * @param {string} specContent - OpenAPI specification content
+ * @returns {Promise<Object>} Blast radius analysis results
+ */
+export const runBlastRadiusAnalysis = async (
+  sessionId,
+  schemaName,
+  specContent,
+) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/v1/sessions/${sessionId}/analysis/blast-radius?schemaName=${encodeURIComponent(schemaName)}`,
+      specContent,
+      {
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        timeout: 30000,
+      },
+    );
+
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Blast radius analysis failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+    };
+  }
+};
