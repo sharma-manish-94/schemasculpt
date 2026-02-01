@@ -131,3 +131,41 @@ celerybeat.pid
 # Local index data
 .codeindex/
 .mcp.json
+# Keep .vscode/settings.json for formatter configuration
+
+# Claude Code configuration
+.claude/
+
+# PM2 configuration
+.pm2/
+
+# Pending tasks file
+pending.txt
+**/pending.txt
+
+# Root level files - ignore everything except specific config files
+/*
+!README.md
+!.editorconfig
+!.pre-commit-config.yaml
+!format-all.sh
+!IDE-SETUP.md
+!FORMATTING-SETUP.md
+!docker-compose.yml
+!.env.docker
+.env.docker.local
+!test-deployment.sh
+!test-deployment.bat
+!check-health.sh
+!/*/
+api/.env.docker
+
+# =============================================================================
+# AI Beast Mode v3 - Workspace (transient, not tracked)
+# =============================================================================
+.ai_workspace/
+
+# Transient files
+SURGICAL_REPORT.txt
+SPEC_CURRENT.md
+*.patch
