@@ -91,7 +91,7 @@ async def connect_repository(
         )
 
     try:
-        result = await repository_service.connect(
+        await repository_service.connect(
             session_id=session_id,
             provider_name=request.provider,
             access_token=request.access_token,

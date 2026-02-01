@@ -7,12 +7,11 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from ..core.exceptions import LLMError, ValidationError
+from ..core.exceptions import LLMError
 from ..core.logging import get_logger
 from ..schemas.ai_schemas import (
-    AIRequest,
     AIResponse,
     GenerateSpecRequest,
     PerformanceMetrics,
@@ -67,7 +66,7 @@ class IntelligentOpenAPIWorkflow:
             path_operations = self._generate_path_structure(domain_model, request)
 
             # Phase 3: Schema Generation
-            schemas = await self._generate_schemas(domain_model, path_operations)
+            schemas = await self._generate_schemas(domain_model)
 
             # Phase 4: Assembly & Validation
             final_spec = self._assemble_specification(
@@ -144,13 +143,6 @@ Respond with a simple JSON structure:
   ]
 }}
 """
-
-        # Get LLM analysis
-        llm_request = AIRequest(
-            spec_text="{}",  # Empty spec for domain analysis
-            prompt=domain_prompt,
-            operation_type="analyze",
-        )
 
         llm_response = await self.llm_service._call_llm_with_retry(
             [{"role": "user", "content": domain_prompt}],
@@ -280,9 +272,7 @@ Respond with a simple JSON structure:
 
         return operations
 
-    async def _generate_schemas(
-        self, entities: List[DomainEntity], operations: List[PathOperation]
-    ) -> Dict[str, Any]:
+    async def _generate_schemas(self, entities: List[DomainEntity]) -> Dict[str, Any]:
         """
         Phase 3: Generate JSON schemas with LLM assistance and logical validation.
         """
@@ -313,7 +303,7 @@ Respond with only the JSON schema object, no additional text.
                 schema = self._validate_and_enhance_schema(llm_response, entity)
                 schemas[entity.name] = schema
 
-            except Exception as e:
+            except Exception:
                 self.logger.warning(
                     f"LLM schema generation failed for {entity.name}, using fallback"
                 )

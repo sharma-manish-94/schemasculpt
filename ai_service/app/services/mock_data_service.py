@@ -6,7 +6,7 @@ Generates realistic, context-aware test data based on OpenAPI schemas.
 import json
 import random
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ..core.logging import get_logger
 from ..schemas.ai_schemas import AIRequest, OperationType

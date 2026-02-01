@@ -160,7 +160,7 @@ class PranceSpecValidator(ISpecValidator):
             if not path.startswith("/"):
                 errors.append(
                     ValidationError(
-                        message=f"Path must start with /",
+                        message="Path must start with /",
                         path=f"/paths/{path}",
                         severity="error",
                     )
@@ -184,7 +184,7 @@ class PranceSpecValidator(ISpecValidator):
                     if not isinstance(operation, dict):
                         errors.append(
                             ValidationError(
-                                message=f"Operation must be an object",
+                                message="Operation must be an object",
                                 path=f"/paths/{path}/{method}",
                                 severity="error",
                             )

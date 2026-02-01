@@ -5,7 +5,7 @@ Specializes in analyzing API domains and extracting business requirements.
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ...schemas.ai_schemas import LLMParameters
 from .base_agent import LLMAgent
@@ -68,7 +68,7 @@ class DomainAnalyzerAgent(LLMAgent):
         domain = task.get("input_data", {}).get("domain")
 
         system_prompt = self._build_system_prompt(
-            f"""
+            """
 You are an expert business analyst and API domain specialist. Your task is to analyze user requirements and provide comprehensive domain analysis.
 
 **Analysis Framework:**
@@ -225,7 +225,7 @@ Focus on identifying:
             )
 
         system_prompt = self._build_system_prompt(
-            f"""
+            """
 You are an expert system architect specializing in entity relationship modeling and dependency analysis.
 
 **Relationship Mapping Tasks:**

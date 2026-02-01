@@ -7,11 +7,10 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Tuple
 
 from app.schemas.ai_schemas import AIRequest, OperationType
 from app.schemas.patch_schemas import (
-    JsonPatchOperation,
     PatchGenerationRequest,
     SmartAIFixRequest,
     SmartAIFixResponse,
@@ -187,7 +186,7 @@ class SmartFixService:
         rule_id = self._infer_rule_from_prompt(request.prompt)
 
         # Generate patches
-        patch_request = PatchGenerationRequest(
+        _ = PatchGenerationRequest(
             spec_text=request.spec_text,
             rule_id=rule_id,
             context=context,

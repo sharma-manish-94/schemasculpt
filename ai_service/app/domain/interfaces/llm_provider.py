@@ -33,13 +33,11 @@ class ILLMProvider(ABC):
     @abstractmethod
     def provider_name(self) -> str:
         """Return the provider name (e.g., 'ollama', 'huggingface', 'openai')."""
-        pass
 
     @property
     @abstractmethod
     def default_model(self) -> str:
         """Return the default model for this provider."""
-        pass
 
     @abstractmethod
     async def chat(
@@ -68,7 +66,6 @@ class ILLMProvider(ABC):
             LLMError: If the LLM request fails.
             LLMTimeoutError: If the request times out.
         """
-        pass
 
     @abstractmethod
     async def chat_stream(
@@ -96,7 +93,6 @@ class ILLMProvider(ABC):
             LLMError: If the LLM request fails.
             LLMTimeoutError: If the request times out.
         """
-        pass
 
     @abstractmethod
     async def generate(
@@ -122,7 +118,6 @@ class ILLMProvider(ABC):
         Returns:
             LLMResponse with the model's output.
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -132,7 +127,6 @@ class ILLMProvider(ABC):
         Returns:
             True if the provider is healthy, False otherwise.
         """
-        pass
 
     @abstractmethod
     async def get_available_models(self) -> List[str]:
@@ -142,7 +136,6 @@ class ILLMProvider(ABC):
         Returns:
             List of model names available for use.
         """
-        pass
 
     def get_provider_info(self) -> Dict[str, Any]:
         """

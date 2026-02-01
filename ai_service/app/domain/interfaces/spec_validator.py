@@ -6,7 +6,7 @@ This abstraction wraps blocking validation libraries for async-safe usage.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from app.domain.models.value_objects import ValidationResult
 
@@ -54,7 +54,6 @@ class ISpecValidator(ABC):
         Returns:
             ValidationResult with is_valid status, errors, and warnings.
         """
-        pass
 
     @abstractmethod
     async def parse(
@@ -77,7 +76,6 @@ class ISpecValidator(ABC):
         Raises:
             ValidationError: If the spec cannot be parsed.
         """
-        pass
 
     @abstractmethod
     async def get_endpoints(
@@ -93,7 +91,6 @@ class ISpecValidator(ABC):
         Returns:
             List of endpoint dictionaries with path, method, and operation details.
         """
-        pass
 
     @abstractmethod
     async def get_schemas(
@@ -109,7 +106,6 @@ class ISpecValidator(ABC):
         Returns:
             Dictionary of schema name to schema definition.
         """
-        pass
 
     @abstractmethod
     async def get_security_schemes(
@@ -125,7 +121,6 @@ class ISpecValidator(ABC):
         Returns:
             Dictionary of security scheme name to definition.
         """
-        pass
 
     @abstractmethod
     def detect_format(self, spec_text: str) -> str:
@@ -138,4 +133,3 @@ class ISpecValidator(ABC):
         Returns:
             "json" or "yaml".
         """
-        pass

@@ -5,8 +5,6 @@ These schemas provide input validation for mock data generation requests,
 ensuring all required fields are present and properly formatted.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 

@@ -23,12 +23,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import (
     get_cache_repository,
-    get_context_manager,
     get_llm_service,
     get_rag_service,
     get_security_workflow,
 )
-from app.core.config import settings
 from app.core.logging import set_correlation_id
 from app.schemas.ai_schemas import AIRequest, AIResponse, OperationType
 from app.schemas.attack_path_schemas import EnrichedSecurityFindingsRequest
@@ -39,7 +37,6 @@ from app.services.security.security_workflow import SecurityAnalysisWorkflow
 
 if TYPE_CHECKING:
     from app.domain.interfaces.cache_repository import ICacheRepository
-    from app.services.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 
@@ -214,7 +211,7 @@ async def analyze_authentication_mechanisms(
             "correlation_id": correlation_id,
         }
 
-    except json.JSONDecodeError as json_error:
+    except json.JSONDecodeError:
         raise HTTPException(
             status_code=400,
             detail={

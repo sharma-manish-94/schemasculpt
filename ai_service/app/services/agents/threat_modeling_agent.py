@@ -15,20 +15,12 @@ context (from RepoMind) to confirm spec-based findings and generate highly
 accurate, implementation-specific attack chains.
 """
 
-import json
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from ...schemas.attack_path_schemas import (
-    AttackChain,
-    AttackComplexity,
-    AttackPathContext,
-    AttackStep,
-    AttackStepType,
-    EnrichedSecurityFinding,
-)
-from ...schemas.security_schemas import SecurityIssue, SecuritySeverity
+from ...schemas.attack_path_schemas import AttackChain, AttackPathContext
+from ...schemas.security_schemas import SecurityIssue
 from ..rag_service import RAGService
 from .base_agent import LLMAgent
 
@@ -198,8 +190,6 @@ Finding: [{vuln.severity.value}] {vuln.title}
         vulnerabilities_text = "\n".join(vuln_summary)
 
         rag_knowledge_section = self._get_rag_section(rag_context)
-
-        max_chain_length = task.get("max_chain_length", 5)
 
         return f"""You are an expert security researcher...
 

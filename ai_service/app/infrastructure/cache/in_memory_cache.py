@@ -6,7 +6,6 @@ This is used as a fallback when Redis is not available.
 """
 
 import asyncio
-import json
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
