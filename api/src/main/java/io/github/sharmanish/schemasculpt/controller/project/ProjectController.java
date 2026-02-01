@@ -3,6 +3,7 @@ package io.github.sharmanish.schemasculpt.controller.project;
 import io.github.sharmanish.schemasculpt.dto.project.CreateProjectRequest;
 import io.github.sharmanish.schemasculpt.dto.project.ProjectDTO;
 import io.github.sharmanish.schemasculpt.dto.project.UpdateProjectRequest;
+import io.github.sharmanish.schemasculpt.dto.request.LinkRepositoryRequest;
 import io.github.sharmanish.schemasculpt.entity.Project;
 import io.github.sharmanish.schemasculpt.security.CustomOAuth2User;
 import io.github.sharmanish.schemasculpt.service.ProjectService;
@@ -115,5 +116,24 @@ public class ProjectController {
 
     projectService.deleteProject(projectId, principal.getUserId());
     return ResponseEntity.noContent().build();
+  }
+
+  /** Link a repository to a project */
+  @PostMapping("/{projectId}/repository")
+  public ResponseEntity<ProjectDTO> linkRepository(
+      @AuthenticationPrincipal CustomOAuth2User principal,
+      @PathVariable Long projectId,
+      @Valid @RequestBody LinkRepositoryRequest request) {
+
+    log.info(
+        "Linking repository path '{}' to project {} for user {}",
+        LogSanitizer.sanitize(request.path()),
+        LogSanitizer.sanitize(projectId),
+        LogSanitizer.sanitize(principal.getUserId()));
+
+    Project project =
+        projectService.linkRepository(projectId, principal.getUserId(), request.path());
+
+    return ResponseEntity.ok(new ProjectDTO(project));
   }
 }

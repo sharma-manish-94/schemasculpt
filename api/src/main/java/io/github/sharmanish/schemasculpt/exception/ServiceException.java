@@ -5,7 +5,9 @@ package io.github.sharmanish.schemasculpt.exception;
  * proxy, etc.) is unavailable or returned an error. Maps to HTTP 502.
  */
 public sealed class ServiceException extends SchemaSculptException
-    permits AIServiceException, ProxyServiceException, TestGenerationException,
+    permits AIServiceException,
+        ProxyServiceException,
+        TestGenerationException,
         MockDataGenerationException {
 
   protected ServiceException(ErrorCode errorCode, String message) {

@@ -2,12 +2,31 @@ import { useSpecStore } from "../../../store/specStore";
 import React from "react";
 
 function NavigationPanel() {
-  const { endpoints, selectedNavItem, setSelectedNavItem } = useSpecStore();
+  const {
+    endpoints,
+    selectedNavItem,
+    setSelectedNavItem,
+    projectId,
+    fetchImplementation,
+    setActiveRightPanelTab,
+  } = useSpecStore();
 
   const paths = endpoints.reduce((acc, ep) => {
     acc[ep.path] = [...(acc[ep.path] || []), ep];
     return acc;
   }, {});
+
+  const handleOperationSelect = (endpoint) => {
+    // 1. Set the selected item for highlighting
+    setSelectedNavItem(endpoint);
+
+    // 2. If it's an operation with an ID, fetch its implementation
+    if (endpoint.operationId && projectId) {
+      fetchImplementation(projectId, endpoint.operationId);
+      // 3. Switch the right panel to the implementation view
+      setActiveRightPanelTab("implementation");
+    }
+  };
 
   return (
     <>
@@ -30,7 +49,7 @@ function NavigationPanel() {
                           ? "active"
                           : ""
                       }`}
-                      onClick={() => setSelectedNavItem(endpoint)}
+                      onClick={() => handleOperationSelect(endpoint)}
                     >
                       {endpoint.method}
                     </span>

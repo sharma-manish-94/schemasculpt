@@ -17,9 +17,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- * Specification entity representing a versioned OpenAPI specification.
- */
+/** Specification entity representing a versioned OpenAPI specification. */
 @Entity
 @Table(name = "specifications")
 @Getter

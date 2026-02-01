@@ -53,6 +53,9 @@ public class Project {
   @Column(name = "is_public")
   private Boolean isPublic = false;
 
+  @Column(name = "repository_path", length = 1024)
+  private String repositoryPath;
+
   @Column(name = "created_at", updatable = false)
   @CreationTimestamp
   private LocalDateTime createdAt;
@@ -64,9 +67,7 @@ public class Project {
   @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Specification> specifications = new ArrayList<>();
 
-  /**
-   * Equals based on ID for JPA identity. Returns false if ID is null (transient entity).
-   */
+  /** Equals based on ID for JPA identity. Returns false if ID is null (transient entity). */
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -76,8 +77,8 @@ public class Project {
   }
 
   /**
-   * HashCode returns constant to maintain contract when ID is null.
-   * Per Vlad Mihalcea's recommendations for JPA entities.
+   * HashCode returns constant to maintain contract when ID is null. Per Vlad Mihalcea's
+   * recommendations for JPA entities.
    */
   @Override
   public int hashCode() {

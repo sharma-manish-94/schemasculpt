@@ -17,9 +17,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- * Entity tracking test data generation history for analytics.
- */
+/** Entity tracking test data generation history for analytics. */
 @Entity
 @Table(name = "test_data_generation_history")
 @Getter

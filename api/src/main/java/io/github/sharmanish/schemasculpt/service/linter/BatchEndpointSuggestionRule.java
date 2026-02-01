@@ -42,14 +42,10 @@ public class BatchEndpointSuggestionRule implements LinterRule {
         (resource, paths) -> {
           // Find single-item GET, DELETE, PUT, PATCH operations
           List<PathInfo> singleItemGets =
-              paths.stream()
-                  .filter(p -> p.hasPathParam && p.methods.contains("GET"))
-                  .toList();
+              paths.stream().filter(p -> p.hasPathParam && p.methods.contains("GET")).toList();
 
           List<PathInfo> singleItemDeletes =
-              paths.stream()
-                  .filter(p -> p.hasPathParam && p.methods.contains("DELETE"))
-                  .toList();
+              paths.stream().filter(p -> p.hasPathParam && p.methods.contains("DELETE")).toList();
 
           List<PathInfo> singleItemUpdates =
               paths.stream()

@@ -126,6 +126,26 @@ Use plain English to modify your specifications:
 
 The AI understands context and follows OpenAPI best practices.
 
+### 🏛️ Odysseus: Code-Aware API Analysis
+
+Bridge the gap between API design and its actual implementation. The Odysseus feature connects your OpenAPI specification directly to your source code, enabling a new dimension of validation and security analysis.
+
+#### 1. **Repository Intelligence**
+
+- **Link Local Repositories**: Connect your `SchemaSculpt` project to a local git repository to establish a single source of truth.
+- **View Implementing Code**: When you select an API endpoint in the editor, instantly see the corresponding function or method in a dedicated "Implementation" tab. No more context-switching between your editor and IDE.
+
+#### 2. **Code-Confirmed Security Findings**
+
+- **Reduce False Positives**: Security vulnerabilities identified in the API specification (e.g., potential Broken Object Level Authorization - BOLA) are automatically validated against the actual source code.
+- **Enriched Context**: Findings are augmented with code-level details like cyclomatic complexity, test coverage, and code authors, providing a holistic view of the risk.
+- **Evidence-Based Reporting**: Each confirmed finding includes a code snippet highlighting the exact location of the vulnerability, turning vague warnings into actionable issues.
+
+#### 3. **AI-Powered Remediation**
+
+- **Actionable Code Fixes**: For confirmed vulnerabilities, SchemaSculpt's AI can suggest language-specific code fixes.
+- **Visual Diff Viewer**: See a clear, side-by-side comparison of the vulnerable code and the AI-suggested fix, making it easy to understand and apply the remediation.
+
 ### ⚡ Intelligent Linting & Auto-Fix
 
 #### 11+ Built-in Linter Rules:
@@ -191,7 +211,7 @@ Each linter suggestion includes an **⚡ Auto-Fix** or **✨ AI-Fix** button:
 
 ## 🏗️ Architecture
 
-SchemaSculpt uses a **three-tier microservices architecture** optimized for AI workloads with RAG-enhanced security analysis:
+SchemaSculpt uses a **four-tier microservices architecture** that integrates API specification analysis with source code intelligence, powered by the **Odysseus** feature set.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -199,7 +219,7 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 │  React 19 • Monaco Editor • Zustand • WebSockets               │
 │  ├─ Advanced Analysis UI (Taint, AuthZ, Schema, Zombie APIs)   │
 │  ├─ Attack Path Visualization (Multi-step chain explorer)      │
-│  └─ Repository Browser (GitHub/GitLab integration via MCP)     │
+│  └─ Implementation Viewer (Code-aware analysis)                │
 └────────────────┬────────────────────────────────────────────────┘
                  │ REST API + WebSocket
                  ▼
@@ -208,74 +228,51 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 │  Java 21 • Spring Boot 4 • WebFlux • Redis Sessions            │
 │  ├─ Validation Service (swagger-parser)                        │
 │  ├─ Linter Engine (11+ rules)                                  │
-│  ├─ Session Manager (Redis)                                    │
-│  ├─ WebSocket Handler (real-time validation)                   │
-│  ├─ Security Findings Extractor (deterministic analysis)       │
-│  ├─ Analysis Controller (advanced features orchestration)      │
-│  └─ Repository Controller (spec discovery)                     │
-└────────────────┬────────────────────────────────────────────────┘
-                 │ HTTP (AI requests)
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
+│  ├─ RepoMindService (Client for Code Analysis) ───────────────┐
+│  ├─ Security Findings Extractor (deterministic)                │
+│  └─ Analysis Controller (Orchestrates all analysis)            │
+└────────────────┬──────────────────┬─────────────────────────────┘
+                 │ HTTP (AI reqs)   │ HTTP (Code context)
+                 ▼                  │
+┌──────────────────────────────────▼──────────────────────────────┐
 │                    AI Service (Python)                          │
 │  Python 3.10+ • FastAPI • Ollama • LangChain • ChromaDB        │
 │                                                                 │
-│  📊 Core Services:                                              │
-│  ├─ LLM Service (mistral, llama3, etc.)                        │
-│  ├─ Prompt Engineering (optimized for OpenAPI)                 │
-│  ├─ JSON Patch Generator (precise edits)                       │
-│  ├─ Smart Fix Service (AI + deterministic)                     │
-│  ├─ Meta-Analysis Engine (linter augmentation)                 │
-│  └─ Mock Data Generator (context-aware)                        │
+│  📊 Core Services & 🧠 RAG-Enhanced Intelligence (Unchanged)    │
 │                                                                 │
-│  🧠 RAG-Enhanced Intelligence:                                  │
-│  ├─ RAG Service (dual knowledge base architecture)             │
-│  │   ├─ Attacker KB: OWASP API Top 10, MITRE ATT&CK           │
-│  │   └─ Governance KB: CVSS, DREAD, GDPR/HIPAA/PCI-DSS        │
-│  ├─ Multi-Agent System (coordinated security analysis)         │
-│  │   ├─ Vulnerability Scanner Agent                            │
-│  │   ├─ Threat Modeling Agent (RAG-augmented)                  │
-│  │   ├─ Security Reporter Agent (RAG-augmented)                │
-│  │   └─ Attack Path Orchestrator (manages agent coordination)  │
-│  └─ Attack Chain Cache (80-90% AI call reduction)              │
-│                                                                 │
-│  🔍 Advanced Analyzers:                                         │
-│  ├─ Taint Analysis (data flow security vulnerabilities)        │
-│  ├─ Authorization Matrix (access control patterns)             │
-│  ├─ Schema Similarity (code quality & duplication)             │
-│  ├─ Zombie API Detection (shadowed/orphaned endpoints)         │
-│  └─ Comprehensive Architecture Analysis (holistic health)      │
-│                                                                 │
-│  🌐 Repository Integration:                                     │
-│  ├─ MCP Client (Model Context Protocol for repo browsing)      │
-│  └─ Repository Service (GitHub/GitLab spec discovery)          │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 ▼
-    ┌────────────────┬───────────────┬──────────────────┐
-    │                │               │                  │
-    ▼                ▼               ▼                  ▼
-┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌──────────────┐
-│ Ollama   │  │ ChromaDB │  │ Redis Cache  │  │ GitHub/      │
-│ (LLM)    │  │ (Vector  │  │ Sessions +   │  │ GitLab       │
-│ mistral/ │  │ Store)   │  │ Attack Chain │  │ Repositories │
-│ llama3   │  │          │  │ Cache        │  │ (via MCP)    │
-└──────────┘  └──────────┘  └──────────────┘  └──────────────┘
+│  🏛️ Code-Aware Intelligence (Odysseus):                         │
+│  ├─ Code-Aware Validator (Confirms spec findings in code)      │
+│  ├─ Remediation Agent (Suggests code fixes)                    │
+│  └─ RepoMind Client (Fetches code, metrics, tests) ───────────┐
+└────────────────┬──────────────────┬─────────────────────────────┘
+                 │                  │
+                 ▼                  ▼
+    ┌────────────────┬───────────┬───────────────────┬────────────┐
+    │                │           │                   │            │
+    ▼                ▼           ▼                   ▼            ▼
+┌──────────┐  ┌──────────┐  ┌───────────┐  ┌───────────────┐  ┌───────────┐
+│ Ollama   │  │ ChromaDB │  │ RepoMind  │  │ Redis Cache   │  │ GitHub/   │
+│ (LLM)    │  │ (Vector  │  │ (Code     │  │ Sessions +    │  │ GitLab    │
+│ mistral/ │  │ Store)   │  │ Analysis) │  │ Attack Chain  │  │ (via MCP) │
+│ llama3   │  │          │  │           │  │ Cache         │  │           │
+└──────────┘  └──────────┘  └───────────┘  └───────────────┘  └───────────┘
 ```
 
 ### Service Communication
 
-| From                                      | To                | Protocol                     | Purpose                                      |
-| ----------------------------------------- | ----------------- | ---------------------------- | -------------------------------------------- |
-| **UI** → **API Gateway**                  | REST              | `axios`                      | CRUD operations on specs                     |
-| **UI** → **API Gateway**                  | WebSocket         | `SockJS`/`STOMP`             | Real-time validation updates                 |
-| **API Gateway** → **AI Service**          | HTTP              | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis              |
-| **API Gateway** → **Redis**               | TCP               | Spring Data Redis            | Session storage, attack chain caching        |
-| **AI Service** → **Ollama**               | HTTP              | `httpx`                      | LLM inference for all AI features            |
-| **AI Service** → **ChromaDB**             | Local/HTTP        | LangChain + ChromaDB client  | RAG knowledge base queries (vector store)    |
-| **AI Service** → **GitHub/GitLab**        | HTTP              | MCP client + REST APIs       | Repository browsing & spec discovery         |
-| **RAG Service** → **Agents**              | Python in-process | Direct function calls        | Knowledge augmentation for security agents   |
-| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls        | Multi-agent coordination for attack analysis |
+| From                                      | To                | Protocol                     | Purpose                                          |
+| ----------------------------------------- | ----------------- | ---------------------------- | ------------------------------------------------ |
+| **UI** → **API Gateway**                  | REST              | `axios`                      | CRUD operations on specs                         |
+| **UI** → **API Gateway**                  | WebSocket         | `SockJS`/`STOMP`             | Real-time validation updates                     |
+| **API Gateway** → **AI Service**          | HTTP              | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis                  |
+| **API Gateway** → **RepoMind**            | HTTP              | `WebClient` (Spring WebFlux) | Trigger indexing, get code context for an endpoint |
+| **API Gateway** → **Redis**               | TCP               | Spring Data Redis            | Session storage, attack chain caching            |
+| **AI Service** → **Ollama**               | HTTP              | `httpx`                      | LLM inference for all AI features                |
+| **AI Service** → **ChromaDB**             | Local/HTTP        | LangChain + ChromaDB client  | RAG knowledge base queries (vector store)        |
+| **AI Service** → **RepoMind**             | HTTP              | `httpx`                      | Get code metrics, find tests, analyze ownership  |
+| **AI Service** → **GitHub/GitLab**        | HTTP              | MCP client + REST APIs       | Repository browsing & spec discovery (future)    |
+| **RAG Service** → **Agents**              | Python in-process | Direct function calls        | Knowledge augmentation for security agents       |
+| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls        | Multi-agent coordination for attack analysis     |
 
 ### Data Flow Examples
 
@@ -326,8 +323,29 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 12. UI renders interactive attack path visualization with expandable steps
 ```
 
-#### Example 3: Comprehensive Architecture Analysis
+#### Example 3: Code-Aware Security Analysis (Odysseus)
 
+```
+1. User links a local repository via the UI.
+2. UI → API Gateway: POST /projects/{id}/repository (path)
+3. API Gateway → RepoMind: POST /index_repo (path)
+   (RepoMind starts indexing the repository code in the background)
+4. User selects a security finding (e.g., "Potential BOLA on GET /users/{id}").
+5. The finding is based on the spec only and is marked as [POTENTIAL].
+6. API Gateway → RepoMind: GET /get_context?symbol=getUserById
+   (Looks up the code that implements the 'getUserById' operationId)
+7. RepoMind returns the file path, source code, and other metrics.
+8. API Gateway → AI Service: POST /ai/security/confirm-finding
+   (Payload includes the spec finding AND the source code from RepoMind)
+9. AI Service (Code-Aware Validator) analyzes the code snippet.
+   (Prompt: "Does this code check if the current user owns the requested resource?")
+10. AI Service → Ollama: LLM inference request.
+11. Ollama confirms the lack of an ownership check.
+12. AI Service → API Gateway: Returns { "isConfirmed": true, "confirmationDetail": "No ownership check found on line 52" }.
+13. UI updates the finding badge from [POTENTIAL] to [CONFIRMED] and displays the code evidence.
+```
+
+#### Example 4: Comprehensive Architecture Analysis
 ```
 1. User clicks "Run Comprehensive Analysis" in Advanced Analysis tab
 2. UI → API Gateway: POST /sessions/{id}/analysis/comprehensive-architecture

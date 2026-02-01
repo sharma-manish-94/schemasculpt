@@ -1,0 +1,34 @@
+.implementation-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+}
+
+.implementation-panel .loading-state,
+.implementation-panel .empty-state,
+.implementation-panel .error-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+.implementation-panel .error-state h3 {
+  color: #f48771;
+  margin-bottom: 10px;
+}
+
+.file-path-header {
+  padding: 5px 10px;
+  background-color: #2a2d2e;
+  color: #ccc;
+  font-family: monospace;
+  font-size: 0.9em;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}

@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when test case generation fails. Maps to HTTP 502 Bad Gateway.
- */
+/** Exception thrown when test case generation fails. Maps to HTTP 502 Bad Gateway. */
 public final class TestGenerationException extends ServiceException {
 
   public TestGenerationException(String message) {

@@ -17,8 +17,8 @@ import org.springframework.context.annotation.Configuration;
 public class VirtualThreadConfig {
 
   /**
-   * Creates an ExecutorService that creates a new virtual thread for each task.
-   * Virtual threads are cheap to create and block, making them ideal for AI service calls.
+   * Creates an ExecutorService that creates a new virtual thread for each task. Virtual threads are
+   * cheap to create and block, making them ideal for AI service calls.
    *
    * @return ExecutorService using virtual threads
    */

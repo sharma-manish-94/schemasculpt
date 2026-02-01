@@ -72,9 +72,7 @@ public class RepositoryService {
         .doOnSuccess(
             response ->
                 log.info(
-                    "Successfully connected to {} for session: {}",
-                    request.provider(),
-                    sessionId))
+                    "Successfully connected to {} for session: {}", request.provider(), sessionId))
         .doOnError(
             error ->
                 log.error(
@@ -176,8 +174,7 @@ public class RepositoryService {
         .bodyToMono(ReadFileResponse.class)
         .doOnSuccess(
             response ->
-                log.info(
-                    "Successfully read file: {} ({} bytes)", request.path(), response.size()))
+                log.info("Successfully read file: {} ({} bytes)", request.path(), response.size()))
         .doOnError(error -> log.error("Error reading file for session: {}", sessionId, error));
   }
 

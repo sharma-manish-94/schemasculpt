@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when a user is not found in the database. Maps to HTTP 404 Not Found.
- */
+/** Exception thrown when a user is not found in the database. Maps to HTTP 404 Not Found. */
 public final class UserNotFoundException extends ResourceNotFoundException {
 
   public UserNotFoundException(Long userId) {

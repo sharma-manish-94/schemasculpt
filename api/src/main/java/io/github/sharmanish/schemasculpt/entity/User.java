@@ -64,8 +64,8 @@ public class User {
   }
 
   /**
-   * Equals based on business key (githubId) for proper JPA identity.
-   * Per Hibernate best practices: use business key, not generated ID.
+   * Equals based on business key (githubId) for proper JPA identity. Per Hibernate best practices:
+   * use business key, not generated ID.
    */
   @Override
   public boolean equals(Object o) {
@@ -76,8 +76,8 @@ public class User {
   }
 
   /**
-   * HashCode based on business key for consistency with equals.
-   * Returns constant when githubId is null to maintain contract.
+   * HashCode based on business key for consistency with equals. Returns constant when githubId is
+   * null to maintain contract.
    */
   @Override
   public int hashCode() {

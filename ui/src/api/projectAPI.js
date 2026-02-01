@@ -43,6 +43,19 @@ export const projectAPI = {
     await apiClient.delete(`/api/v1/projects/${projectId}`);
   },
 
+  /**
+   * Link a local repository to a project.
+   * @param {number} projectId - The ID of the project.
+   * @param {string} path - The local file path to the repository.
+   */
+  async linkRepository(projectId, path) {
+    const response = await apiClient.post(
+      `/api/v1/projects/${projectId}/repository`,
+      { path },
+    );
+    return response.data;
+  },
+
   // Specification Management
 
   /**

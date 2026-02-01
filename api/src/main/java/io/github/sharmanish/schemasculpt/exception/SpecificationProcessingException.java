@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when specification processing fails. Maps to HTTP 400 Bad Request.
- */
+/** Exception thrown when specification processing fails. Maps to HTTP 400 Bad Request. */
 public final class SpecificationProcessingException extends ClientException {
 
   public SpecificationProcessingException(String message) {

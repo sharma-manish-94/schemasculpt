@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
@@ -33,10 +35,15 @@ import org.springframework.web.context.WebApplicationContext;
       org.springframework.boot.security.oauth2.client.autoconfigure.servlet
           .OAuth2ClientWebSecurityAutoConfiguration.class,
       org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration
-          .class
-    })
+          .class,
+      org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration.class
+    },
+    excludeFilters =
+        @ComponentScan.Filter(
+            type = FilterType.ASSIGNABLE_TYPE,
+            classes = io.github.sharmanish.schemasculpt.security.SecurityConfig.class))
 @Import({WebMvcConfig.class, JacksonConfig.class, AuthControllerTest.TestConfig.class})
-@TestPropertySource(properties = {"app.jwt.expiration=3600000"})
+@TestPropertySource(properties = {"app.jwt.expiration=3600000", "spring.flyway.enabled=false"})
 class AuthControllerTest {
 
   private final long jwtExpirationMs = 3600000;
@@ -125,6 +132,11 @@ class AuthControllerTest {
     @Bean("cleanObjectMapper")
     public ObjectMapper cleanObjectMapper() {
       return new ObjectMapper();
+    }
+
+    @Bean("flyway")
+    public org.flywaydb.core.Flyway flyway() {
+      return Mockito.mock(org.flywaydb.core.Flyway.class);
     }
   }
 }
