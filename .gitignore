@@ -38,3 +38,13 @@ pending.txt
 !check-health.sh
 !/*/
 api/.env.docker
+
+# =============================================================================
+# AI Beast Mode v3 - Workspace (transient, not tracked)
+# =============================================================================
+.ai_workspace/
+
+# Transient files
+SURGICAL_REPORT.txt
+SPEC_CURRENT.md
+*.patch
