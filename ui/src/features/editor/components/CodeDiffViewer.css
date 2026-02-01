@@ -1,0 +1,21 @@
+.code-diff-viewer {
+  border: 1px solid #444;
+  border-radius: 4px;
+  margin-top: 15px;
+  overflow: hidden; /* Ensures the child editors respect the border radius */
+}
+
+.diff-header {
+  display: flex;
+  background-color: #2a2d2e;
+  color: #ccc;
+  font-size: 0.9em;
+  font-weight: bold;
+}
+
+.header-original,
+.header-modified {
+  flex: 1;
+  padding: 5px 10px;
+  text-align: center;
+}

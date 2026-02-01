@@ -1,50 +1,57 @@
 import { useSpecStore } from "../../../store/specStore";
 import React from "react";
-import "swagger-ui-react/swagger-ui.css"; // Ensure this is imported for Swagger UI
+import "swagger-ui-react/swagger-ui.css";
 
 // Import the content components for each tab
 import ValidationPanel from "./ValidationPanel";
 import EnhancedSwaggerUI from "./EnhancedSwaggerUI";
 import AIPanel from "../../ai/components/AIPanel";
 import RepositoryPanel from "../../repository/components/RepositoryPanel";
+import ImplementationPanel from "./ImplementationPanel";
 
 function RightPanel() {
-  // Get activeTab and setActiveTab action from the store
-  const { activeTab, setActiveTab } = useSpecStore();
+  const { activeRightPanelTab, setActiveRightPanelTab } = useSpecStore();
 
   return (
     <div className="right-panel-container">
       <div className="panel-tabs">
         <button
-          onClick={() => setActiveTab("validation")}
-          className={activeTab === "validation" ? "active" : ""}
+          onClick={() => setActiveRightPanelTab("validation")}
+          className={activeRightPanelTab === "validation" ? "active" : ""}
         >
           Validation
         </button>
         <button
-          onClick={() => setActiveTab("api_explorer")}
-          className={activeTab === "api_explorer" ? "active" : ""}
+          onClick={() => setActiveRightPanelTab("api_explorer")}
+          className={activeRightPanelTab === "api_explorer" ? "active" : ""}
         >
           API Explorer
         </button>
         <button
-          onClick={() => setActiveTab("ai_features")}
-          className={activeTab === "ai_features" ? "active" : ""}
+          onClick={() => setActiveRightPanelTab("ai_features")}
+          className={activeRightPanelTab === "ai_features" ? "active" : ""}
         >
           AI Features
         </button>
         <button
-          onClick={() => setActiveTab("repository")}
-          className={activeTab === "repository" ? "active" : ""}
+          onClick={() => setActiveRightPanelTab("repository")}
+          className={activeRightPanelTab === "repository" ? "active" : ""}
         >
           Repository
         </button>
+        <button
+          onClick={() => setActiveRightPanelTab("implementation")}
+          className={activeRightPanelTab === "implementation" ? "active" : ""}
+        >
+          Implementation
+        </button>
       </div>
       <div className="panel-content">
-        {activeTab === "validation" && <ValidationPanel />}
-        {activeTab === "api_explorer" && <EnhancedSwaggerUI />}
-        {activeTab === "ai_features" && <AIPanel />}
-        {activeTab === "repository" && <RepositoryPanel />}
+        {activeRightPanelTab === "validation" && <ValidationPanel />}
+        {activeRightPanelTab === "api_explorer" && <EnhancedSwaggerUI />}
+        {activeRightPanelTab === "ai_features" && <AIPanel />}
+        {activeRightPanelTab === "repository" && <RepositoryPanel />}
+        {activeRightPanelTab === "implementation" && <ImplementationPanel />}
       </div>
     </div>
   );

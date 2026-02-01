@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-from app.mcp.client import MCPConnectionError, MCPOperationError
+from app.mcp.client import MCPConnectionError
 from app.mcp.github_provider import GitHubProvider
 from app.mcp.repository_provider import (
     BranchInfo,
@@ -24,8 +24,6 @@ logger = logging.getLogger(__name__)
 
 class RepositoryServiceError(Exception):
     """Base exception for repository service errors"""
-
-    pass
 
 
 class RepositoryService:

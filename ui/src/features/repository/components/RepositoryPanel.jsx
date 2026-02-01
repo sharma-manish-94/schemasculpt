@@ -10,9 +10,75 @@ import GitHubConnect from "./GitHubConnect";
 import RepositoryBrowser from "./RepositoryBrowser";
 import "./RepositoryPanel.css";
 
+const LocalRepoConnector = () => {
+  const {
+    projectId,
+    linkLocalRepository,
+    isLinkingLocalRepo,
+    linkLocalRepoError,
+    localRepositoryPath,
+  } = useSpecStore();
+
+  const [path, setPath] = useState("");
+
+  const handleLinkRepository = async () => {
+    if (!path || !projectId) return;
+    const result = await linkLocalRepository(projectId, path);
+    if (result.success) {
+      alert(
+        "Successfully linked repository! Indexing will begin in the background.",
+      );
+    }
+  };
+
+  return (
+    <div className="local-repo-connector">
+      <div className="divider">
+        <span>OR</span>
+      </div>
+      <h4>Connect a Local Repository</h4>
+      {localRepositoryPath ? (
+        <div>
+          <p className="linked-path">
+            <strong>Linked Path:</strong> <code>{localRepositoryPath}</code>
+          </p>
+          <p className="help-text">
+            To change the path, enter a new one below and re-link.
+          </p>
+        </div>
+      ) : (
+        <p className="help-text">
+          Enter the absolute local path to your source code repository to enable
+          Code-Aware Analysis.
+        </p>
+      )}
+      <div className="input-group">
+        <input
+          type="text"
+          value={path}
+          onChange={(e) => setPath(e.target.value)}
+          placeholder="/Users/yourname/Documents/Github/my-project"
+          disabled={isLinkingLocalRepo}
+          aria-label="Local repository path"
+        />
+        <button
+          onClick={handleLinkRepository}
+          disabled={isLinkingLocalRepo || !path}
+        >
+          {isLinkingLocalRepo ? "Linking..." : "Link & Index"}
+        </button>
+      </div>
+      {linkLocalRepoError && (
+        <p className="error-message">{linkLocalRepoError}</p>
+      )}
+    </div>
+  );
+};
+
 const RepositoryPanel = ({ onClose }) => {
   const {
     sessionId,
+    projectId, // Ensure projectId is available
     isConnected,
     currentRepo,
     loadSpecFromRepository,
@@ -27,7 +93,6 @@ const RepositoryPanel = ({ onClose }) => {
 
   const handleConnected = (repo) => {
     if (repo) {
-      // Quick load scenario - user provided repo URL
       setRepoInfo(repo);
     }
   };
@@ -55,13 +120,8 @@ const RepositoryPanel = ({ onClose }) => {
       );
 
       if (result.success) {
-        // Load the content into the editor
         setSpecText(result.content);
-
-        // Show success message
         alert(`Successfully loaded ${file.name}`);
-
-        // Close the panel
         if (onClose) {
           onClose();
         }
@@ -79,7 +139,7 @@ const RepositoryPanel = ({ onClose }) => {
   return (
     <div className="repository-panel">
       <div className="panel-header">
-        <h2>Import from Repository</h2>
+        <h2>Repository Integration</h2>
         {onClose && (
           <button onClick={onClose} className="close-button" aria-label="Close">
             ×
@@ -88,24 +148,24 @@ const RepositoryPanel = ({ onClose }) => {
       </div>
 
       <div className="panel-content">
-        {!isConnected ? (
-          <GitHubConnect onConnected={handleConnected} />
-        ) : (
-          <>
-            <GitHubConnect onConnected={handleConnected} />
-            <div className="browser-section">
-              {repoInfo || currentRepo ? (
-                <RepositoryBrowser
-                  repoInfo={repoInfo || currentRepo}
-                  onFileSelect={handleFileSelect}
-                />
-              ) : (
-                <div className="prompt-message">
-                  <p>Enter a repository URL above to get started.</p>
-                </div>
-              )}
-            </div>
-          </>
+        <GitHubConnect onConnected={handleConnected} />
+
+        <LocalRepoConnector />
+
+        {isConnected && (
+          <div className="browser-section">
+            <h4>Browse GitHub Repository</h4>
+            {repoInfo || currentRepo ? (
+              <RepositoryBrowser
+                repoInfo={repoInfo || currentRepo}
+                onFileSelect={handleFileSelect}
+              />
+            ) : (
+              <div className="prompt-message">
+                <p>Enter a GitHub repository URL above to get started.</p>
+              </div>
+            )}
+          </div>
         )}
 
         {(loadingSpec || isReadingFile) && (
@@ -126,13 +186,6 @@ const RepositoryPanel = ({ onClose }) => {
             </button>
           </div>
         )}
-      </div>
-
-      <div className="panel-footer">
-        <div className="help-text">
-          <strong>Tip:</strong> Connect to GitHub to browse and import OpenAPI
-          specifications from your repositories.
-        </div>
       </div>
     </div>
   );

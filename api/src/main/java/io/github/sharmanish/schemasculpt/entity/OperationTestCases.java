@@ -21,9 +21,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-/**
- * Entity storing cached test cases for API operations.
- */
+/** Entity storing cached test cases for API operations. */
 @Entity
 @Table(
     name = "operation_test_cases",

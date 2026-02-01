@@ -30,7 +30,7 @@ repos:
     hooks:
       - id: flake8
         files: ^ai_service/
-        args: ['--config', 'ai_service/.flake8', '--exit-zero']
+        args: ['--config', 'ai_service/.flake8']
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2

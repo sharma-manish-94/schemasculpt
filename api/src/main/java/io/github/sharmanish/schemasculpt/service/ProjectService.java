@@ -21,11 +21,33 @@ public class ProjectService {
 
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
+  private final RepoMindService repoMindService;
 
   @SuppressWarnings("checkstyle:MissingJavadocMethod")
-  public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
+  public ProjectService(
+      ProjectRepository projectRepository,
+      UserRepository userRepository,
+      RepoMindService repoMindService) {
     this.projectRepository = projectRepository;
     this.userRepository = userRepository;
+    this.repoMindService = repoMindService;
+  }
+
+  /** Link a source code repository to a project and trigger indexing */
+  @Transactional
+  public Project linkRepository(Long projectId, Long userId, String repoPath) {
+    log.info("Linking repository '{}' to project {} for user {}", repoPath, projectId, userId);
+
+    Project project = getProject(projectId, userId);
+    project.setRepositoryPath(repoPath);
+
+    Project updatedProject = projectRepository.save(project);
+    log.info("Updated project {} with repository path", updatedProject.getId());
+
+    // Trigger indexing asynchronously
+    repoMindService.triggerRepoIndex(repoPath, project.getName());
+
+    return updatedProject;
   }
 
   /** Create a new project for a user */

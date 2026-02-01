@@ -38,22 +38,21 @@ Usage:
     api_router.include_router(security_router)
 """
 
+from app.api.v1.routers.ai_processing import router as ai_processing_router
 from app.api.v1.routers.cache_management import router as cache_router
+from app.api.v1.routers.context import router as context_router
+from app.api.v1.routers.explanation import router as explanation_router
 from app.api.v1.routers.health import router as health_router
+from app.api.v1.routers.meta_analysis import router as meta_analysis_router
 from app.api.v1.routers.mock_server import router as mock_router
 from app.api.v1.routers.patch_operations import router as patch_router
 from app.api.v1.routers.patch_operations import smart_fix_router
+from app.api.v1.routers.prompt import router as prompt_router
 from app.api.v1.routers.rag_knowledge import router as rag_router
 from app.api.v1.routers.security_analysis import router as security_router
 from app.api.v1.routers.spec_analysis import router as analysis_router
 from app.api.v1.routers.test_generation import router as testing_router
-from app.api.v1.routers.meta_analysis import router as meta_analysis_router
-from app.api.v1.routers.prompt import router as prompt_router
-from app.api.v1.routers.context import router as context_router
-from app.api.v1.routers.explanation import router as explanation_router
-from app.api.v1.routers.ai_processing import router as ai_processing_router
 from app.api.v1.routers.workflow import router as workflow_router
-
 
 __all__ = [
     "health_router",
@@ -71,5 +70,5 @@ __all__ = [
     "context_router",
     "explanation_router",
     "ai_processing_router",
-    "workflow_router"
+    "workflow_router",
 ]

@@ -49,7 +49,6 @@ class AttackStep(BaseModel):
     description: str = Field(description="What the attacker does in this step")
     technical_detail: str = Field(description="Technical explanation of exploitation")
 
-    # Example exploitation
     example_request: Optional[str] = Field(None, description="Example HTTP request")
     example_payload: Optional[Dict[str, Any]] = Field(
         None, description="Example malicious payload"
@@ -57,13 +56,9 @@ class AttackStep(BaseModel):
     expected_response: Optional[str] = Field(
         None, description="What attacker gets back"
     )
-
-    # What's gained
     information_gained: List[str] = Field(
         default_factory=list, description="Information/access gained from this step"
     )
-
-    # Prerequisites
     requires_authentication: bool = Field(description="Does this step need auth?")
     requires_previous_steps: List[int] = Field(
         default_factory=list, description="Which previous steps must succeed first"
@@ -75,8 +70,6 @@ class AttackChain(BaseModel):
 
     chain_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str = Field(description="Descriptive name for this attack chain")
-
-    # Severity assessment
     severity: SecuritySeverity = Field(description="Overall severity of this chain")
     complexity: AttackComplexity = Field(description="How hard to execute")
     likelihood: float = Field(
@@ -85,31 +78,21 @@ class AttackChain(BaseModel):
     impact_score: float = Field(
         ge=0.0, le=10.0, description="Business impact if exploited (0-10)"
     )
-
-    # Attack details
     steps: List[AttackStep] = Field(description="Ordered list of attack steps")
     attack_goal: str = Field(description="What the attacker achieves")
     attacker_profile: str = Field(
         description="Skill level required (e.g., 'Script Kiddie', 'Advanced Persistent Threat')"
     )
-
-    # MITRE ATT&CK mapping
     mitre_tactics: List[str] = Field(
         default_factory=list, description="MITRE ATT&CK tactics used"
     )
-
-    # Business context
     business_impact: str = Field(description="Impact in business terms")
     affected_assets: List[str] = Field(
         default_factory=list, description="What resources/data are compromised"
     )
-
-    # Mapping to OWASP
     owasp_categories: List[OWASPCategory] = Field(
         default_factory=list, description="OWASP API categories involved"
     )
-
-    # References
     cve_references: List[str] = Field(
         default_factory=list, description="Related CVEs if applicable"
     )
@@ -117,8 +100,6 @@ class AttackChain(BaseModel):
         default_factory=list,
         description="External resources/articles about this attack pattern",
     )
-
-    # Remediation
     remediation_priority: str = Field(description="IMMEDIATE, HIGH, MEDIUM, LOW")
     remediation_steps: List[str] = Field(
         default_factory=list, description="How to fix all vulnerabilities in this chain"
@@ -129,6 +110,52 @@ class AttackChain(BaseModel):
     )
 
 
+# =============================================================================
+# Code-Aware (Odysseus) Analysis Data Structures
+# MOVED BEFORE AttackPathContext to resolve NameError
+# =============================================================================
+
+
+class CodeContext(BaseModel):
+    """
+    Contextual information about the source code implementation of an API operation.
+    Fetched from RepoMind.
+    """
+
+    file_path: Optional[str] = None
+    code_snippet: Optional[str] = None
+    complexity: Optional[float] = None
+    test_count: Optional[int] = None
+    authors: Optional[List[str]] = None
+
+
+class EnrichedSecurityFinding(BaseModel):
+    """
+    A security finding from the spec, enriched with source code context.
+    """
+
+    original_finding: SecurityIssue
+    is_confirmed: bool = Field(
+        description="True if the vulnerability is confirmed in the source code."
+    )
+    confirmation_detail: str = Field(
+        description="Explanation of how the code confirms or denies the finding."
+    )
+    code_context: Optional[CodeContext] = None
+
+
+class EnrichedSecurityFindingsRequest(BaseModel):
+    """
+    Request payload for the Code-Aware Attack Path analysis.
+    This payload includes pre-computed findings enriched with code context.
+    """
+
+    findings: List[EnrichedSecurityFinding]
+    analysis_depth: str = "standard"
+    max_chain_length: int = 5
+    exclude_low_severity: bool = False
+
+
 class AttackPathContext(BaseModel):
     """
     Model Context Protocol (MCP) - The shared "war room" whiteboard
@@ -137,16 +164,12 @@ class AttackPathContext(BaseModel):
 
     context_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    # Input
     goal: str = Field(
         default="Find critical multi-step attack paths",
         description="What we're trying to discover",
     )
     spec: Dict[str, Any] = Field(description="The OpenAPI specification being analyzed")
     spec_hash: str = Field(description="Hash of spec for caching")
-
-    # Agent outputs
     individual_vulnerabilities: List[SecurityIssue] = Field(
         default_factory=list,
         description="Single vulnerabilities found by Scanner Agent",
@@ -155,8 +178,10 @@ class AttackPathContext(BaseModel):
         default_factory=list,
         description="Multi-step attack paths found by Threat Agent",
     )
-
-    # Workflow state
+    code_context_map: Dict[str, CodeContext] = Field(
+        default_factory=dict,
+        description="Map of finding IDs or endpoints to their source code context from RepoMind.",
+    )
     current_stage: str = Field(
         default="initialized",
         description="scanning | analyzing_chains | reporting | completed | error",
@@ -164,12 +189,8 @@ class AttackPathContext(BaseModel):
     stages_completed: List[str] = Field(
         default_factory=list, description="Stages that have finished"
     )
-
-    # Execution metadata
     total_execution_time_ms: float = Field(default=0.0)
     tokens_used: int = Field(default=0)
-
-    # Progress tracking (for WebSocket updates)
     progress_percentage: float = Field(default=0.0, ge=0.0, le=100.0)
     current_activity: str = Field(default="Starting attack path simulation...")
 
@@ -200,8 +221,6 @@ class AttackPathAnalysisReport(BaseModel):
     report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     spec_hash: str = Field(description="Hash of analyzed spec")
-
-    # Executive summary
     executive_summary: str = Field(
         description="High-level summary for executives/managers"
     )
@@ -209,8 +228,6 @@ class AttackPathAnalysisReport(BaseModel):
     overall_security_score: float = Field(
         ge=0.0, le=100.0, description="Overall security posture (0-100)"
     )
-
-    # Findings
     critical_chains: List[AttackChain] = Field(
         default_factory=list,
         description="Most dangerous attack chains (CRITICAL severity)",
@@ -221,8 +238,6 @@ class AttackPathAnalysisReport(BaseModel):
     all_chains: List[AttackChain] = Field(
         default_factory=list, description="All discovered attack chains"
     )
-
-    # Statistics
     total_chains_found: int = Field(description="Total attack chains discovered")
     total_vulnerabilities: int = Field(description="Individual vulnerabilities found")
     vulnerabilities_in_chains: int = Field(
@@ -231,13 +246,9 @@ class AttackPathAnalysisReport(BaseModel):
     isolated_vulnerabilities: int = Field(
         description="Vulnerabilities not part of any chain"
     )
-
-    # Top risks
     top_3_risks: List[str] = Field(
         default_factory=list, description="Top 3 attack chains explained simply"
     )
-
-    # Remediation roadmap
     immediate_actions: List[str] = Field(
         default_factory=list, description="What to fix right now"
     )
@@ -247,11 +258,7 @@ class AttackPathAnalysisReport(BaseModel):
     long_term_actions: List[str] = Field(
         default_factory=list, description="Architectural improvements"
     )
-
-    # Metadata
     analysis_depth: str = Field(description="Level of analysis performed")
     execution_time_ms: float = Field(description="Time taken for analysis")
     tokens_used: int = Field(description="LLM tokens consumed")
-
-    # Context for caching/debugging
     context_id: str = Field(description="ID of the AttackPathContext used")

@@ -98,7 +98,7 @@ async def process_specification_legacy(
     correlation_id = set_correlation_id()
 
     logger.warning(
-        f"Deprecated /process endpoint called - migrate to /ai/process",
+        "Deprecated /process endpoint called - migrate to /ai/process",
         extra={
             "correlation_id": correlation_id,
             "operation_type": request.operation_type,
@@ -168,7 +168,7 @@ async def generate_specification_legacy(
     correlation_id = set_correlation_id()
 
     logger.warning(
-        f"Deprecated /specifications/generate endpoint called - migrate to /ai/generate",
+        "Deprecated /specifications/generate endpoint called - migrate to /ai/generate",
         extra={
             "correlation_id": correlation_id,
             "domain": request.domain,

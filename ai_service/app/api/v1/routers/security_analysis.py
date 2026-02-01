@@ -23,14 +23,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import (
     get_cache_repository,
-    get_context_manager,
     get_llm_service,
     get_rag_service,
     get_security_workflow,
 )
-from app.core.config import settings
 from app.core.logging import set_correlation_id
 from app.schemas.ai_schemas import AIRequest, AIResponse, OperationType
+from app.schemas.attack_path_schemas import EnrichedSecurityFindingsRequest
 from app.schemas.security_schemas import SecurityAnalysisRequest
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
@@ -38,7 +37,6 @@ from app.services.security.security_workflow import SecurityAnalysisWorkflow
 
 if TYPE_CHECKING:
     from app.domain.interfaces.cache_repository import ICacheRepository
-    from app.services.context_manager import ContextManager
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +211,7 @@ async def analyze_authentication_mechanisms(
             "correlation_id": correlation_id,
         }
 
-    except json.JSONDecodeError as json_error:
+    except json.JSONDecodeError:
         raise HTTPException(
             status_code=400,
             detail={
@@ -567,6 +565,53 @@ async def analyze_attack_chains_from_linter_findings(
             detail={
                 "error": "ATTACK_CHAIN_ANALYSIS_FAILED",
                 "message": f"Failed to analyze attack chains: {str(error)}",
+            },
+        )
+
+
+@router.post("/attack-path-enriched-findings")
+async def analyze_attack_chains_from_enriched_findings(
+    request: EnrichedSecurityFindingsRequest,
+    llm_service: LLMService = Depends(get_llm_service),
+) -> Dict[str, Any]:
+    """
+    Run Code-Aware attack path analysis from findings already enriched with code context.
+
+    This is the most advanced analysis, combining:
+    1. Deterministic spec analysis (from Java linter)
+    2. Deterministic code context (from RepoMind)
+    3. AI-powered reasoning (from LLM)
+    """
+    from app.services.agents.attack_path_orchestrator import AttackPathOrchestrator
+
+    correlation_id = set_correlation_id()
+    logger.info(
+        "Starting Code-Aware attack path analysis from enriched findings",
+        extra={
+            "correlation_id": correlation_id,
+            "findings_count": len(request.findings),
+        },
+    )
+
+    try:
+        # The orchestrator will need a new method to handle this payload
+        orchestrator = AttackPathOrchestrator(llm_service)
+        attack_path_report = await orchestrator.run_analysis_from_enriched_findings(
+            request
+        )
+
+        report_as_dict = attack_path_report.model_dump()
+        return report_as_dict
+
+    except Exception as error:
+        logger.error(
+            f"Enriched attack path analysis failed: {str(error)}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "ENRICHED_ATTACK_PATH_ANALYSIS_FAILED",
+                "message": f"Failed to run analysis from enriched findings: {str(error)}",
             },
         )
 

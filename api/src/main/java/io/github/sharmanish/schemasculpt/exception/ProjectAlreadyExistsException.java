@@ -7,6 +7,7 @@ package io.github.sharmanish.schemasculpt.exception;
 public final class ProjectAlreadyExistsException extends ClientException {
 
   public ProjectAlreadyExistsException(String projectName) {
-    super(ErrorCode.PROJECT_ALREADY_EXISTS, "Project with name '" + projectName + "' already exists");
+    super(
+        ErrorCode.PROJECT_ALREADY_EXISTS, "Project with name '" + projectName + "' already exists");
   }
 }

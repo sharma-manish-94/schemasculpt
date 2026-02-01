@@ -277,7 +277,7 @@ Return only the JSON structure, no explanations."""
             detail={
                 "error": "TEST_GENERATION_FAILED",
                 "message": f"Failed to generate test cases: {str(e)}",
-                "operation": f"{request_data.get('method', '')} {request_data.get('path', '')}",
+                "operation": f"{request.method} {request.path}",
             },
         )
 

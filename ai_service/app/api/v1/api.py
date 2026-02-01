@@ -69,6 +69,7 @@ from app.api.v1.routers.patch_operations import router as patch_router
 from app.api.v1.routers.patch_operations import smart_fix_router
 from app.api.v1.routers.prompt import router as prompt_router
 from app.api.v1.routers.rag_knowledge import router as rag_router
+from app.api.v1.routers.remediation import router as remediation_router
 from app.api.v1.routers.security_analysis import router as security_router
 from app.api.v1.routers.spec_analysis import router as analysis_router
 from app.api.v1.routers.test_generation import router as testing_router
@@ -106,6 +107,9 @@ api_router.include_router(meta_analysis_router)
 
 # Security Analysis
 api_router.include_router(security_router)
+
+# Remediation
+api_router.include_router(remediation_router)
 
 # OpenAPI Specification Analysis
 api_router.include_router(analysis_router)

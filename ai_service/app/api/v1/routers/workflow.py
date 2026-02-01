@@ -6,7 +6,7 @@ These endpoints orchestrate complex multi-step AI operations.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 

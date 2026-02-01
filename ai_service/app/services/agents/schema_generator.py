@@ -5,7 +5,7 @@ Specializes in generating OpenAPI schemas from entity definitions.
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ...schemas.ai_schemas import LLMParameters
 from .base_agent import LLMAgent
@@ -83,7 +83,7 @@ class SchemaGeneratorAgent(LLMAgent):
             )
 
         system_prompt = self._build_system_prompt(
-            f"""
+            """
 You are an expert OpenAPI schema architect specializing in creating comprehensive, production-ready schemas.
 
 **Schema Generation Principles:**

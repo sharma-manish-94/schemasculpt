@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 # Format Java (Backend API)
 echo -e "\n${BLUE}📝 Formatting Java code...${NC}"
 cd api
-./mvnw spotless:apply
+./gradlew spotlessApply
 echo -e "${GREEN}✓ Java code formatted${NC}"
 cd ..
 
