@@ -130,3 +130,4 @@ celerybeat.pid
 
 # Local index data
 .codeindex/
+.mcp.json
