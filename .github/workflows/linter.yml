@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0 # Full history is required to check only new changes
 
       - name: Lint Code Base
-        uses: super-linter/super-linter@v7
+        uses: super-linter/super-linter@v8.3.1
         env:
           # Basic Configuration
           VALIDATE_ALL_CODEBASE: false # Only check changed files in the PR
