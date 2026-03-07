@@ -1,0 +1,32 @@
+meta {
+  name: Add Rate Limiting
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/hardening/operations/rate-limiting
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "requestsPerMinute": 60,
+    "applyToAllEndpoints": true
+  }
+}
+
+docs {
+  # Add Rate Limiting
+
+  Adds rate limiting headers and response documentation to the spec.
+}
+
+assert {
+  res.status: eq 200
+}

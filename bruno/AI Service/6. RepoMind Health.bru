@@ -1,0 +1,24 @@
+meta {
+  name: RepoMind Health
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{aiServiceUrl}}/ai/repomind/health
+  body: none
+  auth: none
+}
+
+docs {
+  # RepoMind Health
+
+  Checks if the RepoMind MCP server is reachable and lists available tools.
+  Requires REPOMIND_ENABLED=true and a running RepoMind process.
+
+  Returns: { status: "available" | "unavailable", tool_count, tools_sample }
+}
+
+assert {
+  res.status: eq 200
+}

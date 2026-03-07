@@ -238,7 +238,7 @@ export const verifyGitHubOAuthState = (state) => {
  */
 export const parseRepositoryUrl = (url) => {
   try {
-    const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
     if (match) {
       const owner = match[1];
       const name = match[2].replace(/\.git$/, ""); // Remove .git suffix if present

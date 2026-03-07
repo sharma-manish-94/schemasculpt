@@ -1,0 +1,42 @@
+meta {
+  name: Create Session
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "specContent": "openapi: 3.0.0\ninfo:\n  title: My API\n  version: 1.0.0\npaths: {}"
+  }
+}
+
+docs {
+  # Create Session
+
+  Creates a new editor session with an initial OpenAPI spec.
+  Returns a sessionId used by all spec editing and analysis endpoints.
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 201) {
+    const sessionId = res.body.sessionId || res.body.id;
+    if (sessionId) {
+      bru.setEnvVar("sessionId", sessionId);
+      console.log("Session created:", sessionId);
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}

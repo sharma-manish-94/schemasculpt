@@ -134,14 +134,20 @@ public class AnalysisController {
       return Mono.just(ResponseEntity.notFound().build());
     }
 
+    // Get spec text for AI context
+    String specText = sessionService.getSpecTextForSession(sessionId);
+    if (specText == null) {
+      return Mono.just(ResponseEntity.notFound().build());
+    }
+
     // Step 1: Extract FACTUAL security findings using deterministic Java analysis
     // This is FAST and 100% ACCURATE - no AI guessing
     java.util.List<SecurityFinding> findings = securityFindingsExtractor.extractFindings(openApi);
 
-    // Step 2: Build request with findings (NOT the full spec)
-    // This payload is tiny compared to sending the entire 5MB spec!
+    // Step 2: Build request with findings AND spec text for AI context
     SecurityFindingsRequest request =
-        new SecurityFindingsRequest(findings, analysisDepth, maxChainLength, excludeLowSeverity);
+        new SecurityFindingsRequest(
+            specText, findings, analysisDepth, maxChainLength, excludeLowSeverity);
 
     // Step 3: Send findings to AI for REASONING about attack chains
     // AI does what it's best at: Finding patterns and reasoning about security implications

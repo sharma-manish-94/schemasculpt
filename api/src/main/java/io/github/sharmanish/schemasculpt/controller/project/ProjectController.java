@@ -5,6 +5,7 @@ import io.github.sharmanish.schemasculpt.dto.project.ProjectDTO;
 import io.github.sharmanish.schemasculpt.dto.project.UpdateProjectRequest;
 import io.github.sharmanish.schemasculpt.dto.request.LinkRepositoryRequest;
 import io.github.sharmanish.schemasculpt.entity.Project;
+import io.github.sharmanish.schemasculpt.exception.ValidationException;
 import io.github.sharmanish.schemasculpt.security.CustomOAuth2User;
 import io.github.sharmanish.schemasculpt.service.ProjectService;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
@@ -124,6 +125,17 @@ public class ProjectController {
       @AuthenticationPrincipal CustomOAuth2User principal,
       @PathVariable Long projectId,
       @Valid @RequestBody LinkRepositoryRequest request) {
+
+    // Validate path to prevent path traversal attacks
+    if (!request.isSafePath()) {
+      log.warn(
+          "Rejected unsafe repository path '{}' for project {} by user {}",
+          LogSanitizer.sanitize(request.path()),
+          LogSanitizer.sanitize(projectId),
+          LogSanitizer.sanitize(principal.getUserId()));
+      throw new ValidationException(
+          "Invalid repository path. Must be an absolute path without path traversal sequences.");
+    }
 
     log.info(
         "Linking repository path '{}' to project {} for user {}",

@@ -1,5 +1,5 @@
 import { useSpecStore } from "../../../store/specStore";
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useState } from "react";
 import ValidationSuggestion from "../../../components/validation/ValidationSuggestion";
 import AIInsightsPanel from "../../../components/validation/AIInsightsPanel";
 import DescriptionQualityPanel from "../../../components/validation/DescriptionQualityPanel";
@@ -141,12 +141,6 @@ const ValidationPanel = React.memo(() => {
       aiFriendlySuggestions,
     };
   };
-
-  // Group suggestions by category
-  const groupedByCategory = useMemo(
-    () => groupSuggestionsByCategory(suggestions),
-    [suggestions],
-  );
 
   const suggestionsSummary = useMemo(
     () => getSuggestionsSummary(suggestions),

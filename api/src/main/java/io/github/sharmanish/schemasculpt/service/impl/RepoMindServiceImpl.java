@@ -46,37 +46,60 @@ public class RepoMindServiceImpl implements RepoMindService {
         .body(Mono.just(requestPayload), McpToolCallRequest.class)
         .retrieve()
         .bodyToMono(responseClass)
-        .doOnError(error -> log.error("Error calling RepoMind tool '{}'", toolName, error));
+        .doOnError(
+            error ->
+                log.error("Error calling RepoMind tool '{}': {}", toolName, error.getMessage()));
   }
 
   // --- Service method implementations ---
 
+  /**
+   * Triggers repository indexing in RepoMind. Returns a Mono for proper error handling - callers
+   * can subscribe and handle errors appropriately.
+   *
+   * @param repoPath Path to the repository on disk
+   * @param repoName Name of the repository for identification
+   * @return Mono<Void> that completes when indexing is triggered (not when indexing completes)
+   */
   @Override
-  public void triggerRepoIndex(String repoPath, String repoName) {
-    log.info("Triggering RepoMind indexing for repo: {}, path: {}", repoName, repoPath);
+  public Mono<Void> triggerRepoIndex(String repoPath, String repoName) {
+    log.info("Triggering RepoMind indexing for repo: '{}', path: '{}'", repoName, repoPath);
     Map<String, Object> args = Map.of("repo_path", repoPath, "repo_name", repoName);
-    callRepoMindTool("index_repo", args, Void.class)
+
+    return callRepoMindTool("index_repo", args, Void.class)
         .doOnSuccess(
             aVoid -> log.info("Successfully triggered RepoMind indexing for '{}'", repoName))
-        .subscribe();
+        .doOnError(
+            error ->
+                log.error(
+                    "Failed to trigger RepoMind indexing for '{}': {}",
+                    repoName,
+                    error.getMessage()))
+        .then();
   }
 
   @Override
   public Mono<ImplementationCodeResponse> getImplementationCode(
       String repoName, String operationId) {
     log.debug(
-        "Fetching implementation from RepoMind for repo: {}, symbol: {}", repoName, operationId);
+        "Fetching implementation from RepoMind for repo: '{}', symbol: '{}'",
+        repoName,
+        operationId);
     Map<String, Object> args = Map.of("symbol_name", operationId, "repo_filter", repoName);
 
     return callRepoMindTool("get_context", args, RepoMindCodeChunk[].class)
         .flatMap(
             chunks -> {
               if (chunks == null || chunks.length == 0) {
+                log.warn(
+                    "No implementation found in RepoMind for symbol '{}' in repo '{}'",
+                    operationId,
+                    repoName);
                 return Mono.error(
-                    new RuntimeException(
-                        "No implementation found in RepoMind for symbol: " + operationId));
+                    new RuntimeException("No implementation found for symbol: " + operationId));
               }
               RepoMindCodeChunk chunk = chunks[0];
+              log.debug("Found implementation at {}", chunk.file_path());
               return Mono.just(
                   new ImplementationCodeResponse(
                       chunk.file_path(), chunk.content(), chunk.start_line(), chunk.language()));
@@ -87,21 +110,41 @@ public class RepoMindServiceImpl implements RepoMindService {
   public Mono<CodeMetrics> getMetrics(String repoName, String symbolName) {
     Map<String, Object> args = Map.of("repo_filter", repoName, "symbol_name", symbolName);
     return callRepoMindTool("get_metrics", args, CodeMetrics.class)
-        .onErrorReturn(new CodeMetrics(0.0)); // Fallback
+        .doOnError(
+            error ->
+                log.warn(
+                    "Failed to get metrics for symbol '{}' in repo '{}': {}. Using default.",
+                    symbolName,
+                    repoName,
+                    error.getMessage()))
+        .onErrorReturn(new CodeMetrics(0.0));
   }
 
   @Override
   public Mono<TestCoverage> findTests(String repoName, String symbolName) {
     Map<String, Object> args = Map.of("repo_filter", repoName, "symbol_name", symbolName);
     return callRepoMindTool("find_tests", args, TestCoverage.class)
-        .onErrorReturn(new TestCoverage(0, 0)); // Fallback
+        .doOnError(
+            error ->
+                log.warn(
+                    "Failed to find tests for symbol '{}' in repo '{}': {}. Using default.",
+                    symbolName,
+                    repoName,
+                    error.getMessage()))
+        .onErrorReturn(new TestCoverage(0, 0));
   }
 
   @Override
   public Mono<CodeOwnership> analyzeOwnership(String repoName, String filePath) {
-    // RepoMind's tool expects a list of file paths.
     Map<String, Object> args = Map.of("repo_filter", repoName, "file_paths", List.of(filePath));
     return callRepoMindTool("analyze_ownership", args, CodeOwnership.class)
-        .onErrorReturn(new CodeOwnership(Collections.emptyList())); // Fallback
+        .doOnError(
+            error ->
+                log.warn(
+                    "Failed to analyze ownership for '{}' in repo '{}': {}. Using default.",
+                    filePath,
+                    repoName,
+                    error.getMessage()))
+        .onErrorReturn(new CodeOwnership(Collections.emptyList()));
   }
 }

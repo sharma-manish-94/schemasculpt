@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from "react";
-import Button from "../ui/Button";
+import React, { useState } from "react";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { useSpecStore } from "../../store/specStore";
-import { explainValidationIssue } from "../../api/validationService";
-import explanationCache from "../../utils/explanationCache";
 import CodeDiffViewer from "../../features/editor/components/CodeDiffViewer";
 import "./ValidationSuggestion.css";
 
@@ -17,10 +14,10 @@ const ValidationSuggestion = ({
   const { suggestCodeFix, isSuggestingFix, suggestFixError, suggestedFix } =
     useSpecStore();
 
-  const [explanation, setExplanation] = useState(null);
-  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [explanationError, setExplanationError] = useState(null);
+  const [explanation] = useState(null);
+  const [isLoadingExplanation] = useState(false);
+  const [showExplanation] = useState(false);
+  const [explanationError] = useState(null);
   const [showFix, setShowFix] = useState(false);
 
   // Check if this suggestion is fixable with the new AI-powered fix
@@ -36,10 +33,6 @@ const ValidationSuggestion = ({
       language: suggestion.context.language,
       vulnerabilityType: suggestion.ruleId || "general-vulnerability",
     });
-  };
-
-  const getSeverityIcon = (severity) => {
-    // ... (same as before)
   };
 
   const getSeverityClass = (severity) => {

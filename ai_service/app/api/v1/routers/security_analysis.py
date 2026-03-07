@@ -545,16 +545,26 @@ async def analyze_attack_chains_from_linter_findings(
                 "correlation_id": correlation_id,
             }
 
-        # This would call the attack chain analyzer with findings
-        # For now, return a placeholder response
-        # TODO: Implement full attack chain analysis from findings
+        from app.schemas.attack_path_schemas import AttackPathAnalysisRequest
+        from app.services.agents.attack_path_orchestrator import AttackPathOrchestrator
 
-        return {
-            "status": "analysis_complete",
-            "findings_analyzed": len(findings),
-            "correlation_id": correlation_id,
-            "message": "Attack chain analysis from findings - implementation in progress",
-        }
+        # Rebuild a minimal spec-text if not provided (use findings as context)
+        analysis_request = AttackPathAnalysisRequest(
+            spec_text=spec_text,
+            analysis_depth=request.get("analysis_depth", "standard"),
+            max_chain_length=request.get("max_chain_length", 5),
+            exclude_low_severity=request.get("exclude_low_severity", False),
+        )
+
+        orchestrator = AttackPathOrchestrator(llm_service)
+        attack_path_report = await orchestrator.run_attack_path_analysis(
+            analysis_request
+        )
+
+        report_as_dict = attack_path_report.model_dump()
+        report_as_dict["findings_analyzed"] = len(findings)
+        report_as_dict["correlation_id"] = correlation_id
+        return report_as_dict
 
     except HTTPException:
         raise

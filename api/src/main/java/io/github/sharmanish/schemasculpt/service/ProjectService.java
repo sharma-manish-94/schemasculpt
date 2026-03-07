@@ -44,8 +44,17 @@ public class ProjectService {
     Project updatedProject = projectRepository.save(project);
     log.info("Updated project {} with repository path", updatedProject.getId());
 
-    // Trigger indexing asynchronously
-    repoMindService.triggerRepoIndex(repoPath, project.getName());
+    // Trigger indexing asynchronously - subscribe to handle the Mono
+    // Errors are logged inside RepoMindServiceImpl; here we just ensure the subscription happens
+    repoMindService
+        .triggerRepoIndex(repoPath, project.getName())
+        .subscribe(
+            unused -> {},
+            error ->
+                log.error(
+                    "Failed to trigger repository indexing for project {}: {}",
+                    projectId,
+                    error.getMessage()));
 
     return updatedProject;
   }

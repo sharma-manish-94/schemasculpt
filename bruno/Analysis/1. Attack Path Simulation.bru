@@ -1,0 +1,37 @@
+meta {
+  name: Attack Path Simulation
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/attack-path-simulation
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "analysisDepth": "standard",
+    "maxChainLength": 5,
+    "includeDataFlow": true
+  }
+}
+
+docs {
+  # Attack Path Simulation
+
+  Runs the AI-powered multi-agent attack path simulation.
+  Discovers multi-step attack chains that can be exploited across endpoints.
+
+  **analysisDepth**: "quick" | "standard" | "deep"
+  **maxChainLength**: Max steps in an attack chain (3-10)
+}
+
+assert {
+  res.status: eq 200
+}

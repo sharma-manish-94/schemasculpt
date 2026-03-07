@@ -1,0 +1,25 @@
+meta {
+  name: Get Spec
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/spec
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Spec
+
+  Retrieves the current OpenAPI specification content for a session.
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Attack Path Findings
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/attack-path-findings
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "specContent": "openapi: 3.0.0\ninfo:\n  title: My API\n  version: 1.0.0\npaths:\n  /users/{id}:\n    get:\n      operationId: getUser\n      parameters:\n        - name: id\n          in: path\n          required: true\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK"
+  }
+}
+
+docs {
+  # Attack Path Findings
+
+  Extracts structured security findings from a spec for use in attack path analysis.
+  Used as a pre-processing step before the full attack path simulation.
+}
+
+assert {
+  res.status: eq 200
+}

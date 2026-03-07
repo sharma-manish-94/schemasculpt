@@ -78,7 +78,6 @@ const LocalRepoConnector = () => {
 const RepositoryPanel = ({ onClose }) => {
   const {
     sessionId,
-    projectId, // Ensure projectId is available
     isConnected,
     currentRepo,
     loadSpecFromRepository,

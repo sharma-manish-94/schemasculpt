@@ -1,0 +1,109 @@
+/* Security Score Card - Premium Style */
+
+.security-score-card {
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.score-header h3 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-700);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-4) 0;
+}
+
+.score-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 6px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-raised);
+}
+
+.score-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-max {
+  font-size: var(--text-sm);
+  color: var(--gray-500);
+}
+
+.score-meta {
+  text-align: center;
+}
+
+.severity-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.severity-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.severity-item.severity-critical {
+  background: #fef2f2;
+}
+
+.severity-item.severity-high {
+  background: #fff7ed;
+}
+
+.severity-item.severity-medium {
+  background: #fefce8;
+}
+
+.severity-item.severity-low {
+  background: #f0fdf4;
+}
+
+.severity-count {
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.severity-critical .severity-count {
+  color: var(--status-critical);
+}
+.severity-high .severity-count {
+  color: var(--status-high);
+}
+.severity-medium .severity-count {
+  color: var(--status-medium);
+}
+.severity-low .severity-count {
+  color: var(--status-low);
+}
+
+.severity-label {
+  font-size: var(--text-xs);
+  color: var(--gray-600);
+  margin-top: var(--space-1);
+}

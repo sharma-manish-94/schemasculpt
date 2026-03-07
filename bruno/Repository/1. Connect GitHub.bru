@@ -1,0 +1,33 @@
+meta {
+  name: Connect GitHub
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/repository/connect
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "repoUrl": "https://github.com/owner/repo",
+    "branch": "main",
+    "githubToken": "ghp_yourtoken"
+  }
+}
+
+docs {
+  # Connect GitHub
+
+  Connects a GitHub repository to the current session for browsing and spec loading.
+}
+
+assert {
+  res.status: eq 200
+}

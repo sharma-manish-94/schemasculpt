@@ -1,0 +1,75 @@
+/* Cards - Clean Containers */
+
+.card {
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.card-elevated {
+  box-shadow: var(--shadow-sm);
+  border-color: transparent;
+}
+
+.card-interactive {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.card-interactive:hover {
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.card-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.card-body {
+  padding: var(--space-5);
+}
+
+.card-footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+/* Compact card variant */
+.card-compact .card-header {
+  padding: var(--space-3) var(--space-4);
+}
+
+.card-compact .card-body {
+  padding: var(--space-4);
+}
+
+/* Status cards */
+.card-status-critical {
+  border-left: 3px solid var(--status-critical);
+}
+
+.card-status-high {
+  border-left: 3px solid var(--status-high);
+}
+
+.card-status-medium {
+  border-left: 3px solid var(--status-medium);
+}
+
+.card-status-low {
+  border-left: 3px solid var(--status-low);
+}

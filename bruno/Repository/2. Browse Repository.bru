@@ -1,0 +1,34 @@
+meta {
+  name: Browse Repository
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/repository/browse
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "owner": "owner",
+    "repo": "repo",
+    "path": "",
+    "branch": "main"
+  }
+}
+
+docs {
+  # Browse Repository
+
+  Lists files and directories in a GitHub repository at the given path.
+}
+
+assert {
+  res.status: eq 200
+}

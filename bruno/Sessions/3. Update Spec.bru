@@ -1,0 +1,31 @@
+meta {
+  name: Update Spec
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/spec
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "specContent": "openapi: 3.0.0\ninfo:\n  title: Updated API\n  version: 2.0.0\npaths: {}"
+  }
+}
+
+docs {
+  # Update Spec
+
+  Replaces the spec content for the current session.
+}
+
+assert {
+  res.status: eq 200
+}

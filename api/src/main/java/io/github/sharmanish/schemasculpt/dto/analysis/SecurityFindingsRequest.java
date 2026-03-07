@@ -9,15 +9,18 @@ import java.util.List;
  * about attack chains.
  */
 public record SecurityFindingsRequest(
+    @JsonProperty("spec_text") String specText,
     @JsonProperty("findings") List<SecurityFinding> findings,
     @JsonProperty("analysis_depth") String analysisDepth,
     @JsonProperty("max_chain_length") int maxChainLength,
     @JsonProperty("exclude_low_severity") boolean excludeLowSeverity) {
-  public SecurityFindingsRequest(List<SecurityFinding> findings) {
-    this(findings, "standard", 5, false);
+
+  public SecurityFindingsRequest(String specText, List<SecurityFinding> findings) {
+    this(specText, findings, "standard", 5, false);
   }
 
-  public SecurityFindingsRequest(List<SecurityFinding> findings, String analysisDepth) {
-    this(findings, analysisDepth, 5, false);
+  public SecurityFindingsRequest(
+      String specText, List<SecurityFinding> findings, String analysisDepth) {
+    this(specText, findings, analysisDepth, 5, false);
   }
 }

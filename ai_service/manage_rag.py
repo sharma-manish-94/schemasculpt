@@ -20,9 +20,9 @@ from pathlib import Path
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from app.core.logging import get_logger
-from app.services.rag_initializer import RAGInitializer
-from app.services.rag_service import RAGService
+from app.core.logging import get_logger  # noqa: E402
+from app.services.rag_initializer import RAGInitializer  # noqa: E402
+from app.services.rag_service import RAGService  # noqa: E402
 
 logger = get_logger("manage_rag")
 
@@ -38,7 +38,7 @@ async def init_knowledge_bases(force: bool = False):
         result = await initializer.initialize_knowledge_bases(force_reingest=force)
 
         if result.get("status") == "success":
-            print(f"\n✅ Initialization successful!")
+            print("\n✅ Initialization successful!")
             print(f"   Total documents ingested: {result.get('total_documents', 0)}")
             print(
                 f"\n   Attacker KB: {result['attacker_kb'].get('documents_added', 0)} documents"
@@ -54,7 +54,7 @@ async def init_knowledge_bases(force: bool = False):
             print("\n✅ Knowledge bases already initialized")
             print("   Use 'python manage_rag.py reingest' to force re-ingestion")
         else:
-            print(f"\n⚠️  Initialization completed with warnings:")
+            print("\n⚠️  Initialization completed with warnings:")
             print(f"   {result}")
 
     except Exception as e:
@@ -76,34 +76,34 @@ async def show_status():
         stats = await rag_service.get_knowledge_base_stats()
 
         if not stats.get("available"):
-            print(f"\n❌ RAG service not available")
+            print("\n❌ RAG service not available")
             print(f"   Error: {stats.get('error', 'Unknown')}")
             print("\nInstall dependencies with:")
             print("   pip install chromadb sentence-transformers")
             return
 
-        print(f"\n✅ RAG service is available")
+        print("\n✅ RAG service is available")
         print(f"   Vector store: {stats.get('vector_store_path', 'Unknown')}")
 
-        print(f"\n📚 Attacker Knowledge Base:")
+        print("\n📚 Attacker Knowledge Base:")
         attacker_kb = stats.get("attacker_kb", {})
         if attacker_kb.get("available"):
-            print(f"   Status: ✅ Available")
+            print("   Status: ✅ Available")
             print(f"   Documents: {attacker_kb.get('document_count', 0)}")
             print(f"   Description: {attacker_kb.get('description', '')}")
         else:
-            print(f"   Status: ❌ Not initialized")
-            print(f"   Run: python manage_rag.py init")
+            print("   Status: ❌ Not initialized")
+            print("   Run: python manage_rag.py init")
 
-        print(f"\n🔐 Governance Knowledge Base:")
+        print("\n🔐 Governance Knowledge Base:")
         governance_kb = stats.get("governance_kb", {})
         if governance_kb.get("available"):
-            print(f"   Status: ✅ Available")
+            print("   Status: ✅ Available")
             print(f"   Documents: {governance_kb.get('document_count', 0)}")
             print(f"   Description: {governance_kb.get('description', '')}")
         else:
-            print(f"   Status: ❌ Not initialized")
-            print(f"   Run: python manage_rag.py init")
+            print("   Status: ❌ Not initialized")
+            print("   Run: python manage_rag.py init")
 
         print(f"\n📊 Total documents: {stats.get('total_documents', 0)}")
 
@@ -195,15 +195,10 @@ Examples:
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # Init command
-    init_parser = subparsers.add_parser("init", help="Initialize knowledge bases")
 
     # Reingest command
-    reingest_parser = subparsers.add_parser(
-        "reingest", help="Force re-ingestion of all documents"
-    )
 
     # Status command
-    status_parser = subparsers.add_parser("status", help="Show knowledge base status")
 
     # Query command
     query_parser = subparsers.add_parser("query", help="Test RAG query")

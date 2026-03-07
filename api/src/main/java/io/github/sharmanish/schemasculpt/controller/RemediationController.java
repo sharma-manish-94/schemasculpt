@@ -11,12 +11,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/remediate")
 @Slf4j
 public class RemediationController {
+
+  private static final String GENERIC_ERROR_MESSAGE =
+      "Unable to generate fix suggestion. Please try again later.";
 
   private final WebClient webClient;
 
@@ -45,11 +49,27 @@ public class RemediationController {
         .bodyToMono(SuggestFixResponse.class)
         .map(ResponseEntity::ok)
         .onErrorResume(
+            WebClientResponseException.class,
             error -> {
-              log.error("Failed to get fix suggestion from AI service", error);
+              log.error(
+                  "AI service returned error status {} for vulnerability type '{}': {}",
+                  error.getStatusCode(),
+                  request.vulnerabilityType(),
+                  error.getMessage());
               return Mono.just(
-                  ResponseEntity.status(500)
-                      .body(new SuggestFixResponse("Error: " + error.getMessage())));
+                  ResponseEntity.status(error.getStatusCode())
+                      .body(new SuggestFixResponse(GENERIC_ERROR_MESSAGE)));
+            })
+        .onErrorResume(
+            error -> {
+              log.error(
+                  "Failed to get fix suggestion from AI service for vulnerability type '{}': {}",
+                  request.vulnerabilityType(),
+                  error.getMessage(),
+                  error);
+              return Mono.just(
+                  ResponseEntity.internalServerError()
+                      .body(new SuggestFixResponse(GENERIC_ERROR_MESSAGE)));
             });
   }
 }

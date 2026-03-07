@@ -262,3 +262,11 @@ class AttackPathAnalysisReport(BaseModel):
     execution_time_ms: float = Field(description="Time taken for analysis")
     tokens_used: int = Field(description="LLM tokens consumed")
     context_id: str = Field(description="ID of the AttackPathContext used")
+    chain_validations: Dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "RepoMind code validation results keyed by chain_id. "
+            "Each value contains overall_verdict, exploitability_score, and per-step verdicts. "
+            "Only populated when REPOMIND_ENABLED=true."
+        ),
+    )

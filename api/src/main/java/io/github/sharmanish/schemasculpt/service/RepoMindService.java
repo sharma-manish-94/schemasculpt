@@ -8,12 +8,14 @@ import reactor.core.publisher.Mono;
 
 public interface RepoMindService {
   /**
-   * Asynchronously triggers the indexing of a repository in the RepoMind service.
+   * Triggers the indexing of a repository in the RepoMind service.
    *
    * @param repoPath The absolute local path to the repository to be indexed.
    * @param repoName A unique name to identify the repository within RepoMind.
+   * @return A Mono that completes when the indexing request is sent (not when indexing finishes).
+   *     Callers should subscribe and handle errors appropriately.
    */
-  void triggerRepoIndex(String repoPath, String repoName);
+  Mono<Void> triggerRepoIndex(String repoPath, String repoName);
 
   /**
    * Asynchronously fetches the implementation code for a given operation ID from RepoMind.

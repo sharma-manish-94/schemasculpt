@@ -58,7 +58,7 @@ const SecurityIssuesList = ({ issues }) => {
     });
 
     return sorted;
-  }, [issues, filterSeverity, filterCategory, sortBy]);
+  }, [issues, filterSeverity, filterCategory, sortBy, severityOrder]);
 
   const getSeverityColor = (severity) => {
     const colors = {

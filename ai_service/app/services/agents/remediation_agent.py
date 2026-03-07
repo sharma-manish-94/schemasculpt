@@ -1,5 +1,7 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+from app.core.config import settings
 
 from .base_agent import LLMAgent
 
@@ -11,12 +13,18 @@ class RemediationAgent(LLMAgent):
     An agent specialized in fixing vulnerable code snippets.
     """
 
-    def __init__(self, llm_service):
+    # Default model for code remediation - can be overridden via constructor
+    DEFAULT_MODEL = settings.default_model
+    DEFAULT_TEMPERATURE = 0.2  # Low temperature for deterministic, correct code
+    DEFAULT_MAX_TOKENS = 2048
+
+    def __init__(self, llm_service, model: Optional[str] = None):
         super().__init__(
             name="RemediationAgent",
             description="Generates code fixes for identified security vulnerabilities.",
             llm_service=llm_service,
         )
+        self.model = model or self.DEFAULT_MODEL
 
     def _build_prompt(
         self, vulnerable_code: str, language: str, vulnerability_type: str
@@ -68,10 +76,10 @@ Your task is to fix a security vulnerability in a given code snippet.
 
         try:
             response = await self.llm_service.generate(
-                model="mistral:7b-instruct",  # Or a more code-specific model
+                model=self.model,
                 prompt=prompt,
-                temperature=0.2,  # Low temperature for more deterministic, correct code
-                max_tokens=2048,
+                temperature=self.DEFAULT_TEMPERATURE,
+                max_tokens=self.DEFAULT_MAX_TOKENS,
             )
 
             fixed_code = response.get("response", "").strip()

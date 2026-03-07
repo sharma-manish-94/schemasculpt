@@ -32,33 +32,42 @@ function NavigationPanel() {
     <>
       <div className="panel-header">
         <span className="panel-icon">🌐</span>
-        API Structure
+        <span className="panel-title">API Structure</span>
       </div>
-      <div className="tree-view">
-        <ul>
-          {Object.entries(paths).map(([path, methods]) => (
-            <li key={path}>
-              <span className="tree-item path-item">{path}</span>
-              <ul>
-                {methods.map((endpoint) => (
-                  <li key={endpoint.method}>
-                    <span
-                      className={`tree-item method-item method-${endpoint.method.toLowerCase()} ${
-                        selectedNavItem?.path === endpoint.path &&
-                        selectedNavItem?.method === endpoint.method
-                          ? "active"
-                          : ""
-                      }`}
-                      onClick={() => handleOperationSelect(endpoint)}
-                    >
-                      {endpoint.method}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+      <div className="nav-tree">
+        {Object.entries(paths).map(([path, methods]) => (
+          <div key={path} className="nav-path-group">
+            <div className="nav-path-header">
+              <code className="nav-path-text">{path}</code>
+            </div>
+            <div className="nav-methods">
+              {methods.map((endpoint) => (
+                <button
+                  key={endpoint.method}
+                  className={`nav-method-item method-${endpoint.method.toLowerCase()} ${
+                    selectedNavItem?.path === endpoint.path &&
+                    selectedNavItem?.method === endpoint.method
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => handleOperationSelect(endpoint)}
+                >
+                  <span className="method-badge">{endpoint.method}</span>
+                  {endpoint.operationId && (
+                    <span className="operation-id">{endpoint.operationId}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {Object.keys(paths).length === 0 && (
+          <div className="nav-empty-state">
+            <span className="empty-icon">📄</span>
+            <p>No endpoints found</p>
+            <p className="text-muted text-sm">Add paths to your OpenAPI spec</p>
+          </div>
+        )}
       </div>
     </>
   );

@@ -10,10 +10,12 @@ specialized knowledge bases (Attacker KB + Governance KB) throughout the analysi
 
 import hashlib
 import logging
+import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from ...schemas.attack_path_schemas import (
+    AttackChain,
     AttackPathAnalysisReport,
     AttackPathAnalysisRequest,
     AttackPathContext,
@@ -25,6 +27,20 @@ from .threat_modeling_agent import ThreatModelingAgent
 from .vulnerability_scanner_agent import VulnerabilityScannerAgent
 
 logger = logging.getLogger(__name__)
+
+
+def _step_type_to_vuln(step_type: str) -> str:
+    """Map AttackStepType enum values to RepoMind vulnerability type names."""
+    mapping = {
+        "reconnaissance": "information_disclosure",
+        "initial_access": "broken_authentication",
+        "privilege_escalation": "broken_function_level_authorization",
+        "data_exfiltration": "data_exposure",
+        "lateral_movement": "bola",
+        "persistence": "broken_authentication",
+        "defense_evasion": "broken_authentication",
+    }
+    return mapping.get(str(step_type).lower(), str(step_type).lower())
 
 
 class AttackPathOrchestrator:
@@ -135,6 +151,34 @@ class AttackPathOrchestrator:
                 f"Threat agent found {len(context.attack_chains)} attack chains"
             )
 
+            # STAGE 2.5: RepoMind Code Validation (optional, non-blocking)
+            repo_name = getattr(request, "repo_name", None)
+            if (
+                context.attack_chains
+                and os.environ.get("REPOMIND_ENABLED", "false").lower() == "true"
+            ):
+                logger.info(
+                    "[AttackPathOrchestrator] Stage 2.5: RepoMind Code Validation"
+                )
+                context.current_activity = (
+                    "Validating attack chains against source code..."
+                )
+                chain_validations = await self._validate_chains_with_repomind(
+                    context.attack_chains, repo_name
+                )
+                if chain_validations:
+                    context.code_context_map["_chain_validations"] = chain_validations
+                    confirmed_count = sum(
+                        1
+                        for v in chain_validations.values()
+                        if v.get("overall_verdict")
+                        in ("FULLY_EXPLOITABLE", "PARTIALLY_EXPLOITABLE")
+                    )
+                    logger.info(
+                        f"[RepoMind] {confirmed_count}/{len(chain_validations)} chains "
+                        "have code-confirmed exploitability"
+                    )
+
             # STAGE 3: Report Generation
             logger.info("[AttackPathOrchestrator] Stage 3: Report Generation")
             context.current_stage = "reporting"
@@ -155,6 +199,11 @@ class AttackPathOrchestrator:
             logger.info(
                 f"Analysis complete! Risk: {report.risk_level}, Score: {report.overall_security_score:.1f}/100"
             )
+
+            # Attach RepoMind chain validations to the report so the UI can show badges
+            chain_validations = context.code_context_map.get("_chain_validations")
+            if chain_validations:
+                report.chain_validations = chain_validations
 
             total_time = (datetime.utcnow() - start_time).total_seconds() * 1000
             report.execution_time_ms = total_time
@@ -276,6 +325,40 @@ class AttackPathOrchestrator:
                     f"Found {len(context.attack_chains)} attack chains",
                 )
 
+            # STAGE 2.5: RepoMind Code Validation (optional, non-blocking)
+            repo_name = getattr(request, "repo_name", None)
+            if (
+                context.attack_chains
+                and os.environ.get("REPOMIND_ENABLED", "false").lower() == "true"
+            ):
+                logger.info(
+                    "[AttackPathOrchestrator] Stage 2.5: RepoMind Code Validation"
+                )
+                context.current_activity = (
+                    "Validating attack chains against source code..."
+                )
+                if progress_callback:
+                    await progress_callback(
+                        "validating_code",
+                        context.progress_percentage,
+                        context.current_activity,
+                    )
+                chain_validations = await self._validate_chains_with_repomind(
+                    context.attack_chains, repo_name
+                )
+                if chain_validations:
+                    context.code_context_map["_chain_validations"] = chain_validations
+                    confirmed_count = sum(
+                        1
+                        for v in chain_validations.values()
+                        if v.get("overall_verdict")
+                        in ("FULLY_EXPLOITABLE", "PARTIALLY_EXPLOITABLE")
+                    )
+                    logger.info(
+                        f"[RepoMind] {confirmed_count}/{len(chain_validations)} chains "
+                        "have code-confirmed exploitability"
+                    )
+
             # STAGE 3: Report Generation
             logger.info("[AttackPathOrchestrator] Stage 3: Report Generation")
             context.current_stage = "reporting"
@@ -303,6 +386,11 @@ class AttackPathOrchestrator:
                 f"Analysis complete! Risk: {report.risk_level}, Score: {report.overall_security_score:.1f}/100"
             )
 
+            # Attach RepoMind chain validations to the report so the UI can show badges
+            chain_validations = context.code_context_map.get("_chain_validations")
+            if chain_validations:
+                report.chain_validations = chain_validations
+
             if progress_callback:
                 await progress_callback(
                     "completed", 100.0, "Attack path analysis complete!"
@@ -317,6 +405,84 @@ class AttackPathOrchestrator:
             if progress_callback:
                 await progress_callback("error", 0.0, f"Analysis failed: {str(e)}")
             raise
+
+    async def _validate_chains_with_repomind(
+        self,
+        chains: List[AttackChain],
+        repo_name: Optional[str],
+    ) -> Dict[str, Dict]:
+        """
+        Validate AI-generated attack chains against actual source code via RepoMind.
+
+        For each chain, calls RepoMind's validate_attack_chain tool which:
+        - Finds the code handler for each attack step (correlate_spec_to_code)
+        - Checks vulnerability patterns vs mitigations in the code
+        - Returns per-step verdicts: CODE_CONFIRMED / CODE_DISPUTED / PARTIAL / UNVERIFIABLE
+
+        Returns a dict mapping chain_id → validation result dict.
+        Non-blocking: logs and returns empty dict on any error.
+        """
+        from ..repomind_client import RepoMindClient
+
+        results: Dict[str, Dict] = {}
+
+        try:
+            async with RepoMindClient() as client:
+                for chain in chains:
+                    # Convert AttackChain steps to the format expected by validate_attack_chain
+                    raw_steps = []
+                    for step in chain.steps:
+                        # Parse "GET /users/{id}" from the combined endpoint field
+                        endpoint = step.endpoint or ""
+                        method = step.http_method or ""
+                        path = endpoint
+                        if " " in endpoint and not method:
+                            parts = endpoint.split(" ", 1)
+                            method, path = parts[0], parts[1]
+                        elif method and not path.startswith("/"):
+                            path = endpoint  # endpoint is already the path
+
+                        raw_steps.append(
+                            {
+                                "step_number": step.step_number,
+                                "endpoint": f"{method} {path}".strip(),
+                                "method": method,
+                                "path": path,
+                                # Map AttackStepType to vulnerability type names
+                                "vulnerability_type": _step_type_to_vuln(
+                                    step.step_type
+                                ),
+                                "description": step.description,
+                                "owasp": (
+                                    chain.owasp_categories[0].value
+                                    if chain.owasp_categories
+                                    else ""
+                                ),
+                            }
+                        )
+
+                    try:
+                        result = await client.validate_attack_chain(
+                            attack_chain=raw_steps,
+                            repo_name=repo_name,
+                            chain_id=chain.chain_id,
+                            chain_description=chain.name,
+                        )
+                        results[chain.chain_id] = result
+                        logger.info(
+                            f"[RepoMind] Chain '{chain.name}': "
+                            f"{result.get('overall_verdict', 'unknown')} "
+                            f"(score={result.get('exploitability_score', 0):.2f})"
+                        )
+                    except Exception as exc:
+                        logger.warning(
+                            f"[RepoMind] Chain validation failed for '{chain.chain_id}': {exc}"
+                        )
+
+        except Exception as exc:
+            logger.warning(f"[RepoMind] Code validation stage skipped: {exc}")
+
+        return results
 
     def get_analysis_stages(self) -> Dict[str, str]:
         """Get descriptions of all analysis stages for UI display"""
