@@ -428,112 +428,159 @@ SchemaSculpt uses a **four-tier microservices architecture** that integrates API
 Before starting, ensure you have:
 
 - ✅ **Java 21+** ([Download](https://jdk.java.net/))
-- ✅ **Gradle 8.14+** (included with `./gradlew`)
 - ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
 - ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
-- ✅ **Docker & Docker Compose** ([Download](https://www.docker.com/))
-- ✅ **Ollama** ([Download](https://ollama.com/))
+- ✅ **Docker** ([Download](https://www.docker.com/)) — for PostgreSQL and Redis
+- ✅ **Ollama** ([Download](https://ollama.com/)) — for local LLM inference
 
-### Quick Start (5 Minutes)
+---
 
-Follow these steps in **separate terminal windows**:
+### 🏃 Local Development Setup
 
-#### 1️⃣ Start Infrastructure Services
+Run each service in a **separate terminal window**.
+
+#### 1️⃣ Start Infrastructure (PostgreSQL + Redis)
 
 ```bash
-# Development Mode: Start infrastructure only (PostgreSQL + Redis)
+# Start PostgreSQL and Redis via Docker Compose
 docker-compose up -d
 
-# OR
-
-# Full Deployment: Start entire stack in Docker (requires Ollama on host)
-docker-compose --profile full up -d --build
+# Verify both containers are healthy
+docker-compose ps
 ```
 
-Verify: `docker-compose ps` should show services as healthy.
+- **PostgreSQL** → `localhost:5432` (used by the Java backend)
+- **Redis** → `localhost:6379` (used for session storage)
 
-**Note:** For full deployment mode, skip to step 5 (all services run in Docker). For development mode (recommended), continue with steps 2-5 to run services locally with hot reloading.
+---
 
-For detailed Docker setup instructions, see [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md).
-
-#### 2️⃣ Start Ollama & Pull Model
+#### 2️⃣ Start Ollama & Pull the LLM Model
 
 ```bash
-# Download the Mistral model (first time only)
+# Pull the Mistral model (only needed once, ~4 GB download)
 ollama pull mistral
 
-# Verify Ollama is running
+# Verify Ollama is running and the model is available
 ollama list
 ```
 
-#### 3️⃣ Start AI Service
+Ollama runs as a background service at `http://localhost:11434`.
+
+---
+
+#### 3️⃣ Start the AI Service
 
 ```bash
 cd ai_service
 
-# Create virtual environment (first time only)
+# First time only: create virtual environment and install dependencies
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies (first time only)
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Copy environment template (first time only)
+# First time only: copy environment template
 cp .env.example .env
 
-# Initialize RAG knowledge bases (first time only)
-# This ingests OWASP, MITRE ATT&CK, CVSS, DREAD, and compliance frameworks
+# First time only: initialize RAG knowledge bases
+# Ingests OWASP, MITRE ATT&CK, CVSS, and compliance frameworks
 python app/scripts/ingest_knowledge.py
 
-# Start the service
+# Start the AI service
 uvicorn app.main:app --reload
 ```
 
-✅ AI Service running at `http://localhost:8000`
-✅ RAG knowledge bases initialized at `data/vector_store/`
+✅ **AI Service** running at `http://localhost:8000`
 
-#### 4️⃣ Start Java Backend
+---
+
+#### 4️⃣ Start the Java Backend
 
 ```bash
 cd api
 
-# Start Spring Boot application
+# Start the Spring Boot API gateway
 ./gradlew bootRun
 ```
 
-✅ API Gateway running at `http://localhost:8080`
+✅ **API Gateway** running at `http://localhost:8080`
 
-#### 5️⃣ Start React Frontend
+**First run**: Flyway will auto-create all database tables.
+
+---
+
+#### 5️⃣ Start the React Frontend
 
 ```bash
 cd ui
 
-# Install dependencies (first time only)
+# First time only: install dependencies
 npm install
 
-# Start development server
+# Start the development server
 npm start
 ```
 
-✅ Browser opens automatically at `http://localhost:3000`
+✅ **Frontend** opens automatically at `http://localhost:3000`
+
+---
+
+#### 6️⃣ (Optional) Start RepoMind — Code Intelligence
+
+RepoMind enables **Code-Aware Analysis**: AI that understands your actual implementation, not just your spec.
+
+```bash
+# Install RepoMind (first time only)
+pip install repomind
+# OR from source:
+# git clone https://github.com/sharma-manish-94/repomind.git
+# cd repomind && pip install -e ".[dev]"
+
+# Start RepoMind MCP server
+REPOMIND_ENABLED=true repomind serve
+```
+
+Then set the following in `ai_service/.env`:
+
+```env
+REPOMIND_ENABLED=true
+REPOMIND_COMMAND=repomind
+REPOMIND_ARGS=serve
+```
+
+✅ **RepoMind** running (MCP stdio) — ready for code indexing
+
+To link your codebase: open SchemaSculpt → **Repository** tab → **Connect a Local Repository** → Browse and select your project folder → **Link & Index**.
+
+---
+
+### 📊 Service Summary
+
+| Service       | Technology           | Port  | Required |
+|---------------|----------------------|-------|----------|
+| PostgreSQL    | Docker               | 5432  | ✅ Yes   |
+| Redis         | Docker               | 6379  | ✅ Yes   |
+| Ollama        | Local binary         | 11434 | ✅ Yes   |
+| AI Service    | Python / FastAPI     | 8000  | ✅ Yes   |
+| API Gateway   | Java / Spring Boot   | 8080  | ✅ Yes   |
+| Frontend      | React / Node.js      | 3000  | ✅ Yes   |
+| RepoMind      | Python / MCP stdio   | —     | ⚡ Optional |
+
+---
 
 ### First Steps
 
-1. **Create a New Project** or **Load an Example Spec**
-2. **See Real-time Validation** - The right panel shows errors and suggestions
-3. **Click "Run AI Analysis"** - Get intelligent insights about your API
-4. **Try a Quick Fix** - Click ⚡ or ✨ on any suggestion
-5. **Ask the AI** - Use natural language to edit: "Add a GET /health endpoint"
-6. **Test Your API** - Click the "API Lab" tab and send test requests
-7. **Advanced Analysis** - Navigate to the "Advanced Analysis" tab for:
-   - **Attack Path Simulation** - RAG-enhanced multi-step attack chain detection
-   - **Taint Analysis** - Track sensitive data flow through your API
-   - **Authorization Matrix** - Visualize access control patterns
-   - **Schema Similarity** - Detect duplicate/near-duplicate schemas
-   - **Zombie API Detection** - Find shadowed and orphaned endpoints
-   - **Comprehensive Architecture Analysis** - Get an overall health score (0-100)
+1. **Open** `http://localhost:3000`
+2. **Load an Example Spec** or paste your OpenAPI YAML/JSON into the editor
+3. **See Real-time Validation** — the right panel shows errors and suggestions
+4. **Run AI Analysis** — click "Run AI Analysis" for intelligent insights
+5. **Try Auto-fix** — click ⚡ or ✨ on any suggestion to apply it
+6. **Advanced Analysis** — navigate to the "Advanced Analysis" tab for:
+   - **Attack Path Simulation** — RAG-enhanced multi-step attack chain detection
+   - **Taint Analysis** — track sensitive data flow through your API
+   - **Authorization Matrix** — visualize access control patterns
+   - **Zombie API Detection** — find shadowed and orphaned endpoints
+7. **Code Intelligence** (optional) — link your repository via the Repository tab to enable code-aware attack chain validation with RepoMind
 
----
 
 ## 🎓 Advanced Features
 
@@ -723,24 +770,41 @@ SchemaSculpt AI ──generates──► Attack Chain (spec-level analysis)
 
 ### Setup
 
-**Step 1: Start RepoMind**
+**Step 1: Install and Start RepoMind**
 
 ```bash
-# Clone and install RepoMind
+# Install via pip (recommended)
+pip install repomind
+
+# OR install from source
 git clone https://github.com/sharma-manish-94/repomind.git
 cd repomind && pip install -e ".[dev]"
 
 # Start the MCP server
-python -m repomind.server
+REPOMIND_ENABLED=true repomind serve
 ```
 
-**Step 2: Index your codebase**
+**Step 2: Enable RepoMind in the AI Service**
 
-In SchemaSculpt's Odysseus tab, link your repository. RepoMind will index it using tree-sitter AST parsing and BGE-base embeddings (100% local).
+In `ai_service/.env`, add:
 
-**Step 3: Run code-aware analysis**
+```env
+REPOMIND_ENABLED=true
+REPOMIND_COMMAND=repomind
+REPOMIND_ARGS=serve
+```
 
-Navigate to the Advanced Analysis tab. Attack chain findings are now enriched with code-level evidence.
+Then restart the AI service (`uvicorn app.main:app --reload`).
+
+**Step 3: Link your codebase in the UI**
+
+Open SchemaSculpt → **Repository** tab → **Connect a Local Repository** → click **Browse** to navigate to your project folder → **Link & Index**.
+
+RepoMind will index your code using tree-sitter AST parsing and BGE-base embeddings — 100% locally.
+
+**Step 4: Run code-aware analysis**
+
+Navigate to the **Advanced Analysis** tab. Attack chain findings are now enriched with code-level evidence (CODE_CONFIRMED / CODE_DISPUTED / PARTIAL).
 
 ### The Four Integration Tools
 

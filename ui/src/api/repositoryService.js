@@ -254,3 +254,85 @@ export const parseRepositoryUrl = (url) => {
     return null;
   }
 };
+
+/**
+ * Link a local repository to a session (no auth required).
+ * Triggers RepoMind indexing in the background.
+ *
+ * @param {string} sessionId - Session ID
+ * @param {string} path - Absolute local path to the repository
+ * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ */
+export const linkLocalRepositoryBySession = async (sessionId, path) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/sessions/${sessionId}/local-repository`,
+      { path },
+      {
+        headers: {
+          "X-Session-ID": sessionId,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error linking local repository:", error);
+    return {
+      success: false,
+      error:
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to link local repository",
+    };
+  }
+};
+
+/**
+ * Browse local filesystem directories.
+ *
+ * @param {string} path - Directory path to browse (defaults to home dir if empty)
+ * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+ */
+export const browseLocalFilesystem = async (path = "") => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/filesystem/browse`, {
+      params: { path },
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error("Error browsing filesystem:", error);
+    return {
+      success: false,
+      error:
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to browse filesystem",
+    };
+  }
+};
+
+/**
+ * Check if RepoMind code intelligence service is available.
+ * @returns {Promise<{available: boolean, status: string, detail?: string}>}
+ */
+export const getRepoMindHealth = async () => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/sessions/repomind-health`,
+    );
+    const data = response.data;
+    return {
+      available: data?.status === "available",
+      status: data?.status || "unknown",
+      detail: data?.error || data?.hint || null,
+      toolCount: data?.tool_count || 0,
+    };
+  } catch (error) {
+    return {
+      available: false,
+      status: "unavailable",
+      detail: error.response?.data?.hint || "AI service may not be running.",
+    };
+  }
+};

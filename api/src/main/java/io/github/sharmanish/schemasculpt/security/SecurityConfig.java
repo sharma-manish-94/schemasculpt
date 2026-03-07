@@ -48,7 +48,8 @@ public class SecurityConfig {
                         "/api/v1/repository/**",
                         "/api/v1/projects/**",
                         "/api/v1/specifications/**",
-                        "/proxy/**"))
+                        "/proxy/**",
+                        "/api/v1/filesystem/**"))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(
@@ -79,6 +80,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/explanations/**")
                     .permitAll()
                     .requestMatchers("/api/v1/repository/**")
+                    .permitAll()
+                    .requestMatchers("/api/v1/filesystem/**")
                     .permitAll()
                     .requestMatchers("/proxy/**")
                     .permitAll()

@@ -6,10 +6,14 @@ import io.github.sharmanish.schemasculpt.dto.MockSessionResponse;
 import io.github.sharmanish.schemasculpt.dto.MockStartRequest;
 import io.github.sharmanish.schemasculpt.dto.SessionResponse;
 import io.github.sharmanish.schemasculpt.dto.request.CreateSessionRequest;
+import io.github.sharmanish.schemasculpt.dto.request.LinkRepositoryRequest;
+import io.github.sharmanish.schemasculpt.exception.ValidationException;
+import io.github.sharmanish.schemasculpt.service.RepoMindService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
+import java.util.Map;
 import io.github.sharmanish.schemasculpt.dto.request.UpdateSpecRequest;
 import io.github.sharmanish.schemasculpt.exception.SessionNotFoundException;
 import io.github.sharmanish.schemasculpt.service.SessionService;
-import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -40,13 +44,16 @@ import reactor.core.publisher.Mono;
 public class SessionController {
   private final SessionService sessionService;
   private final WebClient webClient;
+  private final RepoMindService repoMindService;
 
   public SessionController(
       final SessionService sessionService,
       final WebClient.Builder webClientBuilder,
+      final RepoMindService repoMindService,
       @Value("${ai.service.url}") String aiServiceUrl) {
     this.sessionService = sessionService;
     this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
+    this.repoMindService = repoMindService;
   }
 
   @PostMapping
@@ -109,5 +116,66 @@ public class SessionController {
 
     sessionService.closeSession(sessionId);
     return ResponseEntity.noContent().build();
+  }
+  @PostMapping("/{sessionId}/local-repository")
+  public ResponseEntity<Map<String, String>> linkLocalRepository(
+      @PathVariable @NotBlank(message = "Session ID cannot be blank") String sessionId,
+      @Valid @RequestBody LinkRepositoryRequest request) {
+
+    if (!request.isSafePath()) {
+      log.warn(
+          "Rejected unsafe repository path '{}' for session {}",
+          LogSanitizer.sanitize(request.path()),
+          LogSanitizer.sanitize(sessionId));
+      throw new ValidationException(
+          "Invalid repository path. Must be an absolute path without path traversal sequences.");
+    }
+
+    log.info(
+        "Linking local repository '{}' for session {}",
+        LogSanitizer.sanitize(request.path()),
+        LogSanitizer.sanitize(sessionId));
+
+    // Derive a repo name from the last path segment
+    String[] segments = request.path().replace("\\", "/").split("/");
+    String repoName = segments[segments.length - 1];
+    if (repoName.isBlank()) {
+      repoName = "local-repo";
+    }
+
+    final String finalRepoName = repoName;
+    repoMindService
+        .triggerRepoIndex(request.path(), finalRepoName)
+        .subscribe(
+            unused -> log.info("RepoMind indexing triggered for '{}'", finalRepoName),
+            error ->
+                log.error(
+                    "Failed to trigger indexing for '{}': {}", finalRepoName, error.getMessage()));
+
+    return ResponseEntity.ok(
+        Map.of("path", request.path(), "repoName", finalRepoName, "status", "indexing"));
+  }
+  @GetMapping("/repomind-health")
+  public Mono<ResponseEntity<Object>> repomindHealth() {
+    return webClient
+        .get()
+        .uri("/ai/repomind/health")
+        .retrieve()
+        .bodyToMono(Object.class)
+        .map(ResponseEntity::ok)
+        .onErrorResume(
+            error -> {
+              log.warn("RepoMind health check failed: {}", error.getMessage());
+              return Mono.just(
+                  ResponseEntity.status(503)
+                      .body(
+                          (Object)
+                              java.util.Map.of(
+                                  "status", "unavailable",
+                                  "error", error.getMessage(),
+                                  "hint",
+                                      "Ensure the AI service is running and RepoMind is"
+                                          + " installed (pip install repomind).")));
+            });
   }
 }

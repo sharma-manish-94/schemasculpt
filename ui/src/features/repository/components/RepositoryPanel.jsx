@@ -8,68 +8,151 @@ import React, { useState } from "react";
 import { useSpecStore } from "../../../store/specStore";
 import GitHubConnect from "./GitHubConnect";
 import RepositoryBrowser from "./RepositoryBrowser";
+import DirectoryPicker from "./DirectoryPicker";
 import "./RepositoryPanel.css";
 
 const LocalRepoConnector = () => {
   const {
-    projectId,
-    linkLocalRepository,
+    sessionId,
+    localRepositoryPath,
     isLinkingLocalRepo,
     linkLocalRepoError,
-    localRepositoryPath,
   } = useSpecStore();
 
   const [path, setPath] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
+  const [status, setStatus] = useState(null); // null | "success" | "error"
+  const [statusMsg, setStatusMsg] = useState("");
 
   const handleLinkRepository = async () => {
-    if (!path || !projectId) return;
-    const result = await linkLocalRepository(projectId, path);
-    if (result.success) {
-      alert(
-        "Successfully linked repository! Indexing will begin in the background.",
-      );
+    if (!path) return;
+    if (!sessionId) {
+      setStatus("error");
+      setStatusMsg("No active session. Please refresh the page and try again.");
+      return;
     }
+
+    setStatus(null);
+    setStatusMsg("");
+
+    const { linkLocalRepositoryBySession, getRepoMindHealth } =
+      await import("../../../api/repositoryService");
+
+    // Check RepoMind availability in parallel with linking
+    const [result, health] = await Promise.all([
+      linkLocalRepositoryBySession(sessionId, path),
+      getRepoMindHealth(),
+    ]);
+
+    if (result.success) {
+      useSpecStore.setState({ localRepositoryPath: path });
+      const repoName = result.data?.repoName || path;
+      if (health.available) {
+        setStatus("success");
+        setStatusMsg(
+          `Repository "${repoName}" linked! Indexing ${health.toolCount ? `(${health.toolCount} tools available)` : ""} started in the background.`,
+        );
+      } else {
+        setStatus("warning");
+        setStatusMsg(
+          `Repository path saved, but RepoMind is not running — indexing skipped. ` +
+            `Start RepoMind to enable code intelligence (REPOMIND_ENABLED=true).`,
+        );
+      }
+    } else {
+      setStatus("error");
+      setStatusMsg(result.error || "Failed to link repository.");
+    }
+  };
+
+  const handleDirectorySelected = (selectedPath) => {
+    setPath(selectedPath);
   };
 
   return (
     <div className="local-repo-connector">
-      <div className="divider">
+      <div className="local-repo-divider">
         <span>OR</span>
       </div>
-      <h4>Connect a Local Repository</h4>
-      {localRepositoryPath ? (
-        <div>
-          <p className="linked-path">
-            <strong>Linked Path:</strong> <code>{localRepositoryPath}</code>
+
+      <div className="local-repo-card">
+        <h3 className="local-repo-title">💻 Connect a Local Repository</h3>
+
+        {localRepositoryPath ? (
+          <div className="local-repo-linked">
+            <span className="local-repo-linked-icon">✅</span>
+            <div>
+              <div className="local-repo-linked-label">Currently linked</div>
+              <code className="local-repo-linked-path">
+                {localRepositoryPath}
+              </code>
+            </div>
+          </div>
+        ) : (
+          <p className="local-repo-description">
+            Select your local source code repository to enable{" "}
+            <strong>Code-Aware Analysis</strong> — AI that understands your
+            actual implementation.
           </p>
-          <p className="help-text">
-            To change the path, enter a new one below and re-link.
-          </p>
+        )}
+
+        <div className="local-repo-section">
+          <label className="local-repo-label" htmlFor="local-repo-path">
+            Repository Path
+          </label>
+          <div className="local-repo-input-row">
+            <input
+              id="local-repo-path"
+              type="text"
+              className="form-control"
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              placeholder="/home/user/projects/my-api"
+              disabled={isLinkingLocalRepo}
+              aria-label="Local repository path"
+            />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowPicker(true)}
+              disabled={isLinkingLocalRepo}
+              title="Browse for folder"
+            >
+              📂 Browse
+            </button>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary local-repo-link-btn"
+            onClick={handleLinkRepository}
+            disabled={isLinkingLocalRepo || !path}
+          >
+            {isLinkingLocalRepo ? "Linking…" : "🔗 Link & Index"}
+          </button>
         </div>
-      ) : (
-        <p className="help-text">
-          Enter the absolute local path to your source code repository to enable
-          Code-Aware Analysis.
-        </p>
-      )}
-      <div className="input-group">
-        <input
-          type="text"
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          placeholder="/Users/yourname/Documents/Github/my-project"
-          disabled={isLinkingLocalRepo}
-          aria-label="Local repository path"
-        />
-        <button
-          onClick={handleLinkRepository}
-          disabled={isLinkingLocalRepo || !path}
-        >
-          {isLinkingLocalRepo ? "Linking..." : "Link & Index"}
-        </button>
+
+        {status === "success" && (
+          <div className="local-repo-status local-repo-status--success">
+            ✅ {statusMsg}
+          </div>
+        )}
+        {status === "warning" && (
+          <div className="local-repo-status local-repo-status--warning">
+            ⚠️ {statusMsg}
+          </div>
+        )}
+        {(status === "error" || linkLocalRepoError) && (
+          <div className="local-repo-status local-repo-status--error">
+            ❌ {statusMsg || linkLocalRepoError}
+          </div>
+        )}
       </div>
-      {linkLocalRepoError && (
-        <p className="error-message">{linkLocalRepoError}</p>
+
+      {showPicker && (
+        <DirectoryPicker
+          onSelect={handleDirectorySelected}
+          onClose={() => setShowPicker(false)}
+        />
       )}
     </div>
   );
