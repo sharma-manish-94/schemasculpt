@@ -1,11 +1,16 @@
 package io.github.sharmanish.schemasculpt.controller;
 
+import io.github.sharmanish.schemasculpt.dto.analysis.AuthVerificationResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.ContractVerificationResponse;
 import io.github.sharmanish.schemasculpt.dto.response.ImplementationCodeResponse;
+import io.github.sharmanish.schemasculpt.dto.response.ImplementationIntelligenceResponse;
 import io.github.sharmanish.schemasculpt.entity.Project;
 import io.github.sharmanish.schemasculpt.exception.ValidationException;
 import io.github.sharmanish.schemasculpt.security.CustomOAuth2User;
 import io.github.sharmanish.schemasculpt.service.ProjectService;
 import io.github.sharmanish.schemasculpt.service.RepoMindService;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +40,16 @@ public class ImplementationController {
       Pattern.compile("^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$");
 
   @GetMapping("/projects/{projectId}/operations")
-  public Mono<ResponseEntity<ImplementationCodeResponse>> getImplementationForOperation(
+  public Mono<ResponseEntity<ImplementationIntelligenceResponse>> getImplementationIntelligence(
       @PathVariable Long projectId,
-      @RequestParam String operationId,
+      @RequestParam(required = false) String operationId,
+      @RequestParam(required = false) String path,
+      @RequestParam(required = false) String method,
+      @RequestParam(required = false) String repositoryPath,
       @AuthenticationPrincipal CustomOAuth2User principal) {
 
-    // Validate operationId to prevent path traversal and injection attacks
-    if (operationId == null || !VALID_OPERATION_ID_PATTERN.matcher(operationId).matches()) {
+    // Validate operationId if present
+    if (operationId != null && !VALID_OPERATION_ID_PATTERN.matcher(operationId).matches()) {
       log.warn(
           "Invalid operationId attempted: '{}' by user {}", operationId, principal.getUserId());
       throw new ValidationException(
@@ -50,29 +58,103 @@ public class ImplementationController {
     }
 
     log.debug(
-        "Fetching implementation for operationId: '{}' in project {}", operationId, projectId);
+        "Fetching intelligence for operationId: '{}' (path: {}, method: {}) in project {}",
+        operationId,
+        path,
+        method,
+        projectId);
 
-    // 1. Get project details to find the repository name and verify access
-    Project project = projectService.getProject(projectId, principal.getUserId());
-    String repoName = project.getName();
+    // 1. Determine repository context
+    String effectiveRepoPath;
+    String repoName;
 
-    if (project.getRepositoryPath() == null || project.getRepositoryPath().isBlank()) {
-      log.debug("No repository linked to project {}", projectId);
-      return Mono.just(ResponseEntity.notFound().build());
+    if (repositoryPath != null && !repositoryPath.isBlank()) {
+      effectiveRepoPath = repositoryPath;
+      // Derive repo name from path
+      String[] segments = repositoryPath.replace("\\", "/").split("/");
+      repoName = segments[segments.length - 1];
+    } else {
+      Project project = projectService.getProject(projectId, principal.getUserId());
+      if (project.getRepositoryPath() == null || project.getRepositoryPath().isBlank()) {
+        log.debug("No repository linked to project {}", projectId);
+        return Mono.just(ResponseEntity.notFound().build());
+      }
+      effectiveRepoPath = project.getRepositoryPath();
+      repoName = project.getName();
     }
 
-    // 2. Call RepoMindService to get the implementation code
-    return repoMindService
-        .getImplementationCode(repoName, operationId)
-        .map(ResponseEntity::ok)
-        .onErrorResume(
-            e -> {
-              log.error(
-                  "Failed to get implementation for operationId '{}' in project {}: {}",
-                  operationId,
-                  projectId,
-                  e.getMessage());
-              return Mono.just(ResponseEntity.internalServerError().build());
-            });
+    // 2. Step 1: Attempt to intelligently correlate spec to code if path and method are provided
+    Mono<String> symbolResolverMono;
+    if (path != null && method != null) {
+      symbolResolverMono =
+          repoMindService
+              .intelligentCorrelate(repoName, path, method, operationId)
+              .map(
+                  correlation ->
+                      correlation.matched()
+                          ? correlation.best_match().qualified_name()
+                          : (operationId != null ? operationId : ""))
+              .onErrorResume(e -> {
+                  log.warn("Intelligent correlation failed, falling back to operationId: {}", e.getMessage());
+                  return Mono.just(operationId != null ? operationId : "");
+              });
+    } else {
+      symbolResolverMono = Mono.just(operationId != null ? operationId : "");
+    }
+
+    // 3. Step 2 & 3: Resolve implementation and verify contract in parallel
+    return symbolResolverMono.flatMap(
+        resolvedSymbol -> {
+          if (resolvedSymbol == null || resolvedSymbol.isBlank()) {
+            log.info("No symbol resolved for path: {} method: {}. Returning empty intelligence.", path, method);
+            return Mono.just(ResponseEntity.ok(new ImplementationIntelligenceResponse(
+                new ImplementationCodeResponse("unknown", "// Could not correlate this endpoint to any source code handler.\n// Ensure the repository is indexed and the path/method match your controller.", 0, "text"),
+                new ContractVerificationResponse(false, Collections.emptyList(), "Not analyzed - symbol not found"),
+                new AuthVerificationResponse(false, Collections.emptyList(), "N/A", "N/A"),
+                Collections.emptyList()
+            )));
+          }
+
+          Mono<ImplementationCodeResponse> codeMono =
+              repoMindService.getImplementationCode(repoName, resolvedSymbol);
+          Mono<ContractVerificationResponse> contractMono =
+              (path != null && method != null)
+                  ? repoMindService.verifyContract(repoName, path, method).onErrorReturn(null)
+                  : Mono.justOrEmpty(null);
+          Mono<AuthVerificationResponse> authMono =
+              (path != null && method != null)
+                  ? repoMindService
+                      .verifyAuthContract(repoName, path, method, Collections.emptyList())
+                      .onErrorReturn(null)
+                  : Mono.justOrEmpty(null);
+
+          return Mono.zip(
+                  codeMono.onErrorResume(
+                      e ->
+                          Mono.just(
+                              new ImplementationCodeResponse(
+                                  "unknown",
+                                  "// Implementation not found for " + resolvedSymbol,
+                                  0,
+                                  "text"))),
+                  contractMono.defaultIfEmpty(
+                      new ContractVerificationResponse(
+                          false, Collections.emptyList(), "Not analyzed")),
+                  authMono.defaultIfEmpty(
+                      new AuthVerificationResponse(false, Collections.emptyList(), "N/A", "N/A")))
+              .map(
+                  tuple -> {
+                    ImplementationCodeResponse code = tuple.getT1();
+                    ContractVerificationResponse contract = tuple.getT2();
+                    AuthVerificationResponse auth = tuple.getT3();
+
+                    // Extract callStack from best_match if available (requires passing more state
+                    // through)
+                    List<String> callStack = Collections.emptyList();
+
+                    return ResponseEntity.ok(
+                        new ImplementationIntelligenceResponse(code, contract, auth, callStack));
+                  });
+        });
   }
 }

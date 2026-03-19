@@ -56,12 +56,12 @@ public class TaintAnalyzer extends AbstractSchemaAnalyzer<TaintAnalysisResponse>
                             operation
                                 .getResponses()
                                 .forEach(
-                                    (statusCode, response) -> {
+                                    (_, response) -> {
                                       if (response.getContent() != null) {
                                         response
                                             .getContent()
                                             .forEach(
-                                                (mediaType, content) -> {
+                                                (_, content) -> {
                                                   Schema<?> schema = content.getSchema();
                                                   if (schema != null) {
                                                     // Traversal: Check if response flows from a

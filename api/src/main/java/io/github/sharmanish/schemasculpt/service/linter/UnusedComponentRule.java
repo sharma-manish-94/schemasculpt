@@ -1,5 +1,6 @@
 package io.github.sharmanish.schemasculpt.service.linter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.sharmanish.schemasculpt.dto.ValidationSuggestion;
 import io.swagger.v3.oas.models.OpenAPI;
 import java.util.Collections;
@@ -30,12 +31,13 @@ public class UnusedComponentRule implements LinterRule {
     Set<String> referencedSchemas = new HashSet<>();
 
     try {
-      String jsonString = jsonMapper.writeValueAsString(openApi);
+      // Use Swagger's mapper for consistency with OpenAPI models
+      String jsonString = io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi);
       Matcher matcher = REF_PATTERN.matcher(jsonString);
       while (matcher.find()) {
         referencedSchemas.add(matcher.group(1));
       }
-    } catch (JacksonException e) {
+    } catch (JacksonException | JsonProcessingException _) {
       // If we can't process the spec, we can't find references.
       return Collections.emptyList();
     }

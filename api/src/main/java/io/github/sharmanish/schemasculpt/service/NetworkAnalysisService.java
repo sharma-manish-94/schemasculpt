@@ -66,7 +66,7 @@ public class NetworkAnalysisService {
         };
 
     // Comparator for edges (always match since DefaultEdge has no data)
-    Comparator<DefaultEdge> edgeComparator = (e1, e2) -> 0;
+    Comparator<DefaultEdge> edgeComparator = (_, _) -> 0;
 
     var inspector =
         new VF2GraphIsomorphismInspector<>(

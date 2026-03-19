@@ -65,7 +65,7 @@ public class MissingDescriptionRule implements LinterRule {
         if (operation.getDescription() == null || operation.getDescription().trim().isEmpty()) {
           suggestions.add(
               new ValidationSuggestion(
-                  String.format("Operation '%s %s' is missing a description.", method, path),
+                  "Operation '%s %s' is missing a description.".formatted(method, path),
                   "add-operation-description",
                   "warning",
                   "documentation",
@@ -135,7 +135,7 @@ public class MissingDescriptionRule implements LinterRule {
       if (schema.getDescription() == null || schema.getDescription().trim().isEmpty()) {
         suggestions.add(
             new ValidationSuggestion(
-                String.format("Schema '%s' is missing a description.", schemaName),
+                "Schema '%s' is missing a description.".formatted(schemaName),
                 "add-schema-description",
                 "warning",
                 "documentation",

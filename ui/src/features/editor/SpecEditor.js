@@ -9,7 +9,13 @@ function SpecEditor({ project }) {
   const specText = useSpecStore((state) => state.specText);
   const parseEndpoints = useSpecStore((state) => state.parseEndpoints);
 
+  const setProjectId = useSpecStore((state) => state.setProjectId);
+
   useEffect(() => {
+    if (project?.id) {
+      setProjectId(project.id);
+    }
+
     const initializeSession = async () => {
       try {
         const sessionId = await createSession();
@@ -22,7 +28,7 @@ function SpecEditor({ project }) {
     };
 
     initializeSession();
-  }, [createSession, connectWebSocket]);
+  }, [project?.id, setProjectId, createSession, connectWebSocket]);
 
   // Parse endpoints whenever the spec text changes
   useEffect(() => {

@@ -6,7 +6,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -21,8 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Controller for browsing local filesystem directories.
  *
- * <p>This endpoint is intentionally scoped to directory listing only (no file reads) to support
- * the local repository picker UI. It is safe for local development use.
+ * <p>This endpoint is intentionally scoped to directory listing only (no file reads) to support the
+ * local repository picker UI. It is safe for local development use.
  */
 @RestController
 @RequestMapping("/api/v1/filesystem")
@@ -32,17 +31,16 @@ public class FilesystemController {
   private static final int MAX_ENTRIES = 500;
 
   @GetMapping("/browse")
-  public ResponseEntity<Map<String, Object>> browse(
-      @RequestParam(defaultValue = "") String path) {
+  public ResponseEntity<Map<String, Object>> browse(@RequestParam(defaultValue = "") String path) {
 
     Path browsePath;
 
     if (path.isBlank()) {
-      browsePath = Paths.get(System.getProperty("user.home"));
+      browsePath = Path.of(System.getProperty("user.home"));
     } else {
       try {
-        browsePath = Paths.get(path).normalize();
-      } catch (InvalidPathException e) {
+        browsePath = Path.of(path).normalize();
+      } catch (InvalidPathException _) {
         throw new ValidationException("Invalid path: " + LogSanitizer.sanitize(path));
       }
 

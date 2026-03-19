@@ -92,6 +92,11 @@ class Settings(BaseSettings):
     database_url: Optional[str] = Field(default=None, env="DATABASE_URL")
     redis_url: Optional[str] = Field(default="redis://localhost:6379", env="REDIS_URL")
 
+    # RepoMind Configuration
+    repomind_enabled: bool = Field(default=False, env="REPOMIND_ENABLED")
+    repomind_command: str = Field(default="repomind", env="REPOMIND_COMMAND")
+    repomind_args: str = Field(default="serve", env="REPOMIND_ARGS")
+
     # AI Service Data Directory
     ai_service_data_dir: str = Field(default=".", env="AI_SERVICE_DATA_DIR")
 

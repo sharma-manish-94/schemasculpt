@@ -96,7 +96,7 @@ public class SecurityFindingsExtractor {
                               .getRequestBody()
                               .getContent()
                               .forEach(
-                                  (mediaTypeStr, mediaType) -> {
+                                  (_, mediaType) -> {
                                     if (mediaType.getSchema() != null) {
                                       String schemaName = extractSchemaName(mediaType.getSchema());
                                       if (schemaName != null) {
@@ -126,12 +126,12 @@ public class SecurityFindingsExtractor {
                           operation
                               .getResponses()
                               .forEach(
-                                  (statusCode, response) -> {
+                                  (_, response) -> {
                                     if (response.getContent() != null) {
                                       response
                                           .getContent()
                                           .forEach(
-                                              (mediaTypeStr, mediaType) -> {
+                                              (_, mediaType) -> {
                                                 if (mediaType.getSchema() != null) {
                                                   String schemaName =
                                                       extractSchemaName(mediaType.getSchema());
@@ -174,9 +174,7 @@ public class SecurityFindingsExtractor {
                           String fieldName = String.valueOf(fieldNameObj);
                           if (isSensitiveWord(fieldName)) {
                             String fieldType =
-                                fieldSchema instanceof Schema
-                                    ? ((Schema<?>) fieldSchema).getType()
-                                    : "unknown";
+                                fieldSchema instanceof Schema<?> s ? s.getType() : "unknown";
                             findings.add(
                                 SecurityFinding.schemaContainsSensitiveField(
                                     schemaName,

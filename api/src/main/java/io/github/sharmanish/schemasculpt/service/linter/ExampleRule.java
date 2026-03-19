@@ -171,7 +171,7 @@ public class ExampleRule implements LinterRule {
     try {
       int code = Integer.parseInt(responseCode);
       return code >= 200 && code < 300;
-    } catch (NumberFormatException e) {
+    } catch (NumberFormatException _) {
       return false;
     }
   }

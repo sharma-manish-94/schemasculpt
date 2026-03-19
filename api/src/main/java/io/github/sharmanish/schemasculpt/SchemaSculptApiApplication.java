@@ -7,10 +7,15 @@ import org.springframework.context.annotation.DependsOn;
 @SuppressWarnings("checkstyle:MissingJavadocType")
 @SpringBootApplication
 @DependsOn("flyway")
-public class SchemaSculptApiApplication {
+public final class SchemaSculptApiApplication {
 
   private SchemaSculptApiApplication() {}
 
+  /**
+   * Entry point for the application.
+   *
+   * @param args command-line arguments
+   */
   public static void main(String[] args) {
     SpringApplication.run(SchemaSculptApiApplication.class, args);
   }

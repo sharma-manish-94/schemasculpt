@@ -85,10 +85,12 @@ class RepoMindClient:
         command: Optional[str] = None,
         args: Optional[List[str]] = None,
     ):
-        self.command = command or os.environ.get("REPOMIND_COMMAND", "repomind")
+        from app.core.config import settings
+
+        self.command = command or settings.repomind_command
         raw_args = args
         if raw_args is None:
-            raw_args = os.environ.get("REPOMIND_ARGS", "serve").split()
+            raw_args = settings.repomind_args.split()
         self.args: List[str] = raw_args if isinstance(raw_args, list) else [raw_args]
         self._client = None
         self._session_active = False

@@ -70,7 +70,7 @@ public class RepositoryService {
             })
         .bodyToMono(RepositoryConnectionResponse.class)
         .doOnSuccess(
-            response ->
+            _ ->
                 log.info(
                     "Successfully connected to {} for session: {}", request.provider(), sessionId))
         .doOnError(
@@ -94,7 +94,7 @@ public class RepositoryService {
         .header("X-Session-ID", sessionId)
         .retrieve()
         .bodyToMono(Void.class)
-        .doOnSuccess(v -> log.info("Successfully disconnected session: {}", sessionId))
+        .doOnSuccess(_ -> log.info("Successfully disconnected session: {}", sessionId))
         .doOnError(error -> log.error("Error disconnecting session: {}", sessionId, error));
   }
 

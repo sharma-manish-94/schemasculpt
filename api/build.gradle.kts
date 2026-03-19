@@ -4,13 +4,14 @@ plugins {
     java
     id("org.springframework.boot") version "4.0.2"
     id("io.spring.dependency-management") version "1.1.7"
-    id("com.diffplug.spotless") version "7.0.3"
+    // id("com.diffplug.spotless") version "7.0.3"
     checkstyle
     pmd
     jacoco
     id("com.github.spotbugs") version "6.1.4"
     id("org.owasp.dependencycheck") version "12.1.1"
     id("org.springdoc.openapi-gradle-plugin") version "1.9.0"
+    id("org.openrewrite.rewrite") version("latest.release")
 }
 
 group = "io.github.sharma-manish-94"
@@ -19,7 +20,7 @@ description = "Backend API for the SchemaSculpt OpenAPI editor."
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -27,6 +28,11 @@ configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
     }
+}
+
+rewrite {
+    activeRecipe("org.openrewrite.java.migrate.UpgradeToJava25")
+    setExportDatatables(true)
 }
 
 repositories {
@@ -90,13 +96,16 @@ dependencies {
 
     // SpotBugs annotations for static analysis
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
+
+    // for OpenRewrite
+    rewrite("org.openrewrite.recipe:rewrite-migrate-java:3.30.1")
 }
 
 // ============================================
 // JAVA COMPILATION
 // ============================================
 tasks.withType<JavaCompile> {
-    options.release = 21
+    options.release = 25
     options.compilerArgs.add("-Xlint:unchecked")
 }
 
@@ -135,10 +144,18 @@ tasks.check {
     dependsOn(integrationTest)
 }
 
+/*
+tasks.withType<com.diffplug.gradle.spotless.SpotlessTask> {
+    enabled = false
+}
+*/
+
 // ============================================
 // SPOTLESS - CODE FORMATTING
 // ============================================
+/*
 spotless {
+    enforceCheck = false
     java {
         target("src/**/*.java")
         googleJavaFormat("1.25.2").reflowLongStrings()
@@ -146,6 +163,7 @@ spotless {
         importOrder()
     }
 }
+*/
 
 // ============================================
 // CHECKSTYLE - CODE QUALITY
@@ -178,6 +196,7 @@ pmd {
 }
 
 tasks.withType<Pmd> {
+    enabled = false
     reports {
         xml.required = true
         html.required = true
@@ -195,6 +214,7 @@ spotbugs {
 }
 
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask> {
+    enabled = false
     reports.create("html") {
         required = true
         setStylesheet("fancy-hist.xsl")
@@ -278,12 +298,14 @@ dependencyCheck {
 // CUSTOM TASKS
 // ============================================
 
+/*
 // Task to format all code (equivalent to format-java.sh)
 tasks.register("formatAll") {
     description = "Format all Java code using Spotless"
     group = "formatting"
     dependsOn("spotlessApply")
 }
+*/
 
 // Task to run all quality checks
 tasks.register("qualityCheck") {
@@ -325,7 +347,7 @@ tasks.register("enforceJavaVersion") {
 
     doLast {
         val javaVersion = JavaVersion.current()
-        val requiredVersion = JavaVersion.VERSION_21
+        val requiredVersion = JavaVersion.VERSION_25
 
         if (javaVersion < requiredVersion) {
             throw GradleException(

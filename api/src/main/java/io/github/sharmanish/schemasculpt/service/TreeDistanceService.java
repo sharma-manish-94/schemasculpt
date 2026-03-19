@@ -44,8 +44,8 @@ public class TreeDistanceService {
     if (t2 == null) return t1.graph().vertexSet().size();
 
     // Cost Functions
-    ToDoubleFunction<SpecNode> insertCost = (node) -> 1.0;
-    ToDoubleFunction<SpecNode> removeCost = (node) -> 1.0;
+    ToDoubleFunction<SpecNode> insertCost = (_) -> 1.0;
+    ToDoubleFunction<SpecNode> removeCost = (_) -> 1.0;
     ToDoubleBiFunction<SpecNode, SpecNode> changeCost =
         (n1, n2) -> {
           if (Objects.equals(n1.label(), n2.label()) && Objects.equals(n1.type(), n2.type())) {

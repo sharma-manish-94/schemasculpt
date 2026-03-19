@@ -20,9 +20,17 @@ function NavigationPanel() {
     // 1. Set the selected item for highlighting
     setSelectedNavItem(endpoint);
 
-    // 2. If it's an operation with an ID, fetch its implementation
-    if (endpoint.operationId && projectId) {
-      fetchImplementation(projectId, endpoint.operationId);
+    // 2. Fetch implementation intelligence if we have the context
+    if (
+      projectId &&
+      (endpoint.operationId || (endpoint.path && endpoint.method))
+    ) {
+      fetchImplementation(
+        projectId,
+        endpoint.operationId,
+        endpoint.path,
+        endpoint.method,
+      );
       // 3. Switch the right panel to the implementation view
       setActiveRightPanelTab("implementation");
     }

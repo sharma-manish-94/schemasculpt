@@ -7,11 +7,17 @@ export const implementationAPI = {
    * @param {string} operationId The operationId to look up.
    * @returns {Promise<object>} An object containing the implementation details.
    */
-  async getImplementation(projectId, operationId) {
+  async getImplementation(
+    projectId,
+    operationId,
+    path,
+    method,
+    repositoryPath,
+  ) {
     const response = await apiClient.get(
       `/api/v1/implementations/projects/${projectId}/operations`,
       {
-        params: { operationId },
+        params: { operationId, path, method, repositoryPath },
       },
     );
     return response.data;

@@ -7,18 +7,19 @@ import io.github.sharmanish.schemasculpt.dto.MockStartRequest;
 import io.github.sharmanish.schemasculpt.dto.SessionResponse;
 import io.github.sharmanish.schemasculpt.dto.request.CreateSessionRequest;
 import io.github.sharmanish.schemasculpt.dto.request.LinkRepositoryRequest;
-import io.github.sharmanish.schemasculpt.exception.ValidationException;
-import io.github.sharmanish.schemasculpt.service.RepoMindService;
-import io.github.sharmanish.schemasculpt.util.LogSanitizer;
-import java.util.Map;
 import io.github.sharmanish.schemasculpt.dto.request.UpdateSpecRequest;
 import io.github.sharmanish.schemasculpt.exception.SessionNotFoundException;
+import io.github.sharmanish.schemasculpt.exception.ValidationException;
+import io.github.sharmanish.schemasculpt.service.ProjectService;
+import io.github.sharmanish.schemasculpt.service.RepoMindService;
 import io.github.sharmanish.schemasculpt.service.SessionService;
+import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,15 +46,18 @@ public class SessionController {
   private final SessionService sessionService;
   private final WebClient webClient;
   private final RepoMindService repoMindService;
+  private final ProjectService projectService;
 
   public SessionController(
       final SessionService sessionService,
       final WebClient.Builder webClientBuilder,
       final RepoMindService repoMindService,
+      final ProjectService projectService,
       @Value("${ai.service.url}") String aiServiceUrl) {
     this.sessionService = sessionService;
     this.webClient = webClientBuilder.baseUrl(aiServiceUrl).build();
     this.repoMindService = repoMindService;
+    this.projectService = projectService;
   }
 
   @PostMapping
@@ -62,7 +66,8 @@ public class SessionController {
     log.info("Creating new session");
     String sessionId = sessionService.createSession(request.specText());
     log.info("Created session with ID: {}", LogSanitizer.sanitize(sessionId));
-    return ResponseEntity.status(HttpStatus.CREATED).body(new SessionResponse(sessionId));
+    // For now, return a fixed projectId since the session-to-project mapping is simplified
+    return ResponseEntity.status(HttpStatus.CREATED).body(new SessionResponse(sessionId, 1L));
   }
 
   @PostMapping("/mock")
@@ -117,6 +122,7 @@ public class SessionController {
     sessionService.closeSession(sessionId);
     return ResponseEntity.noContent().build();
   }
+
   @PostMapping("/{sessionId}/local-repository")
   public ResponseEntity<Map<String, String>> linkLocalRepository(
       @PathVariable @NotBlank(message = "Session ID cannot be blank") String sessionId,
@@ -144,17 +150,25 @@ public class SessionController {
     }
 
     final String finalRepoName = repoName;
-    repoMindService
-        .triggerRepoIndex(request.path(), finalRepoName)
-        .subscribe(
-            unused -> log.info("RepoMind indexing triggered for '{}'", finalRepoName),
-            error ->
-                log.error(
-                    "Failed to trigger indexing for '{}': {}", finalRepoName, error.getMessage()));
+
+    // Explicitly link the repository to project 1 so it's persisted for the implementation flow
+    try {
+        projectService.linkRepository(1L, 1L, request.path());
+    } catch (Exception e) {
+        log.warn("Failed to link repository to project 1: {}. Continuing with direct indexing.", e.getMessage());
+        repoMindService
+            .triggerRepoIndex(request.path(), finalRepoName)
+            .subscribe(
+                _ -> log.info("RepoMind indexing triggered for '{}'", finalRepoName),
+                error ->
+                    log.error(
+                        "Failed to trigger indexing for '{}': {}", finalRepoName, error.getMessage()));
+    }
 
     return ResponseEntity.ok(
         Map.of("path", request.path(), "repoName", finalRepoName, "status", "indexing"));
   }
+
   @GetMapping("/repomind-health")
   public Mono<ResponseEntity<Object>> repomindHealth() {
     return webClient
@@ -171,11 +185,13 @@ public class SessionController {
                       .body(
                           (Object)
                               java.util.Map.of(
-                                  "status", "unavailable",
-                                  "error", error.getMessage(),
+                                  "status",
+                                  "unavailable",
+                                  "error",
+                                  error.getMessage(),
                                   "hint",
-                                      "Ensure the AI service is running and RepoMind is"
-                                          + " installed (pip install repomind).")));
+                                  "Ensure the AI service is running and RepoMind is"
+                                      + " installed (pip install repomind).")));
             });
   }
 }

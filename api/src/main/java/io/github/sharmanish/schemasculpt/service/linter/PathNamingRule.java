@@ -40,7 +40,7 @@ public class PathNamingRule implements LinterRule {
     if (path.endsWith("/") && !path.equals("/")) {
       suggestions.add(
           new ValidationSuggestion(
-              String.format("Path '%s' should not have trailing slash.", path),
+              "Path '%s' should not have trailing slash.".formatted(path),
               "remove-trailing-slash",
               "warning",
               "general",
@@ -52,7 +52,7 @@ public class PathNamingRule implements LinterRule {
     if (path.contains("//")) {
       suggestions.add(
           new ValidationSuggestion(
-              String.format("Path '%s' should not contain consecutive slashes.", path),
+              "Path '%s' should not contain consecutive slashes.".formatted(path),
               "fix-consecutive-slashes",
               "warning",
               "general",

@@ -31,7 +31,7 @@ public class MissingOperationIdRule implements LinterRule {
         if (operation.getOperationId() == null || operation.getOperationId().isBlank()) {
           suggestions.add(
               new ValidationSuggestion(
-                  String.format("Operation '%s %s' is missing an operationId.", method, path),
+                  "Operation '%s %s' is missing an operationId.".formatted(method, path),
                   "generate-operation-id",
                   "warning",
                   "completeness",

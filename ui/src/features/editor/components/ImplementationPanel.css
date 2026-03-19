@@ -7,6 +7,20 @@
   background: var(--surface-base);
 }
 
+.impl-main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.impl-editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--border-subtle);
+}
+
 .impl-header {
   display: flex;
   align-items: center;

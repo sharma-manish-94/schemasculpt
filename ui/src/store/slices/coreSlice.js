@@ -105,10 +105,15 @@ export const coreSlice = (set, get) => ({
         requestBody,
         { headers: { "Content-Type": "application/json" } },
       );
-      const newSessionId = response.data.sessionId;
-      set({ sessionId: newSessionId });
-      console.log("Session created with ID:", newSessionId);
-      return newSessionId;
+      const { sessionId, projectId } = response.data;
+      set({ sessionId, projectId });
+      console.log(
+        "Session created with ID:",
+        sessionId,
+        "Project ID:",
+        projectId,
+      );
+      return sessionId;
     } catch (error) {
       console.error("Failed to create session:", error);
       throw error;
@@ -146,17 +151,23 @@ export const coreSlice = (set, get) => ({
     }
   },
 
-  fetchImplementation: async (projectId, operationId) => {
-    if (!projectId || !operationId) return;
+  fetchImplementation: async (projectId, operationId, path, method) => {
+    if (!projectId) return;
+    if (!operationId && (!path || !method)) return;
+
+    const { localRepositoryPath } = get();
 
     set({ isFetchingImplementation: true, implementationError: null });
     try {
-      const implementation = await implementationAPI.getImplementation(
+      const intelligence = await implementationAPI.getImplementation(
         projectId,
         operationId,
+        path,
+        method,
+        localRepositoryPath,
       );
       set({
-        implementationCode: implementation,
+        implementationCode: intelligence,
         isFetchingImplementation: false,
       });
     } catch (error) {

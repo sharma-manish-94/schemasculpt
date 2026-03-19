@@ -27,8 +27,7 @@ public record SecurityFinding(
         "HIGH",
         "security",
         method + " " + path,
-        String.format(
-            "Endpoint %s %s has no security requirements (publicly accessible)", method, path),
+        "Endpoint %s %s has no security requirements (publicly accessible)".formatted(method, path),
         Map.of("method", method, "path", path));
   }
 
@@ -40,7 +39,7 @@ public record SecurityFinding(
         "INFO",
         "data-exposure",
         method + " " + path,
-        String.format("Endpoint %s %s returns schema '%s'", method, path, schemaName),
+        "Endpoint %s %s returns schema '%s'".formatted(method, path, schemaName),
         Map.of(
             "method", method,
             "path", path,
@@ -56,8 +55,7 @@ public record SecurityFinding(
         "INFO",
         "mass-assignment",
         method + " " + path,
-        String.format(
-            "Endpoint %s %s accepts schema '%s' in request body", method, path, schemaName),
+        "Endpoint %s %s accepts schema '%s' in request body".formatted(method, path, schemaName),
         Map.of(
             "method", method,
             "path", path,
@@ -73,9 +71,8 @@ public record SecurityFinding(
         "MEDIUM",
         "data-exposure",
         null,
-        String.format(
-            "Schema '%s' contains sensitive field '%s' (type: %s)",
-            schemaName, fieldName, fieldType),
+        "Schema '%s' contains sensitive field '%s' (type: %s)"
+            .formatted(schemaName, fieldName, fieldType),
         Map.of(
             "schema", schemaName,
             "field", fieldName,
@@ -90,9 +87,8 @@ public record SecurityFinding(
         "HIGH",
         "mass-assignment",
         method + " " + path,
-        String.format(
-            "Endpoint %s %s allows writing to sensitive field '%s' in schema '%s'",
-            method, path, fieldName, schemaName),
+        "Endpoint %s %s allows writing to sensitive field '%s' in schema '%s'"
+            .formatted(method, path, fieldName, schemaName),
         Map.of(
             "method", method,
             "path", path,
@@ -108,7 +104,7 @@ public record SecurityFinding(
         "INFO",
         "data-flow",
         viaEndpoint,
-        String.format("Schema '%s' references schema '%s'", sourceSchema, targetSchema),
+        "Schema '%s' references schema '%s'".formatted(sourceSchema, targetSchema),
         Map.of(
             "sourceSchema", sourceSchema,
             "targetSchema", targetSchema,

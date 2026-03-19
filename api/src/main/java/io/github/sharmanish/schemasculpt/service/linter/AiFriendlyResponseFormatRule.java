@@ -129,16 +129,15 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
   private ValidationSuggestion createErrorStructureSuggestion(
       String path, String method, String statusCode) {
     String message =
-        String.format(
-            """
-Operation [%s %s] returns a non-standard error response for status %s.
+        """
+        Operation [%s %s] returns a non-standard error response for status %s.
 
-WHY: When an AI agent receives an error, it attempts to 'reason' through a fix. \
-If the error body is just a plain string or missing a 'type' code, the agent cannot \
-determine if the error was a validation issue (retryable with better input) \
-or a system failure (non-retryable).\
-""",
-            method, path, statusCode);
+        WHY: When an AI agent receives an error, it attempts to 'reason' through a fix. \
+        If the error body is just a plain string or missing a 'type' code, the agent cannot \
+        determine if the error was a validation issue (retryable with better input) \
+        or a system failure (non-retryable).\
+        """
+            .formatted(method, path, statusCode);
 
     // Deep metadata helps automated tools or IDE plugins show specific fixes
     Map<String, Object> metadata =

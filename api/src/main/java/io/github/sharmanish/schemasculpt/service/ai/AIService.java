@@ -124,7 +124,7 @@ public class AIService {
         Object yamlObject = Yaml.mapper().readValue(rawSpec, Object.class);
         return Yaml.pretty(yamlObject);
       }
-    } catch (JsonProcessingException e) {
+    } catch (JsonProcessingException _) {
       return rawSpec;
     }
   }

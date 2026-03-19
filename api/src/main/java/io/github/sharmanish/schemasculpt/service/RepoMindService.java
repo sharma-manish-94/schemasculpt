@@ -1,7 +1,12 @@
 package io.github.sharmanish.schemasculpt.service;
 
+import io.github.sharmanish.schemasculpt.dto.analysis.AuthVerificationResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.CodeMetrics;
 import io.github.sharmanish.schemasculpt.dto.analysis.CodeOwnership;
+import io.github.sharmanish.schemasculpt.dto.analysis.ContractVerificationResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.IndexingResult;
+import io.github.sharmanish.schemasculpt.dto.analysis.IndexingStats;
+import io.github.sharmanish.schemasculpt.dto.analysis.SpecCorrelationResponse;
 import io.github.sharmanish.schemasculpt.dto.analysis.TestCoverage;
 import io.github.sharmanish.schemasculpt.dto.response.ImplementationCodeResponse;
 import reactor.core.publisher.Mono;
@@ -12,10 +17,16 @@ public interface RepoMindService {
    *
    * @param repoPath The absolute local path to the repository to be indexed.
    * @param repoName A unique name to identify the repository within RepoMind.
-   * @return A Mono that completes when the indexing request is sent (not when indexing finishes).
-   *     Callers should subscribe and handle errors appropriately.
+   * @return A Mono containing the indexing result.
    */
-  Mono<Void> triggerRepoIndex(String repoPath, String repoName);
+  Mono<IndexingResult> triggerRepoIndex(String repoPath, String repoName);
+
+  /**
+   * Fetches current indexing statistics from RepoMind.
+   *
+   * @return A Mono containing the indexing statistics.
+   */
+  Mono<IndexingStats> getIndexStats();
 
   /**
    * Asynchronously fetches the implementation code for a given operation ID from RepoMind.
@@ -25,6 +36,51 @@ public interface RepoMindService {
    * @return A Mono containing the implementation code details.
    */
   Mono<ImplementationCodeResponse> getImplementationCode(String repoName, String operationId);
+
+  /**
+   * Correlates an OpenAPI endpoint to its implementation handler in the source code.
+   *
+   * @param repoName The repository name.
+   * @param path The OpenAPI path.
+   * @param method The HTTP method.
+   * @return A Mono containing the correlation result.
+   */
+  Mono<SpecCorrelationResponse> correlateSpecToCode(String repoName, String path, String method);
+
+  /**
+   * Verifies the API contract (parameters, schemas) against the source code.
+   *
+   * @param repoName The repository name.
+   * @param path The OpenAPI path.
+   * @param method The HTTP method.
+   * @return A Mono containing the contract verification result.
+   */
+  Mono<ContractVerificationResponse> verifyContract(String repoName, String path, String method);
+
+  /**
+   * Verifies the authentication contract against the source code.
+   *
+   * @param repoName The repository name.
+   * @param path The OpenAPI path.
+   * @param method The HTTP method.
+   * @param declaredSecurity The security requirements from the spec.
+   * @return A Mono containing the auth verification result.
+   */
+  Mono<AuthVerificationResponse> verifyAuthContract(
+      String repoName, String path, String method, Object declaredSecurity);
+
+  /**
+   * Intelligently correlates an OpenAPI endpoint to its implementation handler using LLM reasoning
+   * and RepoMind tools.
+   *
+   * @param repoName The repository name.
+   * @param path The OpenAPI path.
+   * @param method The HTTP method.
+   * @param operationId The optional operation ID.
+   * @return A Mono containing the correlation result.
+   */
+  Mono<SpecCorrelationResponse> intelligentCorrelate(
+      String repoName, String path, String method, String operationId);
 
   /**
    * Asynchronously fetches code metrics for a given symbol from RepoMind.

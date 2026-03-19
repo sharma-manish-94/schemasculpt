@@ -7,7 +7,6 @@ public final class ApplicationConstants {
 
   // Session Management
   public static final Duration DEFAULT_SESSION_TTL = Duration.ofHours(1);
-  public static final String SESSION_KEY_PREFIX = "schemasculpt:session:";
 
   // Error Messages
   public static final String SESSION_NOT_FOUND_MESSAGE = "Session not found";

@@ -5,7 +5,7 @@
 **Your AI-Powered Co-Pilot for Building Production-Ready APIs**
 
 [![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
+[![Java](https://img.shields.io/badge/Java-25-orange)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4-green)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow)](https://www.python.org/)
@@ -427,7 +427,7 @@ SchemaSculpt uses a **four-tier microservices architecture** that integrates API
 
 Before starting, ensure you have:
 
-- ✅ **Java 21+** ([Download](https://jdk.java.net/))
+- ✅ **Java 25+** ([Download](https://jdk.java.net/))
 - ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
 - ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
 - ✅ **Docker** ([Download](https://www.docker.com/)) — for PostgreSQL and Redis

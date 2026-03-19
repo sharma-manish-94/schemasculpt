@@ -48,61 +48,63 @@ public class PaginationSupportRule implements LinterRule {
                           if (!hasPagination) {
                             suggestions.add(
                                 new ValidationSuggestion(
-                                    String.format(
-                                        "AI-Friendliness:"
-                                            + " %s %s"
-                                            + " appears to"
-                                            + " return a"
-                                            + " collection"
-                                            + " but lacks"
-                                            + " pagination"
-                                            + " parameters."
-                                            + " Add limit/offset"
-                                            + " or cursor-based"
-                                            + " pagination"
-                                            + " to prevent"
-                                            + " AI agents"
-                                            + " from"
-                                            + " inefficiently"
-                                            + " fetching"
-                                            + " all data.\n\n"
-                                            + "WHY: AI"
-                                            + " agents have"
-                                            + " limited"
-                                            + " token/memory"
-                                            + " budgets and"
-                                            + " request"
-                                            + " timeouts."
-                                            + " Without"
-                                            + " pagination,"
-                                            + " agents must"
-                                            + " fetch"
-                                            + " entire"
-                                            + " collections"
-                                            + " at once,"
-                                            + " which can"
-                                            + " cause"
-                                            + " timeouts,"
-                                            + " memory"
-                                            + " exhaustion,"
-                                            + " or excessive"
-                                            + " costs."
-                                            + " Pagination"
-                                            + " allows"
-                                            + " agents to"
-                                            + " retrieve"
-                                            + " data in"
-                                            + " manageable"
-                                            + " chunks and"
-                                            + " stop when"
-                                            + " they have"
-                                            + " enough"
-                                            + " information,"
-                                            + " dramatically"
-                                            + " improving"
-                                            + " performance"
-                                            + " and reliability.",
-                                        httpMethod, path),
+                                    """
+                                    AI-Friendliness:\
+                                     %s %s\
+                                     appears to\
+                                     return a\
+                                     collection\
+                                     but lacks\
+                                     pagination\
+                                     parameters.\
+                                     Add limit/offset\
+                                     or cursor-based\
+                                     pagination\
+                                     to prevent\
+                                     AI agents\
+                                     from\
+                                     inefficiently\
+                                     fetching\
+                                     all data.
+
+                                    WHY: AI\
+                                     agents have\
+                                     limited\
+                                     token/memory\
+                                     budgets and\
+                                     request\
+                                     timeouts.\
+                                     Without\
+                                     pagination,\
+                                     agents must\
+                                     fetch\
+                                     entire\
+                                     collections\
+                                     at once,\
+                                     which can\
+                                     cause\
+                                     timeouts,\
+                                     memory\
+                                     exhaustion,\
+                                     or excessive\
+                                     costs.\
+                                     Pagination\
+                                     allows\
+                                     agents to\
+                                     retrieve\
+                                     data in\
+                                     manageable\
+                                     chunks and\
+                                     stop when\
+                                     they have\
+                                     enough\
+                                     information,\
+                                     dramatically\
+                                     improving\
+                                     performance\
+                                     and reliability.\
+                                    """
+                                        .formatted(httpMethod, path),
                                     RULE_ID,
                                     "warning",
                                     "ai-friendliness",

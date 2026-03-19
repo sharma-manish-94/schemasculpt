@@ -53,7 +53,7 @@ public class ExplanationController {
         try {
           OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
           if (openAPI != null) {
-            specText = jsonMapper.writeValueAsString(openAPI);
+            specText = io.swagger.v3.core.util.Json.pretty(openAPI);
           }
         } catch (Exception e) {
           log.warn(

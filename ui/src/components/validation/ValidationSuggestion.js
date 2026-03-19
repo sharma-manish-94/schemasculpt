@@ -14,10 +14,10 @@ const ValidationSuggestion = ({
   const { suggestCodeFix, isSuggestingFix, suggestFixError, suggestedFix } =
     useSpecStore();
 
-  const [explanation] = useState(null);
-  const [isLoadingExplanation] = useState(false);
-  const [showExplanation] = useState(false);
-  const [explanationError] = useState(null);
+  const [explanation, setExplanation] = useState(null);
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [explanationError, setExplanationError] = useState(null);
   const [showFix, setShowFix] = useState(false);
 
   // Check if this suggestion is fixable with the new AI-powered fix
@@ -36,20 +36,88 @@ const ValidationSuggestion = ({
   };
 
   const getSeverityClass = (severity) => {
-    // ... (same as before)
+    switch (severity?.toLowerCase()) {
+      case "error":
+      case "critical":
+        return "suggestion-item severity-error";
+      case "warning":
+      case "high":
+        return "suggestion-item severity-warning";
+      case "medium":
+      case "info":
+        return "suggestion-item severity-info";
+      case "low":
+        return "suggestion-item severity-low";
+      default:
+        return "suggestion-item";
+    }
   };
 
-  // ... (useEffect for cache remains the same)
+  const getSeverityIcon = (severity) => {
+    switch (severity?.toLowerCase()) {
+      case "error":
+      case "critical":
+        return "❌";
+      case "warning":
+      case "high":
+        return "⚠️";
+      case "info":
+      case "medium":
+        return "ℹ️";
+      case "low":
+        return "💡";
+      default:
+        return "🔹";
+    }
+  };
 
   const handleExplainClick = async () => {
-    // ... (same as before)
+    if (showExplanation && explanation) {
+      setShowExplanation(false);
+      return;
+    }
+
+    if (explanation) {
+      setShowExplanation(true);
+      return;
+    }
+
+    setIsLoadingExplanation(true);
+    setExplanationError(null);
+
+    try {
+      const { getAIExplanation } = await import("../../api/aiService");
+      const result = await getAIExplanation(sessionId, suggestion.ruleId, {
+        message: suggestion.message,
+        context: suggestion.context,
+      });
+
+      if (result.success) {
+        setExplanation(result.explanation);
+        setShowExplanation(true);
+      } else {
+        setExplanationError(result.error);
+      }
+    } catch (error) {
+      setExplanationError(error.message);
+    } finally {
+      setIsLoadingExplanation(false);
+    }
   };
 
   return (
     <div className={getSeverityClass(suggestion.severity)}>
       <div className="suggestion-content">
         <div className="suggestion-main">
-          {/* ... (icon and text same as before) */}
+          <span className="suggestion-icon">
+            {isAIFriendly ? "🤖" : getSeverityIcon(suggestion.severity)}
+          </span>
+          <div className="suggestion-text">
+            <p className="suggestion-message">{suggestion.message}</p>
+            {suggestion.ruleId && (
+              <span className="suggestion-rule-id">{suggestion.ruleId}</span>
+            )}
+          </div>
         </div>
 
         <div className="suggestion-actions">
@@ -70,7 +138,7 @@ const ValidationSuggestion = ({
               className="explain-button"
               title="Get AI explanation"
             >
-              {/* ... */}
+              {isLoadingExplanation ? "..." : "❓ Why?"}
             </button>
           )}
           {additionalActions}
@@ -100,11 +168,22 @@ const ValidationSuggestion = ({
       )}
 
       {showExplanation && explanation && (
-        <div className="explanation-panel">{/* ... (same as before) */}</div>
+        <div className="explanation-panel">
+          <div className="explanation-header">
+            <h4>AI Explanation</h4>
+            <button onClick={() => setShowExplanation(false)}>✕</button>
+          </div>
+          <div className="explanation-body">
+            <p>{explanation}</p>
+          </div>
+        </div>
       )}
 
       {explanationError && (
-        <div className="explanation-error">{/* ... (same as before) */}</div>
+        <div className="explanation-error">
+          <p>Error: {explanationError}</p>
+          <button onClick={() => setExplanationError(null)}>✕</button>
+        </div>
       )}
     </div>
   );

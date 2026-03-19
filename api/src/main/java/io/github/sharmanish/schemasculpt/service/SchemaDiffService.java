@@ -338,7 +338,7 @@ public class SchemaDiffService {
       boolean isResponseContext,
       Map<String, Schema> newProps) {
     newProps.forEach(
-        (name, schema) -> {
+        (name, _) -> {
           if (!oldSchema.getProperties().containsKey(name)) {
             // If Response: SAFE (Client receives extra data, usually ignores it).
             // If Request: BREAKING if Required, SAFE if Optional.
@@ -449,7 +449,7 @@ public class SchemaDiffService {
             .getComponents()
             .getSchemas()
             .forEach(
-                (name, newSchema) ->
+                (name, _) ->
                     diffs.add(
                         createDiff(
                             SCHEMA_NAME + name,
@@ -495,7 +495,7 @@ public class SchemaDiffService {
             });
 
     newSchemas.forEach(
-        (name, newSchema) -> {
+        (name, _) -> {
           if (!oldSpec.getComponents().getSchemas().containsKey(name)) {
             diffs.add(
                 createDiff(

@@ -21,7 +21,7 @@ AI service handles the MCP protocol complexity.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -89,6 +89,33 @@ async def proxy_repomind_tool_call(request: ToolCallRequest) -> Dict[str, Any]:
         )
 
 
+class DiscoveryRequest(BaseModel):
+    repo_name: str
+    path: str
+    method: str
+    operation_id: Optional[str] = None
+
+
+@router.post("/intelligent_correlate")
+async def intelligent_correlate(request: DiscoveryRequest) -> Dict[str, Any]:
+    """
+    Intelligently correlates an OpenAPI endpoint to its implementation using LLM.
+    Uses DiscoveryAgent to orchestrate multiple tools if needed.
+    """
+    from app.services.agents.discovery_agent import DiscoveryAgent
+
+    agent = DiscoveryAgent(
+        name="DiscoveryAgent", description="Intelligent endpoint correlation agent"
+    )
+
+    return await agent.correlate(
+        repo_name=request.repo_name,
+        path=request.path,
+        method=request.method,
+        operation_id=request.operation_id,
+    )
+
+
 @router.get("/health")
 async def repomind_health() -> Dict[str, Any]:
     """
@@ -96,12 +123,11 @@ async def repomind_health() -> Dict[str, Any]:
 
     Returns status and tool count if RepoMind is reachable.
     """
-    import os
-
+    from app.core.config import settings
     from app.mcp.client import MCPClient, MCPConnectionError
 
-    command = os.environ.get("REPOMIND_COMMAND", "repomind")
-    args = os.environ.get("REPOMIND_ARGS", "serve").split()
+    command = settings.repomind_command
+    args = settings.repomind_args.split()
 
     client = MCPClient()
     try:
@@ -116,6 +142,12 @@ async def repomind_health() -> Dict[str, Any]:
     except MCPConnectionError as exc:
         return {
             "status": "unavailable",
+            "command": command,
+            "error": str(exc),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
             "command": command,
             "error": str(exc),
         }

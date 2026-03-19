@@ -49,7 +49,7 @@ public class ProjectService {
     repoMindService
         .triggerRepoIndex(repoPath, project.getName())
         .subscribe(
-            unused -> {},
+            _ -> {},
             error ->
                 log.error(
                     "Failed to trigger repository indexing for project {}: {}",

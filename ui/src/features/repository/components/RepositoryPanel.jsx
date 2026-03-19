@@ -50,7 +50,8 @@ const LocalRepoConnector = () => {
       if (health.available) {
         setStatus("success");
         setStatusMsg(
-          `Repository "${repoName}" linked! Indexing ${health.toolCount ? `(${health.toolCount} tools available)` : ""} started in the background.`,
+          `Repository "${repoName}" linked! Indexing started in the background. ` +
+            `Now, select an endpoint from the "API Structure" panel to view its implementation and contract integrity.`,
         );
       } else {
         setStatus("warning");
