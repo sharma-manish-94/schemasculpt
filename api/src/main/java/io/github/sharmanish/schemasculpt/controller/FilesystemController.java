@@ -34,19 +34,20 @@ public class FilesystemController {
   public ResponseEntity<Map<String, Object>> browse(@RequestParam(defaultValue = "") String path) {
 
     Path browsePath;
+    Path homeDir = Path.of(System.getProperty("user.home")).normalize().toAbsolutePath();
 
     if (path.isBlank()) {
-      browsePath = Path.of(System.getProperty("user.home"));
+      browsePath = homeDir;
     } else {
       try {
-        browsePath = Path.of(path).normalize();
+        // Resolve the user-supplied path against the home directory and normalize
+        browsePath = homeDir.resolve(path).normalize().toAbsolutePath();
       } catch (InvalidPathException _) {
         throw new ValidationException("Invalid path: " + LogSanitizer.sanitize(path));
       }
 
-      // Prevent path traversal
-      String normalized = browsePath.toString();
-      if (normalized.contains("..")) {
+      // Ensure that the resolved path stays within the allowed base directory
+      if (!browsePath.startsWith(homeDir)) {
         throw new ValidationException("Path traversal not allowed.");
       }
     }
