@@ -140,16 +140,18 @@ async def repomind_health() -> Dict[str, Any]:
             "tools_sample": [t.name for t in tools[:5]] if tools else [],
         }
     except MCPConnectionError as exc:
+        logger.exception("RepoMind health check failed: MCP connection error")
         return {
             "status": "unavailable",
             "command": command,
-            "error": str(exc),
+            "error": "RepoMind is unavailable",
         }
     except Exception as exc:
+        logger.exception("RepoMind health check failed with unexpected error")
         return {
             "status": "error",
             "command": command,
-            "error": str(exc),
+            "error": "Internal error while checking RepoMind health",
         }
     finally:
         await client.disconnect()
