@@ -70,8 +70,12 @@ public class Project {
   /** Equals based on ID for JPA identity. Returns false if ID is null (transient entity). */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Project project = (Project) o;
     return id != null && Objects.equals(id, project.id);
   }

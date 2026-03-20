@@ -185,7 +185,7 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
   private boolean isErrorStatus(final String statusCode) {
     return statusCode.startsWith("4")
         || statusCode.startsWith("5")
-        || statusCode.equalsIgnoreCase("default");
+        || "default".equalsIgnoreCase(statusCode);
   }
 
   private ValidationSuggestion createStandardWrapperSuggestion() {
@@ -194,9 +194,10 @@ public class AiFriendlyResponseFormatRule implements LinterRule {
 Missing standardized response wrapper or RFC 7807 Problem Details.
 
 WHY: AI agents (and MCP servers) perform best when they can use a 'Uniform Observation' pattern. \
-Without a standard wrapper, the agent must re-learn the success/failure indicators for every endpoint, \
+Without a standard wrapper, the agent must re-learn the success/failure indicators \
+for every endpoint, \
 which increases token usage and the risk of hallucination.\
-""";
+        """;
 
     Map<String, Object> metadata =
         Map.of(

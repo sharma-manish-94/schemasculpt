@@ -50,6 +50,12 @@ public class TestDataService {
   /**
    * Generate or retrieve cached test cases for an operation. Implements two-level caching: DB
    * (persistent) + AI service in-memory cache.
+   *
+   * @param request the test case generation request parameters
+   * @param project the project context
+   * @param specification the specification to generate tests for
+   * @param user the requesting user
+   * @return map containing generated test cases and metadata
    */
   @Transactional
   public Map<String, Object> generateTestCases(
@@ -198,6 +204,12 @@ public class TestDataService {
   /**
    * Generate or retrieve cached mock data variations for an operation. Implements two-level
    * caching: DB (persistent) + AI service in-memory cache.
+   *
+   * @param request the mock data generation request parameters
+   * @param project the project context
+   * @param specification the specification to generate mocks for
+   * @param user the requesting user
+   * @return map containing generated mock data variations and metadata
    */
   @Transactional
   public Map<String, Object> generateMockDataVariations(
@@ -330,7 +342,12 @@ public class TestDataService {
     return Map.of("variations", "[]", "count", request.getOrDefault("count", 3), "cached", false);
   }
 
-  /** Invalidate cached test data when specification changes. */
+  /**
+   * Invalidate cached test data when specification changes.
+   *
+   * @param projectId the project whose cache should be invalidated
+   * @param specText the new specification text used to compute the new hash
+   */
   @Transactional
   public void invalidateCache(Long projectId, String specText) {
     String newSpecHash = calculateSpecHash(specText);

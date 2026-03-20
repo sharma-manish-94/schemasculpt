@@ -34,6 +34,13 @@ public class HardeningService {
     this.sessionService = sessionService;
   }
 
+  /**
+   * Harden an API operation with security patterns.
+   *
+   * @param sessionId the session ID
+   * @param request the hardenening request specifying operation and patterns
+   * @return hardening response with applied changes
+   */
   public HardeningResponse hardenOperation(String sessionId, HardenOperationRequest request) {
     log.info(
         "Hardening operation {} {} with patterns: {}",

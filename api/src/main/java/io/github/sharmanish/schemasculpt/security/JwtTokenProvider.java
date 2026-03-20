@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/** JWT Token Provider for generating and validating JWT tokens */
+/** JWT Token Provider for generating and validating JWT tokens. */
 @Component
 @Slf4j
 public class JwtTokenProvider {
@@ -26,6 +26,12 @@ public class JwtTokenProvider {
   @Value("${app.jwt.expiration}")
   private long jwtExpirationMs;
 
+  /**
+   * Generate a JWT token for the given user.
+   *
+   * @param user the user to generate a token for
+   * @return the generated JWT token string
+   */
   public String generateToken(User user) {
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
@@ -47,6 +53,12 @@ public class JwtTokenProvider {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
+  /**
+   * Extract the user ID from a JWT token.
+   *
+   * @param token the JWT token
+   * @return the user ID
+   */
   public Long getUserIdFromToken(String token) {
     Claims claims =
         Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
@@ -54,6 +66,12 @@ public class JwtTokenProvider {
     return claims.get("userId", Long.class);
   }
 
+  /**
+   * Extract the username from a JWT token.
+   *
+   * @param token the JWT token
+   * @return the username
+   */
   public String getUsernameFromToken(String token) {
     Claims claims =
         Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
@@ -61,6 +79,12 @@ public class JwtTokenProvider {
     return claims.get("username", String.class);
   }
 
+  /**
+   * Validate a JWT token.
+   *
+   * @param authToken the JWT token to validate
+   * @return true if the token is valid, false otherwise
+   */
   public boolean validateToken(String authToken) {
     try {
       Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(authToken);

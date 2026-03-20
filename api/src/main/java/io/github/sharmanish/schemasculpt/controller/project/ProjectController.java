@@ -35,7 +35,13 @@ public class ProjectController {
     this.projectService = projectService;
   }
 
-  /** Create a new project */
+  /**
+   * Create a new project.
+   *
+   * @param principal the authenticated user
+   * @param request the create project request body
+   * @return 201 Created with the new project details
+   */
   @PostMapping
   public ResponseEntity<ProjectDTO> createProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -53,7 +59,12 @@ public class ProjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDTO(project));
   }
 
-  /** Get all projects for the authenticated user */
+  /**
+   * Get all projects for the authenticated user.
+   *
+   * @param principal the authenticated user
+   * @return list of projects for the user
+   */
   @GetMapping
   public ResponseEntity<List<ProjectDTO>> getUserProjects(
       @AuthenticationPrincipal CustomOAuth2User principal) {
@@ -68,7 +79,13 @@ public class ProjectController {
     return ResponseEntity.ok(projects);
   }
 
-  /** Get a specific project */
+  /**
+   * Get a specific project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to retrieve
+   * @return the project details
+   */
   @GetMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> getProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
@@ -82,7 +99,14 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /** Update a project */
+  /**
+   * Update a project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to update
+   * @param request the update project request body
+   * @return the updated project details
+   */
   @PutMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> updateProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -105,7 +129,13 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /** Delete a project */
+  /**
+   * Delete a project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to delete
+   * @return 204 No Content on success
+   */
   @DeleteMapping("/{projectId}")
   public ResponseEntity<Void> deleteProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
@@ -119,7 +149,14 @@ public class ProjectController {
     return ResponseEntity.noContent().build();
   }
 
-  /** Link a repository to a project */
+  /**
+   * Link a repository to a project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to link to
+   * @param request the link repository request body
+   * @return the updated project details
+   */
   @PostMapping("/{projectId}/repository")
   public ResponseEntity<ProjectDTO> linkRepository(
       @AuthenticationPrincipal CustomOAuth2User principal,

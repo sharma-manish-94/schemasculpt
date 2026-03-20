@@ -11,7 +11,11 @@ import com.fasterxml.jackson.annotation.JsonValue;
  */
 public sealed interface Severity permits Severity.Critical, Severity.Warning, Severity.Info {
 
-  /** Returns the severity level name for JSON serialization. */
+  /**
+   * Returns the severity level name for JSON serialization.
+   *
+   * @return the severity level name string
+   */
   @JsonValue
   String name();
 

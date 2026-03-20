@@ -16,7 +16,12 @@
       "Bash(test:*)",
       "Bash(pre-commit install:*)",
       "Bash(pre-commit migrate-config:*)",
-      "Bash(pre-commit run:*)"
+      "Bash(pre-commit run:*)",
+      "Bash(gh pr:*)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api:*)"
     ],
     "deny": [],
     "ask": []

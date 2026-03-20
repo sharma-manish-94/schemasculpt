@@ -98,10 +98,10 @@ class AuthControllerTest {
     //                .with(oauth2Login().oauth2User(testPrincipal))
     //                .accept(MediaType.APPLICATION_JSON)
     //                .contentType(MediaType.APPLICATION_JSON))
-    //		    .andDo(result -> System.out.println("Response: " +
+    //        .andDo(result -> System.out.println("Response: " +
     // result.getResponse().getContentAsString()))
-    //		    .andDo(result -> System.out.println("Status: " + result.getResponse().getStatus()))
-    //		    .andExpect(status().isOk())
+    //        .andDo(result -> System.out.println("Status: " + result.getResponse().getStatus()))
+    //        .andExpect(status().isOk())
     //        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
     //        .andExpect(jsonPath("$.username").value("testuser"))
     //        .andExpect(jsonPath("$.email").value("test.email.com"))

@@ -14,7 +14,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class NetworkAnalysisService {
 
-  /** PageRank: Which schemas are most critical? If these break, the whole API breaks. */
+  /**
+   * PageRank: Which schemas are most critical? If these break, the whole API breaks.
+   *
+   * @param graph the API dependency graph
+   * @return map of nodes to their importance scores
+   */
   public Map<GraphBuilderService.ApiNode, Double> calculateImportance(
       Graph<GraphBuilderService.ApiNode, DefaultEdge> graph) {
     PageRank<GraphBuilderService.ApiNode, DefaultEdge> pageRank = new PageRank<>(graph, 0.85);
@@ -24,6 +29,9 @@ public class NetworkAnalysisService {
   /**
    * Betweenness: Which schemas connect disparate parts of the API? Refactoring these helps split
    * the monolith.
+   *
+   * @param graph the API dependency graph
+   * @return map of nodes to their betweenness centrality scores
    */
   public Map<GraphBuilderService.ApiNode, Double> calculateBottlenecks(
       Graph<GraphBuilderService.ApiNode, DefaultEdge> graph) {

@@ -17,6 +17,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class SemanticAnalysisService {
 
+  /**
+   * Analyze semantic consistency of field names and descriptions in the OpenAPI spec.
+   *
+   * @param openApi the OpenAPI specification to analyze
+   * @return semantic report containing issues found
+   */
   public SemanticReport analyzeSemantics(OpenAPI openApi) {
     SemanticReport semanticReport = new SemanticReport();
     if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
@@ -90,6 +96,14 @@ public class SemanticAnalysisService {
   public static class SemanticReport {
     private List<SemanticIssue> issues = new ArrayList<>();
 
+    /**
+     * Add a semantic issue to the report.
+     *
+     * @param schema the schema name containing the issue
+     * @param field the field name with the issue
+     * @param desc the field description
+     * @param score the relevance score
+     */
     public void addIssue(String schema, String field, String desc, double score) {
       issues.add(
           SemanticIssue.builder()

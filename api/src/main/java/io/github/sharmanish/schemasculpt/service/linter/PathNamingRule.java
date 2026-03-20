@@ -37,7 +37,7 @@ public class PathNamingRule implements LinterRule {
     List<ValidationSuggestion> suggestions = new ArrayList<>();
 
     // Check for trailing slash
-    if (path.endsWith("/") && !path.equals("/")) {
+    if (path.endsWith("/") && !"/".equals(path)) {
       suggestions.add(
           new ValidationSuggestion(
               "Path '%s' should not have trailing slash.".formatted(path),
@@ -187,7 +187,7 @@ public class PathNamingRule implements LinterRule {
 
     // Common irregular plurals
     String[] irregularPlurals = {
-      "children", "people", "men", "women", "feet", "teeth", "mice", "data"
+        "children", "people", "men", "women", "feet", "teeth", "mice", "data"
     };
     for (String plural : irregularPlurals) {
       if (segment.equals(plural)) {

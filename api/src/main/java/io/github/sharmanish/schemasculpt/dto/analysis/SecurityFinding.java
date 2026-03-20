@@ -7,6 +7,13 @@ import java.util.Map;
 /**
  * Represents a single factual security finding extracted by deterministic Java analysis. These
  * findings are sent to the AI for reasoning about attack chains.
+ *
+ * @param type the type of finding (e.g., "PUBLIC_ENDPOINT", "SCHEMA_FIELD")
+ * @param severity the severity level ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
+ * @param category the finding category (e.g., "security", "data-exposure", "mass-assignment")
+ * @param endpoint the affected endpoint (e.g., "GET /users/all")
+ * @param description human-readable description of the finding
+ * @param metadata additional context (schema names, field names, dependencies, etc.)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SecurityFinding(
@@ -18,9 +25,9 @@ public record SecurityFinding(
     String description, // Human-readable description
     Map<String, Object> metadata
     // Additional context (schema names, field names, dependencies, etc.)
-    ) {
+) {
 
-  /** Factory method for public endpoint findings */
+  /** Factory method for public endpoint findings. */
   public static SecurityFinding publicEndpoint(String method, String path) {
     return new SecurityFinding(
         "PUBLIC_ENDPOINT",
@@ -31,7 +38,7 @@ public record SecurityFinding(
         Map.of("method", method, "path", path));
   }
 
-  /** Factory method for endpoint returning a schema */
+  /** Factory method for endpoint returning a schema. */
   public static SecurityFinding endpointReturnsSchema(
       String method, String path, String schemaName, List<String> fields) {
     return new SecurityFinding(
@@ -47,7 +54,7 @@ public record SecurityFinding(
             "fields", fields));
   }
 
-  /** Factory method for endpoint accepting a schema */
+  /** Factory method for endpoint accepting a schema. */
   public static SecurityFinding endpointAcceptsSchema(
       String method, String path, String schemaName, List<String> fields) {
     return new SecurityFinding(
@@ -63,7 +70,7 @@ public record SecurityFinding(
             "fields", fields));
   }
 
-  /** Factory method for sensitive field findings */
+  /** Factory method for sensitive field findings. */
   public static SecurityFinding schemaContainsSensitiveField(
       String schemaName, String fieldName, String fieldType) {
     return new SecurityFinding(
@@ -79,7 +86,7 @@ public record SecurityFinding(
             "fieldType", fieldType));
   }
 
-  /** Factory method for writable sensitive field findings */
+  /** Factory method for writable sensitive field findings. */
   public static SecurityFinding writableSensitiveField(
       String method, String path, String schemaName, String fieldName) {
     return new SecurityFinding(
@@ -96,7 +103,7 @@ public record SecurityFinding(
             "field", fieldName));
   }
 
-  /** Factory method for dependency chain findings */
+  /** Factory method for dependency chain findings. */
   public static SecurityFinding schemaDependency(
       String sourceSchema, String targetSchema, String viaEndpoint) {
     return new SecurityFinding(

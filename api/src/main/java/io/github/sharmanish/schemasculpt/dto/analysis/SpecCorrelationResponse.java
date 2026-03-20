@@ -9,17 +9,17 @@ public record SpecCorrelationResponse(
     Integer candidates_found,
     BestMatch best_match
 ) {
-    public record BestMatch(
-        String handler,
-        String qualified_name,
-        String file,
-        Integer start_line,
-        Integer end_line,
-        String language,
-        String repo,
-        Double confidence,
-        String confidence_reason,
-        List<String> callees,
-        String code_snippet
-    ) {}
+  public record BestMatch(
+      String handler,
+      String qualified_name,
+      String file,
+      Integer start_line,
+      Integer end_line,
+      String language,
+      String repo,
+      Double confidence,
+      String confidence_reason,
+      List<String> callees,
+      String code_snippet
+  ) {}
 }

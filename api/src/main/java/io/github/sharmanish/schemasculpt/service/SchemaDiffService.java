@@ -11,7 +11,12 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.parser.OpenAPIV3Parser;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,15 +27,15 @@ import org.springframework.stereotype.Service;
 public class SchemaDiffService {
 
   public static final String SCHEMA_NAME = "Schema: ";
-  private final TreeDistanceService treeDistanceService;
-
   public static final String REMOVED = "Removed";
   public static final String PARAM_POINTER = " -> param:";
 
+  private final TreeDistanceService treeDistanceService;
+
   /**
-   * @param oldSpecContent original specification
-   * @param newSpecContent specification after modification
-   * @return difference in schema - both qualitative and quantitative
+   * @param oldSpecContent original specification.
+   * @param newSpecContent specification after modification.
+   * @return difference in schema - both qualitative and quantitative.
    */
   public DiffResult compareSpecs(String oldSpecContent, String newSpecContent) {
     OpenAPI oldSpec = new OpenAPIV3Parser().readContents(oldSpecContent, null, null).getOpenAPI();
@@ -301,7 +306,7 @@ public class SchemaDiffService {
   }
 
   /**
-   * Deep Recursive Schema Comparison
+   * Deep Recursive Schema Comparison.
    *
    * @param isResponseContext - TRUE if comparing a Response Body, FALSE if comparing a Request
    *     Body. This distinction is crucial: Adding a field to a Request is BREAKING (if required),

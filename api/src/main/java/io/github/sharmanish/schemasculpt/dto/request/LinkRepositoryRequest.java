@@ -32,7 +32,7 @@ public record LinkRepositoryRequest(
         || normalizedPath.contains("//")
         || normalizedPath.startsWith("./")
         || normalizedPath.endsWith("/.")
-        || normalizedPath.equals("..")) {
+        || "..".equals(normalizedPath)) {
       return false;
     }
 

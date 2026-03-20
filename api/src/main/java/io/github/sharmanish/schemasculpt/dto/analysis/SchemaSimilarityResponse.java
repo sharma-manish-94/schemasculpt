@@ -8,5 +8,5 @@ public record SchemaSimilarityResponse(List<SchemaCluster> clusters) {
       Set<String> schemas,
       double similarity_score, // matches Python field name
       List<String> shared_fields // matches Python field name
-      ) {}
+  ) {}
 }

@@ -35,15 +35,15 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ImplementationController {
 
-  private final RepoMindService repoMindService;
-  private final ProjectService projectService;
-
   /**
    * Valid operationId pattern: alphanumeric, underscores, hyphens, dots. Prevents path traversal
    * and injection attacks. Examples: "getPetById", "user.create", "orders_list"
    */
   private static final Pattern VALID_OPERATION_ID_PATTERN =
       Pattern.compile("^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$");
+
+  private final RepoMindService repoMindService;
+  private final ProjectService projectService;
 
   /**
    * Retrieve code intelligence for a specific API operation in a project.

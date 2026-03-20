@@ -26,7 +26,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 public class GlobalExceptionHandler {
 
-  /** Handles authorization failures (user lacks permission). Maps to HTTP 403 Forbidden. */
+  /**
+   * Handles authorization failures (user lacks permission). Maps to HTTP 403 Forbidden.
+   *
+   * @param e the authorization exception
+   * @return 403 Forbidden response with error details
+   */
   @ExceptionHandler(AuthorizationException.class)
   public ResponseEntity<ErrorResponse> handleAuthorization(AuthorizationException e) {
     log.warn("Authorization failure: {}", e.getMessage());
@@ -34,7 +39,12 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(e.getErrorCodeString(), e.getMessage()));
   }
 
-  /** Handles resource not found errors. Maps to HTTP 404 Not Found. */
+  /**
+   * Handles resource not found errors. Maps to HTTP 404 Not Found.
+   *
+   * @param e the resource not found exception
+   * @return 404 Not Found response with error details
+   */
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException e) {
     log.warn("Resource not found: {}", e.getMessage());
@@ -42,7 +52,12 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(e.getErrorCodeString(), e.getMessage()));
   }
 
-  /** Handles client errors (invalid input, validation failures). Maps to HTTP 400 or 409. */
+  /**
+   * Handles client errors (invalid input, validation failures). Maps to HTTP 400 or 409.
+   *
+   * @param e the client exception
+   * @return 400 or 409 response with error details
+   */
   @ExceptionHandler(ClientException.class)
   public ResponseEntity<ErrorResponse> handleClientError(ClientException e) {
     log.warn("Client error: {}", e.getMessage());
@@ -50,7 +65,12 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(e.getErrorCodeString(), e.getMessage()));
   }
 
-  /** Handles external service failures (AI service, proxy). Maps to HTTP 502 Bad Gateway. */
+  /**
+   * Handles external service failures (AI service, proxy). Maps to HTTP 502 Bad Gateway.
+   *
+   * @param e the service exception
+   * @return 502 Bad Gateway response with error details
+   */
   @ExceptionHandler(ServiceException.class)
   public ResponseEntity<ErrorResponse> handleServiceError(ServiceException e) {
     log.error("Service error: {}", e.getMessage(), e);
@@ -58,7 +78,12 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(e.getErrorCodeString(), e.getMessage()));
   }
 
-  /** Handles Spring validation errors from @Valid annotations. */
+  /**
+   * Handles Spring validation errors from @Valid annotations.
+   *
+   * @param e the method argument not valid exception
+   * @return 400 Bad Request response with validation error details
+   */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
     String message =
@@ -69,14 +94,24 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(ErrorCode.VALIDATION_ERROR.code(), message));
   }
 
-  /** Handles illegal argument exceptions. */
+  /**
+   * Handles illegal argument exceptions.
+   *
+   * @param e the illegal argument exception
+   * @return 400 Bad Request response with error details
+   */
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
     log.warn("Invalid argument: {}", e.getMessage());
     return ResponseEntity.badRequest().body(new ErrorResponse("INVALID_ARGUMENT", e.getMessage()));
   }
 
-  /** Handles Java security exceptions. */
+  /**
+   * Handles Java security exceptions.
+   *
+   * @param e the security exception
+   * @return 403 Forbidden response
+   */
   @ExceptionHandler(SecurityException.class)
   public ResponseEntity<ErrorResponse> handleSecurity(SecurityException e) {
     log.warn("Security violation: {}", e.getMessage());
@@ -84,7 +119,12 @@ public class GlobalExceptionHandler {
         .body(new ErrorResponse(ErrorCode.FORBIDDEN.code(), "Access denied"));
   }
 
-  /** Fallback handler for unexpected exceptions. */
+  /**
+   * Fallback handler for unexpected exceptions.
+   *
+   * @param e the unexpected exception
+   * @return 500 Internal Server Error response
+   */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGeneral(Exception e) {
     log.error("Unexpected error occurred", e);

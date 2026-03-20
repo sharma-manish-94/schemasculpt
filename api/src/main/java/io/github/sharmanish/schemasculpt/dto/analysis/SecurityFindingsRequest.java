@@ -7,6 +7,12 @@ import java.util.List;
  * Request payload for the Linter-Augmented AI Analyst. Instead of sending the entire 5MB spec, we
  * send only the factual findings extracted by deterministic Java analysis. The AI then reasons
  * about attack chains.
+ *
+ * @param specText the OpenAPI specification text for AI context
+ * @param findings the list of deterministic security findings
+ * @param analysisDepth the analysis depth level (e.g., "standard", "deep")
+ * @param maxChainLength the maximum attack chain length to analyze
+ * @param excludeLowSeverity whether to exclude low severity findings from analysis
  */
 public record SecurityFindingsRequest(
     @JsonProperty("spec_text") String specText,

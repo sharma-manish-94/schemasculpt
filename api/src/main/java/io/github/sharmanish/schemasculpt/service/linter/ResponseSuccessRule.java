@@ -62,7 +62,7 @@ public class ResponseSuccessRule implements LinterRule {
             responseCode -> {
               try {
                 int code = Integer.parseInt(responseCode);
-                return (code >= 200 && code < 400);
+                return code >= 200 && code < 400;
               } catch (NumberFormatException _) {
                 // Handle special response codes like 'default'
                 return false;

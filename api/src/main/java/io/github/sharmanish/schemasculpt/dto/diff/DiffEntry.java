@@ -15,13 +15,13 @@ public record DiffEntry(
 
   /** Classification of API change impact on clients. */
   public enum ChangeType {
-    /** Will definitely break clients (e.g., removing required field) */
+    /** Will definitely break clients (e.g., removing required field). */
     BREAKING,
-    /** Might break clients (e.g., loosening validation) */
+    /** Might break clients (e.g., loosening validation). */
     DANGEROUS,
-    /** Backward compatible (e.g., adding optional field) */
+    /** Backward compatible (e.g., adding optional field). */
     SAFE,
-    /** Documentation updates */
+    /** Documentation updates. */
     INFO
   }
 }

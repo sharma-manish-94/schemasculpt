@@ -14,38 +14,24 @@ import org.springframework.stereotype.Component;
 @Component
 public class TreeDistanceService {
 
-  public record SpecNode(String path, String label, String type) {
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      SpecNode specNode = (SpecNode) o;
-      return Objects.equals(path, specNode.path)
-          && Objects.equals(label, specNode.label)
-          && Objects.equals(type, specNode.type);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(path, label, type);
-    }
-  }
-
-  // Helper record to carry both the Graph and its Root Node
-  private record TreeData(Graph<SpecNode, DefaultEdge> graph, SpecNode root) {}
-
   public double calculateSpecDistance(OpenAPI spec1, OpenAPI spec2) {
     TreeData t1 = convertToTree(spec1);
     TreeData t2 = convertToTree(spec2);
 
     // Handle empty specs safely
-    if (t1 == null && t2 == null) return 0.0;
-    if (t1 == null) return t2.graph().vertexSet().size();
-    if (t2 == null) return t1.graph().vertexSet().size();
+    if (t1 == null && t2 == null) {
+      return 0.0;
+    }
+    if (t1 == null) {
+      return t2.graph().vertexSet().size();
+    }
+    if (t2 == null) {
+      return t1.graph().vertexSet().size();
+    }
 
     // Cost Functions
-    ToDoubleFunction<SpecNode> insertCost = (_) -> 1.0;
-    ToDoubleFunction<SpecNode> removeCost = (_) -> 1.0;
+    ToDoubleFunction<SpecNode> insertCost = _ -> 1.0;
+    ToDoubleFunction<SpecNode> removeCost = _ -> 1.0;
     ToDoubleBiFunction<SpecNode, SpecNode> changeCost =
         (n1, n2) -> {
           if (Objects.equals(n1.label(), n2.label()) && Objects.equals(n1.type(), n2.type())) {
@@ -63,7 +49,9 @@ public class TreeDistanceService {
   }
 
   private TreeData convertToTree(OpenAPI spec) {
-    if (spec == null) return null;
+    if (spec == null) {
+      return null;
+    }
 
     Graph<SpecNode, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
@@ -162,4 +150,29 @@ public class TreeDistanceService {
       traverseSchema(graph, schemaNode, currentPath + ".items", "items", schema.getItems());
     }
   }
+
+  /** Node representing an element in an OpenAPI specification tree. */
+  public record SpecNode(String path, String label, String type) {
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      SpecNode specNode = (SpecNode) o;
+      return Objects.equals(path, specNode.path)
+          && Objects.equals(label, specNode.label)
+          && Objects.equals(type, specNode.type);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(path, label, type);
+    }
+  }
+
+  // Helper record to carry both the Graph and its Root Node
+  private record TreeData(Graph<SpecNode, DefaultEdge> graph, SpecNode root) {}
 }

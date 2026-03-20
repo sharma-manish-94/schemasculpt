@@ -139,7 +139,7 @@ public class PaginationSupportRule implements LinterRule {
 
   /**
    * Determine if an endpoint likely returns a collection based on: - Path naming (plural, /items,
-   * /list) - Operation summary/description - Response schema (array type)
+   * /list) - Operation summary/description - Response schema (array type).
    */
   private boolean isCollectionEndpoint(String path, Operation operation) {
     // Check path for plural or collection indicators

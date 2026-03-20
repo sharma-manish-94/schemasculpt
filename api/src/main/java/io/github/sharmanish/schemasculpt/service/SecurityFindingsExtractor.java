@@ -49,7 +49,12 @@ public class SecurityFindingsExtractor {
 
   private static final String COMPONENTS_SCHEMAS_PREFIX = "#/components/schemas/";
 
-  /** Main entry point: Extract all security findings from an OpenAPI spec. */
+  /**
+   * Main entry point: Extract all security findings from an OpenAPI spec.
+   *
+   * @param openApi the OpenAPI specification to analyze
+   * @return list of security findings extracted from the specification
+   */
   public List<SecurityFinding> extractFindings(OpenAPI openApi) {
     if (openApi == null || openApi.getPaths() == null) {
       return Collections.emptyList();
