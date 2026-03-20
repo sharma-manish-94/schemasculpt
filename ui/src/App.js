@@ -13,16 +13,14 @@ function App() {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [isAuthenticated, loading, navigate]);
 
   if (loading) {
     return (
       <div className="app-container">
-        <div style={{ padding: '4rem', textAlign: 'center' }}>
-          Loading...
-        </div>
+        <div style={{ padding: "4rem", textAlign: "center" }}>Loading...</div>
       </div>
     );
   }

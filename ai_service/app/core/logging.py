@@ -4,19 +4,18 @@ Provides structured logging with correlation IDs and performance metrics.
 """
 
 import asyncio
-import logging
 import json
+import logging
 import time
 import uuid
 from contextvars import ContextVar
-from typing import Any, Dict, Optional
 from functools import wraps
+from typing import Any, Dict, Optional
 
 from .config import settings
 
-
 # Context variable for request correlation
-correlation_id: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
+correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
 
 
 class StructuredFormatter(logging.Formatter):
@@ -85,6 +84,7 @@ def get_logger(name: str) -> logging.Logger:
 
 def log_performance(func_name: str = None):
     """Decorator to log function performance metrics."""
+
     def decorator(func):
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -100,8 +100,8 @@ def log_performance(func_name: str = None):
                     extra={
                         "function": func_name_actual,
                         "duration_ms": round(duration * 1000, 2),
-                        "status": "success"
-                    }
+                        "status": "success",
+                    },
                 )
                 return result
             except Exception as e:
@@ -112,8 +112,8 @@ def log_performance(func_name: str = None):
                         "function": func_name_actual,
                         "duration_ms": round(duration * 1000, 2),
                         "status": "error",
-                        "error": str(e)
-                    }
+                        "error": str(e),
+                    },
                 )
                 raise
 
@@ -131,8 +131,8 @@ def log_performance(func_name: str = None):
                     extra={
                         "function": func_name_actual,
                         "duration_ms": round(duration * 1000, 2),
-                        "status": "success"
-                    }
+                        "status": "success",
+                    },
                 )
                 return result
             except Exception as e:
@@ -143,12 +143,13 @@ def log_performance(func_name: str = None):
                         "function": func_name_actual,
                         "duration_ms": round(duration * 1000, 2),
                         "status": "error",
-                        "error": str(e)
-                    }
+                        "error": str(e),
+                    },
                 )
                 raise
 
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
+
     return decorator
 
 

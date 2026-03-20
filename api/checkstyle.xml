@@ -24,7 +24,7 @@
     <module name="NewlineAtEndOfFile"/>
 
     <module name="LineLength">
-        <property name="max" value="120"/>
+        <property name="max" value="100"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
@@ -49,13 +49,6 @@
         <module name="IllegalImport"/>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
-        <module name="ImportOrder">
-            <property name="groups" value="/^java\./,javax,org,com"/>
-            <property name="ordered" value="true"/>
-            <property name="separated" value="true"/>
-            <property name="option" value="bottom"/>
-            <property name="sortStaticImportsAlphabetically" value="true"/>
-        </module>
 
         <!-- ============================================ -->
         <!-- Naming Conventions                           -->
@@ -257,6 +250,7 @@
             <property name="scope" value="public"/>
             <property name="allowMissingPropertyJavadoc" value="true"/>
             <property name="ignoreMethodNamesRegex" value="^(get|set|is|equals|hashCode|toString).*$"/>
+            <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="MissingJavadocType">
             <property name="scope" value="public"/>
@@ -264,6 +258,7 @@
         </module>
         <module name="JavadocMethod">
             <property name="accessModifiers" value="public"/>
+            <property name="tokens" value="METHOD_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="JavadocStyle">
             <property name="checkEmptyJavadoc" value="true"/>
@@ -285,9 +280,9 @@
         </module>
         <module name="CommentsIndentation"/>
         <module name="Indentation">
-            <property name="basicOffset" value="4"/>
+            <property name="basicOffset" value="2"/>
             <property name="braceAdjustment" value="0"/>
-            <property name="caseIndent" value="4"/>
+            <property name="caseIndent" value="2"/>
         </module>
         <module name="TodoComment">
             <property name="format" value="(TODO|FIXME|XXX)"/>

@@ -135,12 +135,12 @@ function APILab() {
             response_delay_ms: mockServerConfig.responseDelay,
             error_rate: mockServerConfig.errorRate,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
         throw new Error(
-          `Failed to refresh mock server: ${response.statusText}`
+          `Failed to refresh mock server: ${response.statusText}`,
         );
       }
 
@@ -176,7 +176,7 @@ function APILab() {
 
       if (!response.ok) {
         throw new Error(
-          `Failed to generate test cases: ${response.statusText}`
+          `Failed to generate test cases: ${response.statusText}`,
         );
       }
 
@@ -216,7 +216,7 @@ function APILab() {
             count: mockDataConfig.variationCount,
           }),
           signal: controller.signal,
-        }
+        },
       );
 
       clearTimeout(timeoutId);
@@ -393,7 +393,7 @@ function APILab() {
                   <button
                     onClick={() =>
                       copyToClipboard(
-                        `http://${mockServer.host}:${mockServer.port}${mockServer.base_url}`
+                        `http://${mockServer.host}:${mockServer.port}${mockServer.base_url}`,
                       )
                     }
                   >

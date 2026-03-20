@@ -5,17 +5,18 @@ Provides advanced prompt templates, context management, and dynamic prompt optim
 
 import json
 import re
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..core.logging import get_logger
-from ..schemas.ai_schemas import AIRequest, OperationType, LLMParameters
+from ..schemas.ai_schemas import AIRequest, LLMParameters, OperationType
 
 
 class PromptTemplate(str, Enum):
     """Available prompt templates."""
+
     SYSTEM_ARCHITECT = "system_architect"
     CODE_GENERATOR = "code_generator"
     VALIDATOR = "validator"
@@ -27,6 +28,7 @@ class PromptTemplate(str, Enum):
 @dataclass
 class PromptContext:
     """Context information for prompt generation."""
+
     operation_history: List[str]
     spec_complexity: str
     domain_knowledge: Dict[str, Any]
@@ -54,9 +56,7 @@ class PromptEngine:
         self._failure_patterns = []
 
     def generate_intelligent_prompt(
-        self,
-        request: AIRequest,
-        context_id: Optional[str] = None
+        self, request: AIRequest, context_id: Optional[str] = None
     ) -> Tuple[str, str]:
         """
         Generate intelligent system and user prompts based on request and context.
@@ -64,7 +64,9 @@ class PromptEngine:
         Returns:
             Tuple of (system_prompt, user_prompt)
         """
-        self.logger.info(f"Generating intelligent prompt for operation: {request.operation_type}")
+        self.logger.info(
+            f"Generating intelligent prompt for operation: {request.operation_type}"
+        )
 
         # Analyze the request to determine optimal prompt strategy
         prompt_strategy = self._analyze_prompt_strategy(request)
@@ -90,7 +92,7 @@ class PromptEngine:
             "requires_chain_of_thought": self._needs_cot(request),
             "requires_examples": self._needs_examples(request),
             "requires_constraints": self._needs_constraints(request),
-            "tone": self._determine_tone(request)
+            "tone": self._determine_tone(request),
         }
 
         return strategy
@@ -106,14 +108,16 @@ class PromptEngine:
             OperationType.PATCH: PromptTemplate.SYSTEM_ARCHITECT,
         }
 
-        return operation_mapping.get(request.operation_type, PromptTemplate.SYSTEM_ARCHITECT)
+        return operation_mapping.get(
+            request.operation_type, PromptTemplate.SYSTEM_ARCHITECT
+        )
 
     def _assess_request_complexity(self, request: AIRequest) -> str:
         """Assess the complexity of the request."""
         try:
             spec_data = json.loads(request.spec_text)
-            path_count = len(spec_data.get('paths', {}))
-            component_count = len(spec_data.get('components', {}).get('schemas', {}))
+            path_count = len(spec_data.get("paths", {}))
+            component_count = len(spec_data.get("components", {}).get("schemas", {}))
 
             total_complexity = path_count + component_count
 
@@ -131,25 +135,25 @@ class PromptEngine:
         """Determine if chain-of-thought reasoning is needed."""
         complex_operations = [OperationType.GENERATE, OperationType.OPTIMIZE]
         return (
-            request.operation_type in complex_operations or
-            len(request.prompt.split()) > 20 or
-            "complex" in request.prompt.lower()
+            request.operation_type in complex_operations
+            or len(request.prompt.split()) > 20
+            or "complex" in request.prompt.lower()
         )
 
     def _needs_examples(self, request: AIRequest) -> bool:
         """Determine if examples would be helpful."""
         return (
-            request.operation_type == OperationType.GENERATE or
-            "example" in request.prompt.lower() or
-            "sample" in request.prompt.lower()
+            request.operation_type == OperationType.GENERATE
+            or "example" in request.prompt.lower()
+            or "sample" in request.prompt.lower()
         )
 
     def _needs_constraints(self, request: AIRequest) -> bool:
         """Determine if explicit constraints are needed."""
         return (
-            request.validate_output or
-            request.target_paths is not None or
-            "must" in request.prompt.lower()
+            request.validate_output
+            or request.target_paths is not None
+            or "must" in request.prompt.lower()
         )
 
     def _determine_tone(self, request: AIRequest) -> str:
@@ -161,7 +165,9 @@ class PromptEngine:
         else:
             return "professional"
 
-    def _get_or_create_context(self, context_id: Optional[str], request: AIRequest) -> PromptContext:
+    def _get_or_create_context(
+        self, context_id: Optional[str], request: AIRequest
+    ) -> PromptContext:
         """Get existing context or create new one."""
         if context_id and context_id in self._context_memory:
             context = self._context_memory[context_id]
@@ -176,7 +182,7 @@ class PromptEngine:
             domain_knowledge={},
             user_preferences={},
             error_patterns=[],
-            success_patterns=[]
+            success_patterns=[],
         )
 
         if context_id:
@@ -185,10 +191,7 @@ class PromptEngine:
         return context
 
     def _generate_system_prompt(
-        self,
-        request: AIRequest,
-        strategy: Dict[str, Any],
-        context: PromptContext
+        self, request: AIRequest, strategy: Dict[str, Any], context: PromptContext
     ) -> str:
         """Generate an intelligent system prompt."""
 
@@ -200,7 +203,7 @@ class PromptEngine:
             self._get_expertise_section(strategy, context),
             self._get_methodology_section(strategy),
             self._get_constraints_section(request, strategy),
-            self._get_output_format_section(request, strategy)
+            self._get_output_format_section(request, strategy),
         ]
 
         # Add chain-of-thought if needed
@@ -214,10 +217,7 @@ class PromptEngine:
         return "\n\n".join(filter(None, system_sections))
 
     def _generate_user_prompt(
-        self,
-        request: AIRequest,
-        strategy: Dict[str, Any],
-        context: PromptContext
+        self, request: AIRequest, strategy: Dict[str, Any], context: PromptContext
     ) -> str:
         """Generate an intelligent user prompt."""
 
@@ -225,7 +225,7 @@ class PromptEngine:
             self._get_specification_analysis(request),
             self._get_task_description(request, strategy),
             self._get_specification_content(request),
-            self._get_requirements_section(request, strategy)
+            self._get_requirements_section(request, strategy),
         ]
 
         # Add examples if helpful
@@ -237,7 +237,9 @@ class PromptEngine:
 
         return "\n\n".join(filter(None, user_sections))
 
-    def _get_expertise_section(self, strategy: Dict[str, Any], context: PromptContext) -> str:
+    def _get_expertise_section(
+        self, strategy: Dict[str, Any], context: PromptContext
+    ) -> str:
         """Generate expertise and capabilities section."""
         complexity = strategy["complexity_level"]
 
@@ -283,17 +285,21 @@ Think through each phase explicitly in your reasoning."""
 - Ensure all changes maintain specification integrity
 - Validate the result for correctness and completeness"""
 
-    def _get_constraints_section(self, request: AIRequest, strategy: Dict[str, Any]) -> str:
+    def _get_constraints_section(
+        self, request: AIRequest, strategy: Dict[str, Any]
+    ) -> str:
         """Generate constraints section."""
         constraints = ["**Critical Constraints:**"]
 
         # Universal constraints
-        constraints.extend([
-            "- Output ONLY valid JSON without any commentary or markdown formatting",
-            "- Preserve existing specification structure unless explicitly asked to change",
-            "- Maintain all existing references and relationships",
-            "- Follow OpenAPI 3.0+ specification standards strictly"
-        ])
+        constraints.extend(
+            [
+                "- Output ONLY valid JSON without any commentary or markdown formatting",
+                "- Preserve existing specification structure unless explicitly asked to change",
+                "- Maintain all existing references and relationships",
+                "- Follow OpenAPI 3.0+ specification standards strictly",
+            ]
+        )
 
         # Request-specific constraints
         if request.validate_output:
@@ -303,7 +309,9 @@ Think through each phase explicitly in your reasoning."""
             constraints.append("- Maintain consistent formatting and style")
 
         if request.target_paths:
-            constraints.append(f"- Focus changes on specified paths: {', '.join(request.target_paths)}")
+            constraints.append(
+                f"- Focus changes on specified paths: {', '.join(request.target_paths)}"
+            )
 
         # Strategy-specific constraints
         if strategy["tone"] == "precise":
@@ -313,7 +321,9 @@ Think through each phase explicitly in your reasoning."""
 
         return "\n".join(constraints)
 
-    def _get_output_format_section(self, request: AIRequest, strategy: Dict[str, Any]) -> str:
+    def _get_output_format_section(
+        self, request: AIRequest, strategy: Dict[str, Any]
+    ) -> str:
         """Generate output format requirements."""
         return """**Output Format Requirements:**
 - Return a complete, valid OpenAPI JSON specification
@@ -351,13 +361,13 @@ Use this context to maintain consistency with previous operations."""
             analysis = ["**Current Specification Analysis:**"]
 
             # Basic info
-            version = spec_data.get('openapi', 'unknown')
-            title = spec_data.get('info', {}).get('title', 'Unknown API')
+            version = spec_data.get("openapi", "unknown")
+            title = spec_data.get("info", {}).get("title", "Unknown API")
             analysis.append(f"- API: {title}")
             analysis.append(f"- OpenAPI Version: {version}")
 
             # Paths analysis
-            paths = spec_data.get('paths', {})
+            paths = spec_data.get("paths", {})
             analysis.append(f"- Total Endpoints: {len(paths)}")
 
             if paths:
@@ -367,12 +377,12 @@ Use this context to maintain consistency with previous operations."""
                 analysis.append(f"- HTTP Methods: {', '.join(sorted(methods)).upper()}")
 
             # Components analysis
-            components = spec_data.get('components', {})
-            schemas = components.get('schemas', {})
+            components = spec_data.get("components", {})
+            schemas = components.get("schemas", {})
             if schemas:
                 analysis.append(f"- Schema Components: {len(schemas)}")
 
-            security = components.get('securitySchemes', {})
+            security = components.get("securitySchemes", {})
             if security:
                 analysis.append(f"- Security Schemes: {len(security)}")
 
@@ -383,7 +393,9 @@ Use this context to maintain consistency with previous operations."""
         except Exception:
             return "**Current Specification Analysis:**\n- Status: Analysis failed"
 
-    def _get_task_description(self, request: AIRequest, strategy: Dict[str, Any]) -> str:
+    def _get_task_description(
+        self, request: AIRequest, strategy: Dict[str, Any]
+    ) -> str:
         """Generate task description section."""
         return f"""**Your Task:**
 {request.prompt}
@@ -398,7 +410,9 @@ Use this context to maintain consistency with previous operations."""
 {request.spec_text}
 ```"""
 
-    def _get_requirements_section(self, request: AIRequest, strategy: Dict[str, Any]) -> str:
+    def _get_requirements_section(
+        self, request: AIRequest, strategy: Dict[str, Any]
+    ) -> str:
         """Generate requirements section."""
         requirements = ["**Specific Requirements:**"]
 
@@ -435,16 +449,20 @@ Use this context to maintain consistency with previous operations."""
 
         return ""
 
-    def _get_success_criteria(self, request: AIRequest, strategy: Dict[str, Any]) -> str:
+    def _get_success_criteria(
+        self, request: AIRequest, strategy: Dict[str, Any]
+    ) -> str:
         """Define success criteria for the task."""
         criteria = ["**Success Criteria:**"]
 
-        criteria.extend([
-            "✓ Valid OpenAPI 3.0+ JSON specification",
-            "✓ All requested changes implemented correctly",
-            "✓ No broken references or invalid schemas",
-            "✓ Consistent with OpenAPI best practices"
-        ])
+        criteria.extend(
+            [
+                "✓ Valid OpenAPI 3.0+ JSON specification",
+                "✓ All requested changes implemented correctly",
+                "✓ No broken references or invalid schemas",
+                "✓ Consistent with OpenAPI best practices",
+            ]
+        )
 
         if request.validate_output:
             criteria.append("✓ Passes OpenAPI specification validation")
@@ -474,23 +492,29 @@ Use this context to maintain consistency with previous operations."""
             },
             PromptTemplate.DOMAIN_EXPERT: {
                 "role_definition": "You are a Domain Expert with deep knowledge of industry-specific API patterns and business requirements."
-            }
+            },
         }
 
-    def learn_from_feedback(self, prompt_id: str, success: bool, feedback: Optional[str] = None):
+    def learn_from_feedback(
+        self, prompt_id: str, success: bool, feedback: Optional[str] = None
+    ):
         """Learn from user feedback to improve future prompts."""
         if success:
-            self._success_patterns.append({
-                "prompt_id": prompt_id,
-                "timestamp": datetime.utcnow(),
-                "feedback": feedback
-            })
+            self._success_patterns.append(
+                {
+                    "prompt_id": prompt_id,
+                    "timestamp": datetime.utcnow(),
+                    "feedback": feedback,
+                }
+            )
         else:
-            self._failure_patterns.append({
-                "prompt_id": prompt_id,
-                "timestamp": datetime.utcnow(),
-                "feedback": feedback
-            })
+            self._failure_patterns.append(
+                {
+                    "prompt_id": prompt_id,
+                    "timestamp": datetime.utcnow(),
+                    "feedback": feedback,
+                }
+            )
 
         self.logger.info(f"Learned from feedback - Success: {success}, ID: {prompt_id}")
 
@@ -499,6 +523,11 @@ Use this context to maintain consistency with previous operations."""
         return {
             "total_success_patterns": len(self._success_patterns),
             "total_failure_patterns": len(self._failure_patterns),
-            "success_rate": len(self._success_patterns) / (len(self._success_patterns) + len(self._failure_patterns)) if (self._success_patterns or self._failure_patterns) else 0,
-            "active_contexts": len(self._context_memory)
+            "success_rate": (
+                len(self._success_patterns)
+                / (len(self._success_patterns) + len(self._failure_patterns))
+                if (self._success_patterns or self._failure_patterns)
+                else 0
+            ),
+            "active_contexts": len(self._context_memory),
         }

@@ -2,8 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:base",
-    ":dependencyDashboard",
-    ":semanticCommits"
+    ":timezone(Asia/Kolkata)", 
+    "group:springBoot" 
   ],
   "schedule": ["before 5am on Monday"],
   "packageRules": [
@@ -12,16 +12,32 @@
       "groupName": "Spring Boot Dependencies"
     },
     {
-      "matchPackagePatterns": ["^react", "^react-dom"],
+      "matchPackagePatterns": ["^react", "^react-dom", "^@types/react"],
       "groupName": "React Core"
     },
     {
-      "matchPackagePatterns": ["^fastapi", "^uvicorn", "^pydantic"],
+      "matchPackagePatterns": ["^fastapi", "^uvicorn", "^pydantic", "^starlette"],
       "groupName": "FastAPI Core"
+    },
+    {
+      "description": "Automerge non-major updates if CI passes",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Do not automerge major updates, and label them clearly",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-update"]
     }
   ],
   "osvVulnerabilityAlerts": true,
   "labels": ["dependencies"],
   "prConcurrentLimit": 3,
-  "prHourlyLimit": 2
+  "prHourlyLimit": 2,
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["@me"]
+  }
 }

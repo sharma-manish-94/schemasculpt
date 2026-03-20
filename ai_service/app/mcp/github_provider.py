@@ -4,19 +4,19 @@ GitHub Provider - MCP-based GitHub repository access
 This module provides GitHub repository operations using the MCP GitHub server.
 """
 
-import logging
 import base64
 import json
-from typing import List, Dict, Any, Optional
+import logging
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from .client import MCPClient, MCPConnectionError, MCPOperationError
 from .repository_provider import (
-    RepositoryProvider,
-    RepositoryInfo,
-    FileInfo,
-    FileContent,
     BranchInfo,
+    FileContent,
+    FileInfo,
+    RepositoryInfo,
+    RepositoryProvider,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class GitHubProvider(RepositoryProvider):
             await self._client.connect(
                 command="npx",
                 args=["-y", "@modelcontextprotocol/server-github"],
-                env=env
+                env=env,
             )
 
             logger.info("Connected to GitHub MCP server")
@@ -64,7 +64,9 @@ class GitHubProvider(RepositoryProvider):
         if self._client:
             await self._client.disconnect()
 
-    async def list_repositories(self, username: Optional[str] = None) -> List[RepositoryInfo]:
+    async def list_repositories(
+        self, username: Optional[str] = None
+    ) -> List[RepositoryInfo]:
         """
         List GitHub repositories.
 
@@ -78,13 +80,12 @@ class GitHubProvider(RepositoryProvider):
             # Note: The actual tool name may vary based on MCP server implementation
             # This is a placeholder - we'll need to check actual GitHub MCP server tools
             result = await self._client.call_tool(
-                "list_repositories",
-                {"username": username} if username else {}
+                "list_repositories", {"username": username} if username else {}
             )
 
             repos = []
             # Parse result based on actual MCP server response format
-            repo_data = result.content[0].text if hasattr(result, 'content') else result
+            repo_data = result.content[0].text if hasattr(result, "content") else result
 
             # This parsing will need adjustment based on actual response format
             if isinstance(repo_data, list):
@@ -110,14 +111,10 @@ class GitHubProvider(RepositoryProvider):
         """
         try:
             result = await self._client.call_tool(
-                "get_repository",
-                {
-                    "owner": owner,
-                    "repo": repo
-                }
+                "get_repository", {"owner": owner, "repo": repo}
             )
 
-            repo_data = result.content[0].text if hasattr(result, 'content') else result
+            repo_data = result.content[0].text if hasattr(result, "content") else result
             return self._parse_repository_info(repo_data)
 
         except Exception as e:
@@ -137,15 +134,13 @@ class GitHubProvider(RepositoryProvider):
         """
         try:
             result = await self._client.call_tool(
-                "list_branches",
-                {
-                    "owner": owner,
-                    "repo": repo
-                }
+                "list_branches", {"owner": owner, "repo": repo}
             )
 
             branches = []
-            branch_data = result.content[0].text if hasattr(result, 'content') else result
+            branch_data = (
+                result.content[0].text if hasattr(result, "content") else result
+            )
 
             if isinstance(branch_data, list):
                 for branch in branch_data:
@@ -158,11 +153,7 @@ class GitHubProvider(RepositoryProvider):
             raise MCPOperationError(f"Error listing branches: {e}") from e
 
     async def browse_tree(
-        self,
-        owner: str,
-        repo: str,
-        path: str = "",
-        branch: Optional[str] = None
+        self, owner: str, repo: str, path: str = "", branch: Optional[str] = None
     ) -> List[FileInfo]:
         """
         Browse repository tree.
@@ -177,32 +168,32 @@ class GitHubProvider(RepositoryProvider):
             List of files and directories
         """
         try:
-            args = {
-                "owner": owner,
-                "repo": repo,
-                "path": path
-            }
+            args = {"owner": owner, "repo": repo, "path": path}
             if branch:
                 args["ref"] = branch
 
             logger.info(f"Calling get_file_contents with args: {args}")
             result = await self._client.call_tool("get_file_contents", args)
-            logger.info(f"MCP result type: {type(result)}, hasattr content: {hasattr(result, 'content')}")
+            logger.info(
+                f"MCP result type: {type(result)}, hasattr content: {hasattr(result, 'content')}"
+            )
 
             files = []
 
             # Extract the text content from MCP result
             file_data = None
-            if hasattr(result, 'content') and result.content:
+            if hasattr(result, "content") and result.content:
                 content_item = result.content[0]
-                if hasattr(content_item, 'text'):
+                if hasattr(content_item, "text"):
                     file_data = content_item.text
                 else:
                     file_data = content_item
             else:
                 file_data = result
 
-            logger.info(f"file_data type: {type(file_data)}, first 500 chars: {str(file_data)[:500]}")
+            logger.info(
+                f"file_data type: {type(file_data)}, first 500 chars: {str(file_data)[:500]}"
+            )
 
             # Parse the data - MCP returns JSON string
             if isinstance(file_data, str):
@@ -216,9 +207,13 @@ class GitHubProvider(RepositoryProvider):
                         file_list = parsed_data
                     elif isinstance(parsed_data, dict):
                         # Might be wrapped in a response object
-                        file_list = parsed_data.get('files', parsed_data.get('tree', [parsed_data]))
+                        file_list = parsed_data.get(
+                            "files", parsed_data.get("tree", [parsed_data])
+                        )
                     else:
-                        logger.warning(f"Unexpected parsed data type: {type(parsed_data)}")
+                        logger.warning(
+                            f"Unexpected parsed data type: {type(parsed_data)}"
+                        )
                         file_list = []
 
                 except json.JSONDecodeError as e:
@@ -241,15 +236,13 @@ class GitHubProvider(RepositoryProvider):
             return files
 
         except Exception as e:
-            logger.error(f"Error browsing tree {owner}/{repo}/{path}: {e}", exc_info=True)
+            logger.error(
+                f"Error browsing tree {owner}/{repo}/{path}: {e}", exc_info=True
+            )
             raise MCPOperationError(f"Error browsing tree: {e}") from e
 
     async def read_file(
-        self,
-        owner: str,
-        repo: str,
-        path: str,
-        ref: Optional[str] = None
+        self, owner: str, repo: str, path: str, ref: Optional[str] = None
     ) -> FileContent:
         """
         Read file content from repository.
@@ -264,18 +257,16 @@ class GitHubProvider(RepositoryProvider):
             File content
         """
         try:
-            args = {
-                "owner": owner,
-                "repo": repo,
-                "path": path
-            }
+            args = {"owner": owner, "repo": repo, "path": path}
             if ref:
                 args["ref"] = ref
 
             result = await self._client.call_tool("get_file_contents", args)
 
             # Parse result
-            content_data = result.content[0].text if hasattr(result, 'content') else result
+            content_data = (
+                result.content[0].text if hasattr(result, "content") else result
+            )
             return self._parse_file_content(content_data, path)
 
         except Exception as e:
@@ -283,11 +274,7 @@ class GitHubProvider(RepositoryProvider):
             raise MCPOperationError(f"Error reading file: {e}") from e
 
     async def search_files(
-        self,
-        owner: str,
-        repo: str,
-        pattern: str,
-        branch: Optional[str] = None
+        self, owner: str, repo: str, pattern: str, branch: Optional[str] = None
     ) -> List[FileInfo]:
         """
         Search for files matching a pattern.
@@ -302,18 +289,14 @@ class GitHubProvider(RepositoryProvider):
             List of matching files
         """
         try:
-            args = {
-                "owner": owner,
-                "repo": repo,
-                "pattern": pattern
-            }
+            args = {"owner": owner, "repo": repo, "pattern": pattern}
             if branch:
                 args["ref"] = branch
 
             result = await self._client.call_tool("search_files", args)
 
             files = []
-            file_data = result.content[0].text if hasattr(result, 'content') else result
+            file_data = result.content[0].text if hasattr(result, "content") else result
 
             if isinstance(file_data, list):
                 for item in file_data:
@@ -332,7 +315,11 @@ class GitHubProvider(RepositoryProvider):
         """Parse repository info from MCP response."""
         if isinstance(data, dict):
             return RepositoryInfo(
-                owner=data.get("owner", {}).get("login", "") if isinstance(data.get("owner"), dict) else data.get("owner", ""),
+                owner=(
+                    data.get("owner", {}).get("login", "")
+                    if isinstance(data.get("owner"), dict)
+                    else data.get("owner", "")
+                ),
                 name=data.get("name", ""),
                 full_name=data.get("full_name", ""),
                 description=data.get("description"),
@@ -351,7 +338,7 @@ class GitHubProvider(RepositoryProvider):
                 description=None,
                 url="",
                 default_branch="main",
-                private=False
+                private=False,
             )
 
     def _parse_file_info(self, data: Any) -> FileInfo:
@@ -372,7 +359,7 @@ class GitHubProvider(RepositoryProvider):
                 type="file",
                 size=None,
                 sha=None,
-                url=None
+                url=None,
             )
 
     def _parse_file_content(self, data: Any, path: str) -> FileContent:
@@ -395,7 +382,7 @@ class GitHubProvider(RepositoryProvider):
                 encoding=encoding,
                 size=data.get("size", len(content)),
                 sha=data.get("sha", ""),
-                url=data.get("url")
+                url=data.get("url"),
             )
         else:
             # Assume string response is the content
@@ -406,7 +393,7 @@ class GitHubProvider(RepositoryProvider):
                 encoding="utf-8",
                 size=len(content),
                 sha="",
-                url=None
+                url=None,
             )
 
     def _parse_branch_info(self, data: Any) -> BranchInfo:
@@ -414,15 +401,15 @@ class GitHubProvider(RepositoryProvider):
         if isinstance(data, dict):
             return BranchInfo(
                 name=data.get("name", ""),
-                commit_sha=data.get("commit", {}).get("sha", "") if isinstance(data.get("commit"), dict) else "",
-                protected=data.get("protected", False)
+                commit_sha=(
+                    data.get("commit", {}).get("sha", "")
+                    if isinstance(data.get("commit"), dict)
+                    else ""
+                ),
+                protected=data.get("protected", False),
             )
         else:
-            return BranchInfo(
-                name=str(data),
-                commit_sha="",
-                protected=False
-            )
+            return BranchInfo(name=str(data), commit_sha="", protected=False)
 
     def _parse_datetime(self, date_str: Optional[str]) -> Optional[datetime]:
         """Parse datetime string."""

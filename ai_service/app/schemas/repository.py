@@ -5,20 +5,27 @@ These schemas define the request/response models for repository endpoints.
 """
 
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RepositoryConnectionRequest(BaseModel):
     """Request to connect to a repository provider."""
-    model_config = ConfigDict(populate_by_name=True)  # Accept both access_token and accessToken
+
+    model_config = ConfigDict(
+        populate_by_name=True
+    )  # Accept both access_token and accessToken
 
     provider: str = Field(..., description="Repository provider (github, gitlab)")
-    access_token: str = Field(..., description="OAuth access token", alias="accessToken")
+    access_token: str = Field(
+        ..., description="OAuth access token", alias="accessToken"
+    )
 
 
 class RepositoryConnectionResponse(BaseModel):
     """Response after connecting to a repository provider."""
+
     success: bool
     message: str
     provider: str
@@ -26,6 +33,7 @@ class RepositoryConnectionResponse(BaseModel):
 
 class RepositoryInfoResponse(BaseModel):
     """Information about a repository."""
+
     owner: str
     name: str
     full_name: str
@@ -39,17 +47,22 @@ class RepositoryInfoResponse(BaseModel):
 
 class RepositoryListRequest(BaseModel):
     """Request to list repositories."""
-    username: Optional[str] = Field(None, description="Optional username to filter repositories")
+
+    username: Optional[str] = Field(
+        None, description="Optional username to filter repositories"
+    )
 
 
 class RepositoryListResponse(BaseModel):
     """Response with list of repositories."""
+
     repositories: List[RepositoryInfoResponse]
     count: int
 
 
 class BranchInfoResponse(BaseModel):
     """Information about a branch."""
+
     name: str
     commit_sha: str
     protected: bool
@@ -57,31 +70,39 @@ class BranchInfoResponse(BaseModel):
 
 class BranchListResponse(BaseModel):
     """Response with list of branches."""
+
     branches: List[BranchInfoResponse]
     count: int
 
 
 class FileInfoResponse(BaseModel):
     """Information about a file or directory."""
+
     path: str
     name: str
     type: str = Field(..., description="Type: file or dir")
     size: Optional[int] = None
     sha: Optional[str] = None
     url: Optional[str] = None
-    is_openapi_spec: bool = Field(default=False, description="Whether this file is likely an OpenAPI spec")
+    is_openapi_spec: bool = Field(
+        default=False, description="Whether this file is likely an OpenAPI spec"
+    )
 
 
 class BrowseTreeRequest(BaseModel):
     """Request to browse repository tree."""
+
     owner: str
     repo: str
     path: str = Field(default="", description="Path in repository (empty for root)")
-    branch: Optional[str] = Field(None, description="Branch name (default: default branch)")
+    branch: Optional[str] = Field(
+        None, description="Branch name (default: default branch)"
+    )
 
 
 class BrowseTreeResponse(BaseModel):
     """Response with repository tree contents."""
+
     files: List[FileInfoResponse]
     path: str
     branch: Optional[str]
@@ -89,6 +110,7 @@ class BrowseTreeResponse(BaseModel):
 
 class ReadFileRequest(BaseModel):
     """Request to read a file from repository."""
+
     owner: str
     repo: str
     path: str
@@ -97,6 +119,7 @@ class ReadFileRequest(BaseModel):
 
 class ReadFileResponse(BaseModel):
     """Response with file content."""
+
     path: str
     content: str
     encoding: str
@@ -107,6 +130,7 @@ class ReadFileResponse(BaseModel):
 
 class SearchFilesRequest(BaseModel):
     """Request to search for files."""
+
     owner: str
     repo: str
     pattern: str = Field(..., description="File pattern (e.g., *.yaml, *.json)")
@@ -115,6 +139,7 @@ class SearchFilesRequest(BaseModel):
 
 class SearchFilesResponse(BaseModel):
     """Response with search results."""
+
     files: List[FileInfoResponse]
     count: int
     pattern: str
@@ -122,6 +147,7 @@ class SearchFilesResponse(BaseModel):
 
 class FindOpenAPISpecsRequest(BaseModel):
     """Request to find OpenAPI specs in a repository."""
+
     owner: str
     repo: str
     branch: Optional[str] = Field(None, description="Branch name")
@@ -129,12 +155,14 @@ class FindOpenAPISpecsRequest(BaseModel):
 
 class FindOpenAPISpecsResponse(BaseModel):
     """Response with OpenAPI spec files."""
+
     specs: List[FileInfoResponse]
     count: int
 
 
 class RepositoryHealthResponse(BaseModel):
     """Health check response for repository service."""
+
     status: str
     mcp_available: bool
     connected: bool

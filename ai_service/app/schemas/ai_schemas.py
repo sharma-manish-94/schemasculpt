@@ -5,14 +5,17 @@ Provides comprehensive data validation and serialization.
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field, validator
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field, validator
+
 from ..core.config import settings
 
 
 class OperationType(str, Enum):
     """Supported OpenAPI operation types."""
+
     MODIFY = "modify"
     GENERATE = "generate"
     VALIDATE = "validate"
@@ -25,6 +28,7 @@ class OperationType(str, Enum):
 
 class ResponseFormat(str, Enum):
     """Supported response formats."""
+
     JSON = "json"
     YAML = "yaml"
     MARKDOWN = "markdown"
@@ -32,6 +36,7 @@ class ResponseFormat(str, Enum):
 
 class StreamingMode(str, Enum):
     """Streaming response modes."""
+
     DISABLED = "disabled"
     TOKENS = "tokens"
     CHUNKS = "chunks"
@@ -40,6 +45,7 @@ class StreamingMode(str, Enum):
 
 class LLMParameters(BaseModel):
     """LLM-specific parameters for fine-tuning responses."""
+
     temperature: float = Field(default=0.1, ge=0.0, le=2.0)
     max_tokens: int = Field(default=4096, ge=1, le=8192)
     top_p: float = Field(default=0.9, ge=0.0, le=1.0)
@@ -50,6 +56,7 @@ class LLMParameters(BaseModel):
 
 class ContextWindow(BaseModel):
     """Context management for conversation continuity."""
+
     conversation_id: Optional[UUID] = Field(default_factory=uuid4)
     previous_operations: List[str] = Field(default_factory=list)
     context_size: int = Field(default=10, ge=1, le=50)
@@ -58,6 +65,7 @@ class ContextWindow(BaseModel):
 
 class JSONPatchOperation(BaseModel):
     """JSON Patch operation for precise spec modifications."""
+
     op: str = Field(..., pattern="^(add|remove|replace|move|copy|test)$")
     path: str = Field(..., description="JSON Pointer path")
     value: Optional[Any] = Field(default=None)
@@ -68,7 +76,9 @@ class AIRequest(BaseModel):
     """Enhanced AI request with advanced capabilities."""
 
     # Core fields - support both camelCase (Spring Boot) and snake_case (Python)
-    spec_text: str = Field(..., description="OpenAPI specification text", alias="specText")
+    spec_text: str = Field(
+        ..., description="OpenAPI specification text", alias="specText"
+    )
     prompt: str = Field(..., min_length=1, description="User prompt for AI")
     operation_type: OperationType = Field(default=OperationType.MODIFY)
 
@@ -80,7 +90,9 @@ class AIRequest(BaseModel):
 
     # JSON Patch support
     json_patches: Optional[List[JSONPatchOperation]] = Field(default=None)
-    target_paths: Optional[List[str]] = Field(default=None, description="Specific paths to modify")
+    target_paths: Optional[List[str]] = Field(
+        default=None, description="Specific paths to modify"
+    )
 
     # Validation options
     validate_output: bool = Field(default=True)
@@ -95,17 +107,18 @@ class AIRequest(BaseModel):
     # Pydantic v2 configuration
     model_config = {"populate_by_name": True}  # Allow both spec_text and specText
 
-    @validator('json_patches')
+    @validator("json_patches")
     def validate_patches(cls, v):
         if v:
             for patch in v:
-                if patch.op in ['move', 'copy'] and not patch.from_path:
+                if patch.op in ["move", "copy"] and not patch.from_path:
                     raise ValueError(f"Operation {patch.op} requires 'from' field")
         return v
 
 
 class ValidationResult(BaseModel):
     """OpenAPI validation results."""
+
     is_valid: bool
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
@@ -114,6 +127,7 @@ class ValidationResult(BaseModel):
 
 class PerformanceMetrics(BaseModel):
     """Performance metrics for AI operations."""
+
     processing_time_ms: float
     token_count: int
     model_used: str
@@ -130,7 +144,9 @@ class AIResponse(BaseModel):
 
     # Validation and quality
     validation: ValidationResult
-    confidence_score: float = Field(ge=0.0, le=1.0, description="AI confidence in the result")
+    confidence_score: float = Field(
+        ge=0.0, le=1.0, description="AI confidence in the result"
+    )
 
     # Applied changes
     changes_summary: str = Field(description="Human-readable summary of changes")
@@ -149,6 +165,7 @@ class AIResponse(BaseModel):
 
 class StreamingChunk(BaseModel):
     """Streaming response chunk."""
+
     chunk_id: int
     content: str
     is_final: bool = False
@@ -158,16 +175,22 @@ class StreamingChunk(BaseModel):
 class GenerateSpecRequest(BaseModel):
     """Enhanced specification generation request."""
 
-    prompt: str = Field(..., min_length=1, description="Description of the API to generate")
+    prompt: str = Field(
+        ..., min_length=1, description="Description of the API to generate"
+    )
 
     # Generation parameters
-    api_style: str = Field(default="REST", description="API style (REST, GraphQL, gRPC)")
+    api_style: str = Field(
+        default="REST", description="API style (REST, GraphQL, gRPC)"
+    )
     openapi_version: str = Field(default="3.0.0", pattern="^3\.[0-9]+\.[0-9]+$")
     include_examples: bool = Field(default=True)
     include_security: bool = Field(default=True)
 
     # Domain-specific options
-    domain: Optional[str] = Field(default=None, description="API domain (e.g., 'ecommerce', 'social')")
+    domain: Optional[str] = Field(
+        default=None, description="API domain (e.g., 'ecommerce', 'social')"
+    )
     complexity_level: str = Field(default="medium", pattern="^(simple|medium|complex)$")
     target_framework: Optional[str] = Field(default=None)
 
@@ -197,8 +220,12 @@ class MockStartRequest(BaseModel):
     include_cors: bool = Field(default=True)
 
     # Advanced mocking
-    use_ai_responses: bool = Field(default=True, description="Generate realistic responses using AI")
-    response_variety: int = Field(default=3, ge=1, le=10, description="Number of response variations")
+    use_ai_responses: bool = Field(
+        default=True, description="Generate realistic responses using AI"
+    )
+    response_variety: int = Field(
+        default=3, ge=1, le=10, description="Number of response variations"
+    )
 
     # Metadata
     mock_name: Optional[str] = Field(default=None)
@@ -227,6 +254,7 @@ class MockStartResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Service health status."""
+
     status: str = Field(default="healthy")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     version: str
@@ -243,6 +271,7 @@ class HealthResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Standardized error response."""
+
     error: str
     error_code: str
     message: str

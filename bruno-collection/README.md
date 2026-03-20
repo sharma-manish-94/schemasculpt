@@ -34,7 +34,7 @@ Before running the collection, ensure all services are running:
 3. **Spring Boot API**: Java backend service
    ```bash
    cd api
-   mvn spring-boot:run
+   ./gradlew bootRun
    ```
 
 4. **Ollama**: Required for AI functionality

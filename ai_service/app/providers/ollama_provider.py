@@ -4,18 +4,13 @@ Connects to local or remote Ollama instances.
 """
 
 import json
-from typing import Dict, Any, AsyncGenerator, Optional, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import httpx
 
-from .base_provider import (
-    BaseLLMProvider,
-    LLMResponse,
-    LLMStreamResponse,
-    ProviderType
-)
-from ..core.logging import get_logger
 from ..core.exceptions import LLMError
+from ..core.logging import get_logger
+from .base_provider import BaseLLMProvider, LLMResponse, LLMStreamResponse, ProviderType
 
 
 class OllamaProvider(BaseLLMProvider):
@@ -37,8 +32,7 @@ class OllamaProvider(BaseLLMProvider):
         self.tags_endpoint = f"{self.base_url}/api/tags"
 
         self.client = httpx.AsyncClient(
-            timeout=httpx.Timeout(self.timeout),
-            limits=httpx.Limits(max_connections=10)
+            timeout=httpx.Timeout(self.timeout), limits=httpx.Limits(max_connections=10)
         )
 
     def _get_provider_type(self) -> ProviderType:
@@ -51,7 +45,7 @@ class OllamaProvider(BaseLLMProvider):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         stream: bool = False,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Send chat completion request to Ollama."""
         model = model or self.default_model
@@ -62,7 +56,7 @@ class OllamaProvider(BaseLLMProvider):
             "stream": False,
             "options": {
                 "temperature": temperature,
-            }
+            },
         }
 
         if max_tokens:
@@ -73,15 +67,16 @@ class OllamaProvider(BaseLLMProvider):
             payload["options"].update(kwargs)
 
         try:
-            self.logger.debug(f"Sending chat request to Ollama: model={model}, messages={len(messages)}")
-
-            response = await self.client.post(
-                self.chat_endpoint,
-                json=payload
+            self.logger.debug(
+                f"Sending chat request to Ollama: model={model}, messages={len(messages)}"
             )
 
+            response = await self.client.post(self.chat_endpoint, json=payload)
+
             if response.status_code != 200:
-                error_msg = f"Ollama API error: {response.status_code} - {response.text}"
+                error_msg = (
+                    f"Ollama API error: {response.status_code} - {response.text}"
+                )
                 self.logger.error(error_msg)
                 raise LLMError(error_msg)
 
@@ -94,7 +89,8 @@ class OllamaProvider(BaseLLMProvider):
                 usage = {
                     "prompt_tokens": result.get("prompt_eval_count", 0),
                     "completion_tokens": result.get("eval_count", 0),
-                    "total_tokens": result.get("prompt_eval_count", 0) + result.get("eval_count", 0)
+                    "total_tokens": result.get("prompt_eval_count", 0)
+                    + result.get("eval_count", 0),
                 }
 
             return LLMResponse(
@@ -105,8 +101,8 @@ class OllamaProvider(BaseLLMProvider):
                 metadata={
                     "total_duration": result.get("total_duration"),
                     "load_duration": result.get("load_duration"),
-                    "eval_duration": result.get("eval_duration")
-                }
+                    "eval_duration": result.get("eval_duration"),
+                },
             )
 
         except httpx.RequestError as e:
@@ -124,7 +120,7 @@ class OllamaProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[LLMStreamResponse, None]:
         """Stream chat completion response from Ollama."""
         model = model or self.default_model
@@ -135,7 +131,7 @@ class OllamaProvider(BaseLLMProvider):
             "stream": True,
             "options": {
                 "temperature": temperature,
-            }
+            },
         }
 
         if max_tokens:
@@ -148,9 +144,7 @@ class OllamaProvider(BaseLLMProvider):
             self.logger.debug(f"Starting streaming chat with Ollama: model={model}")
 
             async with self.client.stream(
-                "POST",
-                self.chat_endpoint,
-                json=payload
+                "POST", self.chat_endpoint, json=payload
             ) as response:
                 if response.status_code != 200:
                     error_msg = f"Ollama API error: {response.status_code}"
@@ -171,7 +165,7 @@ class OllamaProvider(BaseLLMProvider):
                             is_final=is_final,
                             model=model,
                             provider="ollama",
-                            metadata={"chunk": chunk} if is_final else None
+                            metadata={"chunk": chunk} if is_final else None,
                         )
 
                     except json.JSONDecodeError:
@@ -189,7 +183,7 @@ class OllamaProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Generate completion using Ollama's generate endpoint."""
         model = model or self.default_model
@@ -200,7 +194,7 @@ class OllamaProvider(BaseLLMProvider):
             "stream": False,
             "options": {
                 "temperature": temperature,
-            }
+            },
         }
 
         if max_tokens:
@@ -212,13 +206,12 @@ class OllamaProvider(BaseLLMProvider):
         try:
             self.logger.debug(f"Sending generate request to Ollama: model={model}")
 
-            response = await self.client.post(
-                self.generate_endpoint,
-                json=payload
-            )
+            response = await self.client.post(self.generate_endpoint, json=payload)
 
             if response.status_code != 200:
-                error_msg = f"Ollama API error: {response.status_code} - {response.text}"
+                error_msg = (
+                    f"Ollama API error: {response.status_code} - {response.text}"
+                )
                 self.logger.error(error_msg)
                 raise LLMError(error_msg)
 
@@ -232,12 +225,13 @@ class OllamaProvider(BaseLLMProvider):
                 usage={
                     "prompt_tokens": result.get("prompt_eval_count", 0),
                     "completion_tokens": result.get("eval_count", 0),
-                    "total_tokens": result.get("prompt_eval_count", 0) + result.get("eval_count", 0)
+                    "total_tokens": result.get("prompt_eval_count", 0)
+                    + result.get("eval_count", 0),
                 },
                 metadata={
                     "total_duration": result.get("total_duration"),
-                    "eval_duration": result.get("eval_duration")
-                }
+                    "eval_duration": result.get("eval_duration"),
+                },
             )
 
         except httpx.RequestError as e:
@@ -262,6 +256,7 @@ class OllamaProvider(BaseLLMProvider):
         try:
             # This should ideally be async, but keeping it simple for now
             import requests
+
             response = requests.get(self.tags_endpoint, timeout=5)
             if response.status_code == 200:
                 models = response.json().get("models", [])

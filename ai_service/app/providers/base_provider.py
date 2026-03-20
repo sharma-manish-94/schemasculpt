@@ -5,12 +5,13 @@ All LLM providers must implement this interface.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any, AsyncGenerator, Optional, List
 from enum import Enum
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 
 class ProviderType(Enum):
     """Supported LLM provider types."""
+
     OLLAMA = "ollama"
     HUGGINGFACE = "huggingface"
     VCAP = "vcap"
@@ -21,6 +22,7 @@ class ProviderType(Enum):
 @dataclass
 class LLMResponse:
     """Standard LLM response format."""
+
     content: str
     model: str
     provider: str
@@ -31,6 +33,7 @@ class LLMResponse:
 @dataclass
 class LLMStreamResponse:
     """Streaming LLM response chunk."""
+
     content: str
     is_final: bool
     model: str
@@ -67,7 +70,7 @@ class BaseLLMProvider(ABC):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         stream: bool = False,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """
         Send a chat completion request to the LLM.
@@ -92,7 +95,7 @@ class BaseLLMProvider(ABC):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[LLMStreamResponse, None]:
         """
         Stream a chat completion response from the LLM.
@@ -116,7 +119,7 @@ class BaseLLMProvider(ABC):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """
         Generate completion for a single prompt.
@@ -162,10 +165,8 @@ class BaseLLMProvider(ABC):
         """
         return {
             "provider_type": self.provider_type.value,
-            "config": {k: v for k, v in self.config.items() if k not in ['api_key', 'token']},
-            "capabilities": {
-                "chat": True,
-                "streaming": True,
-                "generation": True
-            }
+            "config": {
+                k: v for k, v in self.config.items() if k not in ["api_key", "token"]
+            },
+            "capabilities": {"chat": True, "streaming": True, "generation": True},
         }

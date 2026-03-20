@@ -3,7 +3,7 @@ Custom exceptions for SchemaSculpt AI Service.
 Provides structured error handling with appropriate HTTP status codes.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 class SchemaSculptException(Exception):
@@ -14,7 +14,7 @@ class SchemaSculptException(Exception):
         message: str,
         status_code: int = 500,
         error_code: str = "INTERNAL_ERROR",
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ):
         self.message = message
         self.status_code = status_code
@@ -31,7 +31,7 @@ class ValidationError(SchemaSculptException):
             message=message,
             status_code=400,
             error_code="VALIDATION_ERROR",
-            details=details
+            details=details,
         )
 
 
@@ -40,10 +40,7 @@ class LLMError(SchemaSculptException):
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(
-            message=message,
-            status_code=502,
-            error_code="LLM_ERROR",
-            details=details
+            message=message, status_code=502, error_code="LLM_ERROR", details=details
         )
 
 
@@ -51,11 +48,7 @@ class LLMTimeoutError(LLMError):
     """Raised when LLM requests timeout."""
 
     def __init__(self, message: str = "LLM request timed out"):
-        super().__init__(
-            message=message,
-            status_code=504,
-            error_code="LLM_TIMEOUT"
-        )
+        super().__init__(message=message, status_code=504, error_code="LLM_TIMEOUT")
 
 
 class OpenAPIError(SchemaSculptException):
@@ -66,7 +59,7 @@ class OpenAPIError(SchemaSculptException):
             message=message,
             status_code=422,
             error_code="OPENAPI_ERROR",
-            details=details
+            details=details,
         )
 
 
@@ -75,9 +68,7 @@ class RateLimitError(SchemaSculptException):
 
     def __init__(self, message: str = "Rate limit exceeded"):
         super().__init__(
-            message=message,
-            status_code=429,
-            error_code="RATE_LIMIT_EXCEEDED"
+            message=message, status_code=429, error_code="RATE_LIMIT_EXCEEDED"
         )
 
 
@@ -89,7 +80,7 @@ class ConfigurationError(SchemaSculptException):
             message=message,
             status_code=500,
             error_code="CONFIGURATION_ERROR",
-            details=details
+            details=details,
         )
 
 
@@ -98,9 +89,7 @@ class AuthenticationError(SchemaSculptException):
 
     def __init__(self, message: str = "Authentication failed"):
         super().__init__(
-            message=message,
-            status_code=401,
-            error_code="AUTHENTICATION_ERROR"
+            message=message, status_code=401, error_code="AUTHENTICATION_ERROR"
         )
 
 
@@ -109,7 +98,5 @@ class AuthorizationError(SchemaSculptException):
 
     def __init__(self, message: str = "Authorization failed"):
         super().__init__(
-            message=message,
-            status_code=403,
-            error_code="AUTHORIZATION_ERROR"
+            message=message, status_code=403, error_code="AUTHORIZATION_ERROR"
         )

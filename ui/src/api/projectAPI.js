@@ -1,11 +1,11 @@
-import apiClient from './axiosConfig';
+import apiClient from "./axiosConfig";
 
 export const projectAPI = {
   /**
    * Get all projects for the authenticated user
    */
   async getProjects() {
-    const response = await apiClient.get('/api/v1/projects');
+    const response = await apiClient.get("/api/v1/projects");
     return response.data;
   },
 
@@ -21,7 +21,7 @@ export const projectAPI = {
    * Create a new project
    */
   async createProject(projectData) {
-    const response = await apiClient.post('/api/v1/projects', projectData);
+    const response = await apiClient.post("/api/v1/projects", projectData);
     return response.data;
   },
 
@@ -29,7 +29,10 @@ export const projectAPI = {
    * Update a project
    */
   async updateProject(projectId, updates) {
-    const response = await apiClient.put(`/api/v1/projects/${projectId}`, updates);
+    const response = await apiClient.put(
+      `/api/v1/projects/${projectId}`,
+      updates,
+    );
     return response.data;
   },
 
@@ -48,7 +51,7 @@ export const projectAPI = {
   async saveSpecification(projectId, specData) {
     const response = await apiClient.post(
       `/api/v1/projects/${projectId}/specifications`,
-      specData
+      specData,
     );
     return response.data;
   },
@@ -58,7 +61,7 @@ export const projectAPI = {
    */
   async getCurrentSpecification(projectId) {
     const response = await apiClient.get(
-      `/api/v1/projects/${projectId}/specifications/current`
+      `/api/v1/projects/${projectId}/specifications/current`,
     );
     return response.data;
   },
@@ -67,7 +70,9 @@ export const projectAPI = {
    * Get all versions of the specification
    */
   async getSpecificationVersions(projectId) {
-    const response = await apiClient.get(`/api/v1/projects/${projectId}/specifications`);
+    const response = await apiClient.get(
+      `/api/v1/projects/${projectId}/specifications`,
+    );
     return response.data;
   },
 
@@ -76,7 +81,7 @@ export const projectAPI = {
    */
   async getSpecificationVersion(projectId, version) {
     const response = await apiClient.get(
-      `/api/v1/projects/${projectId}/specifications/versions/${version}`
+      `/api/v1/projects/${projectId}/specifications/versions/${version}`,
     );
     return response.data;
   },
@@ -88,8 +93,8 @@ export const projectAPI = {
     const response = await apiClient.post(
       `/api/v1/projects/${projectId}/specifications/versions/${version}/revert`,
       null,
-      { params: { commitMessage } }
+      { params: { commitMessage } },
     );
     return response.data;
-  }
+  },
 };

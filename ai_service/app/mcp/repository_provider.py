@@ -6,14 +6,15 @@ must implement.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class RepositoryInfo:
     """Information about a repository."""
+
     owner: str
     name: str
     full_name: str
@@ -28,6 +29,7 @@ class RepositoryInfo:
 @dataclass
 class FileInfo:
     """Information about a file in a repository."""
+
     path: str
     name: str
     type: str  # "file" or "dir"
@@ -39,6 +41,7 @@ class FileInfo:
 @dataclass
 class FileContent:
     """Content of a file from a repository."""
+
     path: str
     content: str
     encoding: str
@@ -50,6 +53,7 @@ class FileContent:
 @dataclass
 class BranchInfo:
     """Information about a branch."""
+
     name: str
     commit_sha: str
     protected: bool
@@ -88,7 +92,9 @@ class RepositoryProvider(ABC):
         pass
 
     @abstractmethod
-    async def list_repositories(self, username: Optional[str] = None) -> List[RepositoryInfo]:
+    async def list_repositories(
+        self, username: Optional[str] = None
+    ) -> List[RepositoryInfo]:
         """
         List repositories accessible to the authenticated user.
 
@@ -139,11 +145,7 @@ class RepositoryProvider(ABC):
 
     @abstractmethod
     async def browse_tree(
-        self,
-        owner: str,
-        repo: str,
-        path: str = "",
-        branch: Optional[str] = None
+        self, owner: str, repo: str, path: str = "", branch: Optional[str] = None
     ) -> List[FileInfo]:
         """
         Browse repository tree at a specific path.
@@ -164,11 +166,7 @@ class RepositoryProvider(ABC):
 
     @abstractmethod
     async def read_file(
-        self,
-        owner: str,
-        repo: str,
-        path: str,
-        ref: Optional[str] = None
+        self, owner: str, repo: str, path: str, ref: Optional[str] = None
     ) -> FileContent:
         """
         Read file content from repository.
@@ -189,11 +187,7 @@ class RepositoryProvider(ABC):
 
     @abstractmethod
     async def search_files(
-        self,
-        owner: str,
-        repo: str,
-        pattern: str,
-        branch: Optional[str] = None
+        self, owner: str, repo: str, pattern: str, branch: Optional[str] = None
     ) -> List[FileInfo]:
         """
         Search for files matching a pattern.
@@ -213,10 +207,7 @@ class RepositoryProvider(ABC):
         pass
 
     async def find_openapi_specs(
-        self,
-        owner: str,
-        repo: str,
-        branch: Optional[str] = None
+        self, owner: str, repo: str, branch: Optional[str] = None
     ) -> List[FileInfo]:
         """
         Find OpenAPI specification files in a repository.
@@ -253,7 +244,10 @@ class RepositoryProvider(ABC):
             if any(name in file_lower for name in common_names):
                 openapi_files.append(file)
             # Or if it's in common directories
-            elif any(dir in file.path.lower() for dir in ["api", "spec", "docs", "openapi", "swagger"]):
+            elif any(
+                dir in file.path.lower()
+                for dir in ["api", "spec", "docs", "openapi", "swagger"]
+            ):
                 openapi_files.append(file)
 
         return openapi_files

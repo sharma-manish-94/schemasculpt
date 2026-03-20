@@ -9,10 +9,10 @@ Implements multi-level caching:
 
 import hashlib
 import json
-from typing import Any, Dict, Optional, List
-from functools import lru_cache
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
+from functools import lru_cache
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +67,7 @@ class CacheService:
 
     def _evict_expired(self, cache: Dict[str, Dict[str, Any]]) -> None:
         """Remove expired entries from cache."""
-        expired_keys = [
-            key for key, entry in cache.items()
-            if self._is_expired(entry)
-        ]
+        expired_keys = [key for key, entry in cache.items() if self._is_expired(entry)]
         for key in expired_keys:
             del cache[key]
 
@@ -79,8 +76,7 @@ class CacheService:
         if len(cache) > self.max_cache_size:
             # Sort by last accessed time and remove oldest
             sorted_items = sorted(
-                cache.items(),
-                key=lambda x: x[1].get("last_accessed", datetime.min)
+                cache.items(), key=lambda x: x[1].get("last_accessed", datetime.min)
             )
             items_to_remove = len(cache) - self.max_cache_size
             for key, _ in sorted_items[:items_to_remove]:
@@ -110,7 +106,7 @@ class CacheService:
         self,
         spec_text: str,
         parsed_spec: Dict[str, Any],
-        ttl_minutes: Optional[int] = None
+        ttl_minutes: Optional[int] = None,
     ) -> None:
         """Cache a parsed specification."""
         cache_key = self._generate_cache_key(spec_text)
@@ -120,7 +116,7 @@ class CacheService:
             "data": parsed_spec,
             "created_at": datetime.utcnow(),
             "expires_at": datetime.utcnow() + ttl,
-            "last_accessed": datetime.utcnow()
+            "last_accessed": datetime.utcnow(),
         }
 
         self._evict_lru(self._spec_cache)
@@ -129,19 +125,17 @@ class CacheService:
     # ==================== Test Case Cache ====================
 
     def get_test_cases(
-        self,
-        spec_text: str,
-        path: str,
-        method: str,
-        include_ai_tests: bool = True
+        self, spec_text: str, path: str, method: str, include_ai_tests: bool = True
     ) -> Optional[Dict[str, Any]]:
         """Retrieve cached test cases for an endpoint."""
-        cache_key = self._generate_cache_key({
-            "spec": self._generate_cache_key(spec_text),  # Use spec hash
-            "path": path,
-            "method": method,
-            "include_ai": include_ai_tests
-        })
+        cache_key = self._generate_cache_key(
+            {
+                "spec": self._generate_cache_key(spec_text),  # Use spec hash
+                "path": path,
+                "method": method,
+                "include_ai": include_ai_tests,
+            }
+        )
 
         self._evict_expired(self._test_cache)
 
@@ -164,22 +158,24 @@ class CacheService:
         method: str,
         include_ai_tests: bool,
         test_cases: Dict[str, Any],
-        ttl_minutes: Optional[int] = None
+        ttl_minutes: Optional[int] = None,
     ) -> None:
         """Cache generated test cases."""
-        cache_key = self._generate_cache_key({
-            "spec": self._generate_cache_key(spec_text),
-            "path": path,
-            "method": method,
-            "include_ai": include_ai_tests
-        })
+        cache_key = self._generate_cache_key(
+            {
+                "spec": self._generate_cache_key(spec_text),
+                "path": path,
+                "method": method,
+                "include_ai": include_ai_tests,
+            }
+        )
         ttl = timedelta(minutes=ttl_minutes) if ttl_minutes else self.default_ttl
 
         self._test_cache[cache_key] = {
             "data": test_cases,
             "created_at": datetime.utcnow(),
             "expires_at": datetime.utcnow() + ttl,
-            "last_accessed": datetime.utcnow()
+            "last_accessed": datetime.utcnow(),
         }
 
         self._evict_lru(self._test_cache)
@@ -188,21 +184,18 @@ class CacheService:
     # ==================== Mock Data Cache ====================
 
     def get_mock_data(
-        self,
-        spec_text: str,
-        path: str,
-        method: str,
-        response_code: str,
-        count: int
+        self, spec_text: str, path: str, method: str, response_code: str, count: int
     ) -> Optional[List[Dict[str, Any]]]:
         """Retrieve cached mock data variations."""
-        cache_key = self._generate_cache_key({
-            "spec": self._generate_cache_key(spec_text),
-            "path": path,
-            "method": method,
-            "code": response_code,
-            "count": count
-        })
+        cache_key = self._generate_cache_key(
+            {
+                "spec": self._generate_cache_key(spec_text),
+                "path": path,
+                "method": method,
+                "code": response_code,
+                "count": count,
+            }
+        )
 
         self._evict_expired(self._mock_cache)
 
@@ -226,23 +219,25 @@ class CacheService:
         response_code: str,
         count: int,
         mock_data: List[Dict[str, Any]],
-        ttl_minutes: Optional[int] = None
+        ttl_minutes: Optional[int] = None,
     ) -> None:
         """Cache generated mock data."""
-        cache_key = self._generate_cache_key({
-            "spec": self._generate_cache_key(spec_text),
-            "path": path,
-            "method": method,
-            "code": response_code,
-            "count": count
-        })
+        cache_key = self._generate_cache_key(
+            {
+                "spec": self._generate_cache_key(spec_text),
+                "path": path,
+                "method": method,
+                "code": response_code,
+                "count": count,
+            }
+        )
         ttl = timedelta(minutes=ttl_minutes) if ttl_minutes else self.default_ttl
 
         self._mock_cache[cache_key] = {
             "data": mock_data,
             "created_at": datetime.utcnow(),
             "expires_at": datetime.utcnow() + ttl,
-            "last_accessed": datetime.utcnow()
+            "last_accessed": datetime.utcnow(),
         }
 
         self._evict_lru(self._mock_cache)
@@ -260,12 +255,10 @@ class CacheService:
 
         # Remove related test and mock caches
         self._test_cache = {
-            k: v for k, v in self._test_cache.items()
-            if not k.startswith(spec_key)
+            k: v for k, v in self._test_cache.items() if not k.startswith(spec_key)
         }
         self._mock_cache = {
-            k: v for k, v in self._mock_cache.items()
-            if not k.startswith(spec_key)
+            k: v for k, v in self._mock_cache.items() if not k.startswith(spec_key)
         }
 
         logger.info(f"Invalidated cache for spec {spec_key}")
@@ -288,14 +281,14 @@ class CacheService:
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics and metrics."""
         total_hits = (
-            self._cache_stats["spec_hits"] +
-            self._cache_stats["test_hits"] +
-            self._cache_stats["mock_hits"]
+            self._cache_stats["spec_hits"]
+            + self._cache_stats["test_hits"]
+            + self._cache_stats["mock_hits"]
         )
         total_misses = (
-            self._cache_stats["spec_misses"] +
-            self._cache_stats["test_misses"] +
-            self._cache_stats["mock_misses"]
+            self._cache_stats["spec_misses"]
+            + self._cache_stats["test_misses"]
+            + self._cache_stats["mock_misses"]
         )
         total_requests = total_hits + total_misses
 
@@ -306,13 +299,15 @@ class CacheService:
                 "spec_cache": len(self._spec_cache),
                 "test_cache": len(self._test_cache),
                 "mock_cache": len(self._mock_cache),
-                "total": len(self._spec_cache) + len(self._test_cache) + len(self._mock_cache)
+                "total": len(self._spec_cache)
+                + len(self._test_cache)
+                + len(self._mock_cache),
             },
             "stats": self._cache_stats,
             "hit_rate_percent": round(hit_rate, 2),
             "total_hits": total_hits,
             "total_misses": total_misses,
-            "total_requests": total_requests
+            "total_requests": total_requests,
         }
 
 

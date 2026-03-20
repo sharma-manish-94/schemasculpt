@@ -5,17 +5,13 @@ Supports SAP AI Core and other Cloud Foundry deployed LLM services.
 
 import json
 import os
-from typing import Dict, Any, AsyncGenerator, Optional, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
+
 import httpx
 
-from .base_provider import (
-    BaseLLMProvider,
-    LLMResponse,
-    LLMStreamResponse,
-    ProviderType
-)
-from ..core.logging import get_logger
 from ..core.exceptions import LLMError
+from ..core.logging import get_logger
+from .base_provider import BaseLLMProvider, LLMResponse, LLMStreamResponse, ProviderType
 
 
 class VCAPProvider(BaseLLMProvider):
@@ -51,9 +47,7 @@ class VCAPProvider(BaseLLMProvider):
 
         # Prepare authentication
         self.access_token = None
-        self.client = httpx.AsyncClient(
-            timeout=httpx.Timeout(self.timeout)
-        )
+        self.client = httpx.AsyncClient(timeout=httpx.Timeout(self.timeout))
 
     def _get_provider_type(self) -> ProviderType:
         return ProviderType.VCAP
@@ -83,13 +77,18 @@ class VCAPProvider(BaseLLMProvider):
             for service in services:
                 if service.get("name") == self.service_name:
                     credentials = service.get("credentials", {})
-                    self.logger.info(f"Found credentials for service: {self.service_name}")
+                    self.logger.info(
+                        f"Found credentials for service: {self.service_name}"
+                    )
                     return credentials
 
         # If not found by name, try first available AI service
         ai_service_types = ["aicore", "genai-hub", "ml-foundation", "llm-service"]
         for service_type in ai_service_types:
-            if service_type in self.vcap_config and len(self.vcap_config[service_type]) > 0:
+            if (
+                service_type in self.vcap_config
+                and len(self.vcap_config[service_type]) > 0
+            ):
                 credentials = self.vcap_config[service_type][0].get("credentials", {})
                 self.logger.info(f"Using first available {service_type} credentials")
                 return credentials
@@ -108,13 +107,13 @@ class VCAPProvider(BaseLLMProvider):
             auth_data = {
                 "grant_type": "client_credentials",
                 "client_id": self.client_id,
-                "client_secret": self.client_secret
+                "client_secret": self.client_secret,
             }
 
             response = await self.client.post(
                 self.auth_url,
                 data=auth_data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
 
             if response.status_code != 200:
@@ -156,7 +155,7 @@ class VCAPProvider(BaseLLMProvider):
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         stream: bool = False,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Send chat completion request to VCAP LLM service."""
         model = model or self.default_model
@@ -166,7 +165,7 @@ class VCAPProvider(BaseLLMProvider):
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "stream": False
+            "stream": False,
         }
 
         if max_tokens:
@@ -182,20 +181,14 @@ class VCAPProvider(BaseLLMProvider):
 
             self.logger.debug(f"Sending chat request to VCAP: {endpoint}")
 
-            response = await self.client.post(
-                endpoint,
-                json=payload,
-                headers=headers
-            )
+            response = await self.client.post(endpoint, json=payload, headers=headers)
 
             if response.status_code == 401:
                 # Token might have expired, refresh and retry
                 self.access_token = None
                 headers = await self._get_headers()
                 response = await self.client.post(
-                    endpoint,
-                    json=payload,
-                    headers=headers
+                    endpoint, json=payload, headers=headers
                 )
 
             if response.status_code != 200:
@@ -206,7 +199,9 @@ class VCAPProvider(BaseLLMProvider):
             result = response.json()
 
             # Parse OpenAI-compatible response
-            content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            content = (
+                result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            )
             usage = result.get("usage", {})
 
             return LLMResponse(
@@ -216,12 +211,12 @@ class VCAPProvider(BaseLLMProvider):
                 usage={
                     "prompt_tokens": usage.get("prompt_tokens", 0),
                     "completion_tokens": usage.get("completion_tokens", 0),
-                    "total_tokens": usage.get("total_tokens", 0)
+                    "total_tokens": usage.get("total_tokens", 0),
                 },
                 metadata={
                     "service_name": self.service_name,
-                    "deployment": "cloud_foundry"
-                }
+                    "deployment": "cloud_foundry",
+                },
             )
 
         except httpx.RequestError as e:
@@ -235,7 +230,7 @@ class VCAPProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[LLMStreamResponse, None]:
         """Stream chat completion response from VCAP service."""
         model = model or self.default_model
@@ -244,7 +239,7 @@ class VCAPProvider(BaseLLMProvider):
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "stream": True
+            "stream": True,
         }
 
         if max_tokens:
@@ -258,10 +253,7 @@ class VCAPProvider(BaseLLMProvider):
             endpoint = f"{self.api_url}/chat/completions"
 
             async with self.client.stream(
-                "POST",
-                endpoint,
-                json=payload,
-                headers=headers
+                "POST", endpoint, json=payload, headers=headers
             ) as response:
                 if response.status_code != 200:
                     error_msg = f"VCAP streaming error: {response.status_code}"
@@ -280,13 +272,15 @@ class VCAPProvider(BaseLLMProvider):
                         chunk = json.loads(data)
                         delta = chunk.get("choices", [{}])[0].get("delta", {})
                         content = delta.get("content", "")
-                        finish_reason = chunk.get("choices", [{}])[0].get("finish_reason")
+                        finish_reason = chunk.get("choices", [{}])[0].get(
+                            "finish_reason"
+                        )
 
                         yield LLMStreamResponse(
                             content=content,
                             is_final=finish_reason is not None,
                             model=model,
-                            provider="vcap"
+                            provider="vcap",
                         )
 
                     except json.JSONDecodeError:
@@ -303,7 +297,7 @@ class VCAPProvider(BaseLLMProvider):
         model: Optional[str] = None,
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> LLMResponse:
         """Generate completion for a prompt."""
         messages = [{"role": "user", "content": prompt}]
@@ -314,11 +308,11 @@ class VCAPProvider(BaseLLMProvider):
         try:
             headers = await self._get_headers()
             # Try to access the base URL or a health endpoint
-            response = await self.client.get(
-                f"{self.api_url}/health",
-                headers=headers
-            )
-            return response.status_code in [200, 404]  # 404 is OK if health endpoint doesn't exist
+            response = await self.client.get(f"{self.api_url}/health", headers=headers)
+            return response.status_code in [
+                200,
+                404,
+            ]  # 404 is OK if health endpoint doesn't exist
         except Exception as e:
             self.logger.error(f"VCAP health check failed: {str(e)}")
             return False

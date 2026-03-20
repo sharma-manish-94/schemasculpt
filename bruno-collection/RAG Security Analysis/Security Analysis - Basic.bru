@@ -29,18 +29,18 @@ tests {
   test("Status should be 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-  
+
   test("Should return security analysis", function() {
     expect(res.getBody()).to.have.property('updated_spec_text');
     expect(res.getBody()).to.have.property('operation_type');
     expect(res.getBody()).to.have.property('success');
   });
-  
+
   test("Should identify security issues", function() {
     const analysis = res.getBody().updated_spec_text;
     expect(analysis).to.include.oneOf(['authentication', 'authorization', 'security']);
   });
-  
+
   test("Should include RAG context", function() {
     const metadata = res.getBody().metadata;
     if (metadata) {

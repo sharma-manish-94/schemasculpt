@@ -4,11 +4,15 @@ Analyzes PII, sensitive data exposure, and data protection in OpenAPI specs.
 """
 
 import re
-from typing import Dict, Any, List
-from ...schemas.security_schemas import (
-    DataExposureAnalysis, SecurityIssue, SecuritySeverity, OWASPCategory
-)
+from typing import Any, Dict, List
+
 from ...core.logging import get_logger
+from ...schemas.security_schemas import (
+    DataExposureAnalysis,
+    OWASPCategory,
+    SecurityIssue,
+    SecuritySeverity,
+)
 
 logger = get_logger("security.data_exposure_analyzer")
 
@@ -96,19 +100,25 @@ class DataExposureAnalyzer:
                             response_def, path, method, status_code
                         )
                         if pii_in_response:
-                            issues.append(SecurityIssue(
-                                id=f"data-pii-response-{path}-{method}-{status_code}",
-                                title="PII in API Response",
-                                description=f"PII detected in response for {method.upper()} {path} ({status_code})",
-                                severity=SecuritySeverity.HIGH,
-                                owasp_category=OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH,
-                                location={"path": path, "method": method, "response": status_code},
-                                recommendation="Ensure PII is only returned when necessary and implement field-level authorization",
-                                cwe_id="CWE-359",
-                                references=[
-                                    "https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/"
-                                ]
-                            ))
+                            issues.append(
+                                SecurityIssue(
+                                    id=f"data-pii-response-{path}-{method}-{status_code}",
+                                    title="PII in API Response",
+                                    description=f"PII detected in response for {method.upper()} {path} ({status_code})",
+                                    severity=SecuritySeverity.HIGH,
+                                    owasp_category=OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH,
+                                    location={
+                                        "path": path,
+                                        "method": method,
+                                        "response": status_code,
+                                    },
+                                    recommendation="Ensure PII is only returned when necessary and implement field-level authorization",
+                                    cwe_id="CWE-359",
+                                    references=[
+                                        "https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/"
+                                    ],
+                                )
+                            )
 
         # Check for passwords in requests/responses
         password_exposure_issues = self._check_password_exposure(schemas, paths)
@@ -116,26 +126,29 @@ class DataExposureAnalyzer:
 
         # Check for missing HTTPS
         servers = spec.get("servers", [])
-        uses_https = all(
-            server.get("url", "").startswith("https://")
-            for server in servers
-        ) if servers else False
+        uses_https = (
+            all(server.get("url", "").startswith("https://") for server in servers)
+            if servers
+            else False
+        )
 
         if not uses_https and (pii_fields_detected or sensitive_data_fields):
             unencrypted_sensitive_data = True
-            issues.append(SecurityIssue(
-                id="data-no-https",
-                title="Sensitive Data Without HTTPS",
-                description="API handles sensitive data but doesn't require HTTPS",
-                severity=SecuritySeverity.CRITICAL,
-                owasp_category=OWASPCategory.SECURITY_MISCONFIGURATION,
-                location={"servers": servers if servers else "not defined"},
-                recommendation="Enforce HTTPS for all API communications, especially when handling PII or sensitive data",
-                cwe_id="CWE-319",
-                references=[
-                    "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
-                ]
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="data-no-https",
+                    title="Sensitive Data Without HTTPS",
+                    description="API handles sensitive data but doesn't require HTTPS",
+                    severity=SecuritySeverity.CRITICAL,
+                    owasp_category=OWASPCategory.SECURITY_MISCONFIGURATION,
+                    location={"servers": servers if servers else "not defined"},
+                    recommendation="Enforce HTTPS for all API communications, especially when handling PII or sensitive data",
+                    cwe_id="CWE-319",
+                    references=[
+                        "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+                    ],
+                )
+            )
 
         # Check for excessive data exposure
         excessive_exposure_issues = self._check_excessive_data_exposure(paths, schemas)
@@ -143,26 +156,35 @@ class DataExposureAnalyzer:
 
         # Generate recommendations
         if pii_fields_detected:
-            recommendations.append(f"Implement field-level access control for {len(pii_fields_detected)} PII field(s)")
-            recommendations.append("Consider data minimization - only collect and expose necessary PII")
-            recommendations.append("Implement data masking for sensitive fields in logs and responses")
+            recommendations.append(
+                f"Implement field-level access control for {len(pii_fields_detected)} PII field(s)"
+            )
+            recommendations.append(
+                "Consider data minimization - only collect and expose necessary PII"
+            )
+            recommendations.append(
+                "Implement data masking for sensitive fields in logs and responses"
+            )
 
         if sensitive_data_fields:
-            recommendations.append("Never expose passwords, tokens, or secrets in API responses")
-            recommendations.append("Use proper encryption for sensitive data at rest and in transit")
+            recommendations.append(
+                "Never expose passwords, tokens, or secrets in API responses"
+            )
+            recommendations.append(
+                "Use proper encryption for sensitive data at rest and in transit"
+            )
 
         if not uses_https:
             recommendations.append("Enforce HTTPS/TLS for all API endpoints")
 
         recommendations.append("Implement data retention and deletion policies for PII")
-        recommendations.append("Add privacy controls (e.g., consent management, data export)")
+        recommendations.append(
+            "Add privacy controls (e.g., consent management, data export)"
+        )
 
         # Calculate score
         score = self._calculate_score(
-            pii_fields_detected,
-            sensitive_data_fields,
-            uses_https,
-            issues
+            pii_fields_detected, sensitive_data_fields, uses_https, issues
         )
 
         return DataExposureAnalysis(
@@ -171,13 +193,11 @@ class DataExposureAnalyzer:
             unencrypted_sensitive_data=unencrypted_sensitive_data,
             issues=issues,
             recommendations=recommendations,
-            score=score
+            score=score,
         )
 
     def _analyze_schema(
-        self,
-        schema_name: str,
-        schema_def: Dict[str, Any]
+        self, schema_name: str, schema_def: Dict[str, Any]
     ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Analyze a schema for PII and sensitive data fields."""
         pii_fields = []
@@ -191,33 +211,33 @@ class DataExposureAnalyzer:
             # Check for PII
             for pii_type, pattern in self.PII_PATTERNS.items():
                 if re.search(pattern, prop_lower, re.IGNORECASE):
-                    pii_fields.append({
-                        "schema": schema_name,
-                        "field": prop_name,
-                        "type": pii_type,
-                        "description": prop_def.get("description", "")
-                    })
+                    pii_fields.append(
+                        {
+                            "schema": schema_name,
+                            "field": prop_name,
+                            "type": pii_type,
+                            "description": prop_def.get("description", ""),
+                        }
+                    )
                     break
 
             # Check for sensitive data
             for sensitive_type, pattern in self.SENSITIVE_PATTERNS.items():
                 if re.search(pattern, prop_lower, re.IGNORECASE):
-                    sensitive_fields.append({
-                        "schema": schema_name,
-                        "field": prop_name,
-                        "type": sensitive_type,
-                        "description": prop_def.get("description", "")
-                    })
+                    sensitive_fields.append(
+                        {
+                            "schema": schema_name,
+                            "field": prop_name,
+                            "type": sensitive_type,
+                            "description": prop_def.get("description", ""),
+                        }
+                    )
                     break
 
         return pii_fields, sensitive_fields
 
     def _check_response_for_pii(
-        self,
-        response_def: Dict[str, Any],
-        path: str,
-        method: str,
-        status_code: str
+        self, response_def: Dict[str, Any], path: str, method: str, status_code: str
     ) -> bool:
         """Check if a response contains PII."""
         content = response_def.get("content", {})
@@ -241,9 +261,7 @@ class DataExposureAnalyzer:
         return False
 
     def _check_password_exposure(
-        self,
-        schemas: Dict[str, Any],
-        paths: Dict[str, Any]
+        self, schemas: Dict[str, Any], paths: Dict[str, Any]
     ) -> List[SecurityIssue]:
         """Check for password fields in responses."""
         issues = []
@@ -255,27 +273,27 @@ class DataExposureAnalyzer:
                 if re.search(r"password|passwd|pwd", prop_name, re.IGNORECASE):
                     # Check if it's write-only
                     if not prop_def.get("writeOnly", False):
-                        issues.append(SecurityIssue(
-                            id=f"data-password-exposure-{schema_name}-{prop_name}",
-                            title="Password Field Not Write-Only",
-                            description=f"Password field '{prop_name}' in schema '{schema_name}' is not marked as writeOnly",
-                            severity=SecuritySeverity.CRITICAL,
-                            owasp_category=OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH,
-                            location={"schema": schema_name, "field": prop_name},
-                            recommendation="Mark password fields as 'writeOnly: true' to prevent them from being returned in responses",
-                            remediation_example='{\n  "password": {\n    "type": "string",\n    "writeOnly": true\n  }\n}',
-                            cwe_id="CWE-256",
-                            references=[
-                                "https://swagger.io/docs/specification/data-models/data-types/#readonly-writeonly"
-                            ]
-                        ))
+                        issues.append(
+                            SecurityIssue(
+                                id=f"data-password-exposure-{schema_name}-{prop_name}",
+                                title="Password Field Not Write-Only",
+                                description=f"Password field '{prop_name}' in schema '{schema_name}' is not marked as writeOnly",
+                                severity=SecuritySeverity.CRITICAL,
+                                owasp_category=OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH,
+                                location={"schema": schema_name, "field": prop_name},
+                                recommendation="Mark password fields as 'writeOnly: true' to prevent them from being returned in responses",
+                                remediation_example='{\n  "password": {\n    "type": "string",\n    "writeOnly": true\n  }\n}',
+                                cwe_id="CWE-256",
+                                references=[
+                                    "https://swagger.io/docs/specification/data-models/data-types/#readonly-writeonly"
+                                ],
+                            )
+                        )
 
         return issues
 
     def _check_excessive_data_exposure(
-        self,
-        paths: Dict[str, Any],
-        schemas: Dict[str, Any]
+        self, paths: Dict[str, Any], schemas: Dict[str, Any]
     ) -> List[SecurityIssue]:
         """Check for excessive data exposure patterns."""
         issues = []
@@ -295,16 +313,18 @@ class DataExposureAnalyzer:
                         # Count properties if schema is inline
                         properties = schema.get("properties", {})
                         if len(properties) > 15:  # Threshold for "too many fields"
-                            issues.append(SecurityIssue(
-                                id=f"data-excessive-exposure-{path}",
-                                title="Potential Excessive Data Exposure",
-                                description=f"GET {path} returns {len(properties)} fields - consider implementing field filtering",
-                                severity=SecuritySeverity.MEDIUM,
-                                owasp_category=OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH,
-                                location={"path": path, "method": "get"},
-                                recommendation="Implement field filtering (sparse fieldsets) to allow clients to request only needed data",
-                                cwe_id="CWE-213"
-                            ))
+                            issues.append(
+                                SecurityIssue(
+                                    id=f"data-excessive-exposure-{path}",
+                                    title="Potential Excessive Data Exposure",
+                                    description=f"GET {path} returns {len(properties)} fields - consider implementing field filtering",
+                                    severity=SecuritySeverity.MEDIUM,
+                                    owasp_category=OWASPCategory.BROKEN_OBJECT_PROPERTY_AUTH,
+                                    location={"path": path, "method": "get"},
+                                    recommendation="Implement field filtering (sparse fieldsets) to allow clients to request only needed data",
+                                    cwe_id="CWE-213",
+                                )
+                            )
 
         return issues
 
@@ -313,7 +333,7 @@ class DataExposureAnalyzer:
         pii_fields: List[Dict[str, Any]],
         sensitive_fields: List[Dict[str, Any]],
         uses_https: bool,
-        issues: List[SecurityIssue]
+        issues: List[SecurityIssue],
     ) -> float:
         """Calculate data protection score (0-100)."""
         base_score = 70.0
@@ -338,7 +358,7 @@ class DataExposureAnalyzer:
             SecuritySeverity.HIGH: 10,
             SecuritySeverity.MEDIUM: 5,
             SecuritySeverity.LOW: 2,
-            SecuritySeverity.INFO: 1
+            SecuritySeverity.INFO: 1,
         }
 
         penalty = sum(severity_penalties.get(issue.severity, 0) for issue in issues)

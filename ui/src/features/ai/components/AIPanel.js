@@ -272,7 +272,7 @@ function AIHardeningTab() {
           variant="primary"
           onClick={() =>
             runHardening("oauth2", () =>
-              addOAuth2Security(sessionId, selectedPath, selectedMethod)
+              addOAuth2Security(sessionId, selectedPath, selectedMethod),
             )
           }
           loading={loading["oauth2"]}
@@ -296,8 +296,8 @@ function AIHardeningTab() {
                   sessionId,
                   selectedPath,
                   selectedMethod,
-                  rateLimit
-                )
+                  rateLimit,
+                ),
               )
             }
             loading={loading["rateLimit"]}
@@ -318,7 +318,7 @@ function AIHardeningTab() {
             variant="secondary"
             onClick={() =>
               runHardening("caching", () =>
-                addCaching(sessionId, selectedPath, selectedMethod, cacheTtl)
+                addCaching(sessionId, selectedPath, selectedMethod, cacheTtl),
               )
             }
             loading={loading["caching"]}
@@ -331,7 +331,7 @@ function AIHardeningTab() {
           variant="ai"
           onClick={() =>
             runHardening("complete", () =>
-              hardenOperationComplete(sessionId, selectedPath, selectedMethod)
+              hardenOperationComplete(sessionId, selectedPath, selectedMethod),
             )
           }
           loading={loading["complete"]}
@@ -366,7 +366,7 @@ function AIHardeningTab() {
         ([key, error]) =>
           error && (
             <ErrorMessage key={key} message={`${key} failed: ${error}`} />
-          )
+          ),
       )}
 
       <div className="features-info">

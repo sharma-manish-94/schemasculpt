@@ -7,11 +7,10 @@ import asyncio
 import hashlib
 import json
 from datetime import datetime
-from typing import Dict, Any
-from ...schemas.security_schemas import (
-    SecurityAnalysisReport, SecuritySeverity
-)
+from typing import Any, Dict
+
 from ...core.logging import get_logger
+from ...schemas.security_schemas import SecurityAnalysisReport, SecuritySeverity
 from .authentication_analyzer import AuthenticationAnalyzer
 from .authorization_analyzer import AuthorizationAnalyzer
 from .data_exposure_analyzer import DataExposureAnalyzer
@@ -37,9 +36,7 @@ class SecurityAnalysisWorkflow:
         self.owasp_validator = OWASPComplianceValidator()
 
     async def analyze(
-        self,
-        spec_text: str,
-        validation_suggestions: list = None
+        self, spec_text: str, validation_suggestions: list = None
     ) -> SecurityAnalysisReport:
         """
         Perform comprehensive security analysis on OpenAPI specification.
@@ -56,8 +53,7 @@ class SecurityAnalysisWorkflow:
         # Log validation suggestions if provided
         if validation_suggestions:
             security_suggestions = [
-                s for s in validation_suggestions
-                if self._is_security_related(s)
+                s for s in validation_suggestions if self._is_security_related(s)
             ]
             self.logger.info(
                 f"Received {len(validation_suggestions)} validation suggestions, "
@@ -83,7 +79,7 @@ class SecurityAnalysisWorkflow:
                 self.auth_analyzer.analyze(spec),
                 self.authz_analyzer.analyze(spec),
                 self.data_analyzer.analyze(spec),
-                return_exceptions=False
+                return_exceptions=False,
             )
         except Exception as e:
             self.logger.error(f"Error running parallel analyzers: {str(e)}")
@@ -92,10 +88,7 @@ class SecurityAnalysisWorkflow:
         # Run OWASP compliance validator (depends on other analyzers)
         self.logger.info("Running OWASP compliance validation")
         owasp_analysis = await self.owasp_validator.validate(
-            spec,
-            auth_analysis,
-            authz_analysis,
-            data_analysis
+            spec, auth_analysis, authz_analysis, data_analysis
         )
 
         # Collect all issues
@@ -109,7 +102,7 @@ class SecurityAnalysisWorkflow:
             auth_analysis.score,
             authz_analysis.score,
             data_analysis.score,
-            owasp_analysis.compliance_percentage
+            owasp_analysis.compliance_percentage,
         )
 
         # Determine overall risk level
@@ -123,7 +116,7 @@ class SecurityAnalysisWorkflow:
             auth_analysis,
             authz_analysis,
             data_analysis,
-            owasp_analysis
+            owasp_analysis,
         )
 
         # Create comprehensive report
@@ -137,10 +130,12 @@ class SecurityAnalysisWorkflow:
             all_issues=all_issues,
             executive_summary=executive_summary,
             generated_at=datetime.utcnow().isoformat(),
-            spec_hash=spec_hash
+            spec_hash=spec_hash,
         )
 
-        self.logger.info(f"Security analysis complete. Overall score: {overall_score:.1f}, Risk: {risk_level}")
+        self.logger.info(
+            f"Security analysis complete. Overall score: {overall_score:.1f}, Risk: {risk_level}"
+        )
 
         return report
 
@@ -149,7 +144,7 @@ class SecurityAnalysisWorkflow:
         auth_score: float,
         authz_score: float,
         data_score: float,
-        owasp_compliance: float
+        owasp_compliance: float,
     ) -> float:
         """
         Calculate overall security score as weighted average.
@@ -160,37 +155,28 @@ class SecurityAnalysisWorkflow:
         - Data Protection: 25%
         - OWASP Compliance: 20%
         """
-        weights = {
-            "auth": 0.25,
-            "authz": 0.30,
-            "data": 0.25,
-            "owasp": 0.20
-        }
+        weights = {"auth": 0.25, "authz": 0.30, "data": 0.25, "owasp": 0.20}
 
         overall = (
-            auth_score * weights["auth"] +
-            authz_score * weights["authz"] +
-            data_score * weights["data"] +
-            owasp_compliance * weights["owasp"]
+            auth_score * weights["auth"]
+            + authz_score * weights["authz"]
+            + data_score * weights["data"]
+            + owasp_compliance * weights["owasp"]
         )
 
         return round(overall, 1)
 
     def _determine_risk_level(
-        self,
-        overall_score: float,
-        all_issues: list
+        self, overall_score: float, all_issues: list
     ) -> SecuritySeverity:
         """Determine overall risk level based on score and critical issues."""
         # Check for critical issues
         critical_count = sum(
-            1 for issue in all_issues
-            if issue.severity == SecuritySeverity.CRITICAL
+            1 for issue in all_issues if issue.severity == SecuritySeverity.CRITICAL
         )
 
         high_count = sum(
-            1 for issue in all_issues
-            if issue.severity == SecuritySeverity.HIGH
+            1 for issue in all_issues if issue.severity == SecuritySeverity.HIGH
         )
 
         # Critical issues override score
@@ -218,7 +204,7 @@ class SecurityAnalysisWorkflow:
         auth_analysis,
         authz_analysis,
         data_analysis,
-        owasp_analysis
+        owasp_analysis,
     ) -> str:
         """Generate executive summary using LLM if available, otherwise use template."""
 
@@ -228,9 +214,13 @@ class SecurityAnalysisWorkflow:
         all_issues.extend(authz_analysis.issues)
         all_issues.extend(data_analysis.issues)
 
-        critical_count = sum(1 for i in all_issues if i.severity == SecuritySeverity.CRITICAL)
+        critical_count = sum(
+            1 for i in all_issues if i.severity == SecuritySeverity.CRITICAL
+        )
         high_count = sum(1 for i in all_issues if i.severity == SecuritySeverity.HIGH)
-        medium_count = sum(1 for i in all_issues if i.severity == SecuritySeverity.MEDIUM)
+        medium_count = sum(
+            1 for i in all_issues if i.severity == SecuritySeverity.MEDIUM
+        )
 
         # Get API info
         info = spec.get("info", {})
@@ -252,13 +242,21 @@ class SecurityAnalysisWorkflow:
 
         # Authentication summary
         if auth_analysis.has_authentication:
-            auth_type = "OAuth2" if any("oauth" in s.lower() for s in auth_analysis.authentication_schemes) else "basic"
+            auth_type = (
+                "OAuth2"
+                if any(
+                    "oauth" in s.lower() for s in auth_analysis.authentication_schemes
+                )
+                else "basic"
+            )
             summary_parts.append(
                 f"Authentication: {auth_type.title()} authentication is implemented "
                 f"(score: {auth_analysis.score:.1f}/100)."
             )
         else:
-            summary_parts.append("Authentication: No authentication mechanisms defined - critical security gap.")
+            summary_parts.append(
+                "Authentication: No authentication mechanisms defined - critical security gap."
+            )
 
         # Authorization summary
         if authz_analysis.rbac_implemented:
@@ -304,10 +302,25 @@ class SecurityAnalysisWorkflow:
             return False
 
         security_keywords = [
-            'security', 'auth', 'authorization', 'authentication',
-            'oauth', 'api-key', 'token', 'credentials', 'password',
-            'secret', 'encrypt', 'https', 'ssl', 'tls', 'cors',
-            'csrf', 'xss', 'injection', 'vulnerability'
+            "security",
+            "auth",
+            "authorization",
+            "authentication",
+            "oauth",
+            "api-key",
+            "token",
+            "credentials",
+            "password",
+            "secret",
+            "encrypt",
+            "https",
+            "ssl",
+            "tls",
+            "cors",
+            "csrf",
+            "xss",
+            "injection",
+            "vulnerability",
         ]
 
         search_text = f"{suggestion.get('rule_id', '')} {suggestion.get('message', '')} {suggestion.get('category', '')}".lower()

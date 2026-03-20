@@ -1,12 +1,12 @@
-import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { authAPI } from '../api/authAPI';
-import './LoginPage.css';
+import React from "react";
+import { useSearchParams } from "react-router-dom";
+import { authAPI } from "../api/authAPI";
+import "./LoginPage.css";
 
 function LoginPage() {
   const [searchParams] = useSearchParams();
-  const error = searchParams.get('error');
-  const expired = searchParams.get('expired');
+  const error = searchParams.get("error");
+  const expired = searchParams.get("expired");
 
   const handleGitHubLogin = () => {
     authAPI.initiateLogin();

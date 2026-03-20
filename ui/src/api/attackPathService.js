@@ -38,7 +38,7 @@ export const runAttackPathSimulation = async (sessionId, options = {}) => {
           maxChainLength,
         },
         timeout: 120000, // 2 minute timeout (NEW approach is much faster!)
-      }
+      },
     );
 
     return response.data;

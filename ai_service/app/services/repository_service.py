@@ -6,24 +6,25 @@ for repository operations.
 """
 
 import logging
-from typing import Optional, List, Dict
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional
 
-from app.mcp.repository_provider import (
-    RepositoryProvider,
-    RepositoryInfo,
-    FileInfo,
-    FileContent,
-    BranchInfo,
-)
-from app.mcp.github_provider import GitHubProvider
 from app.mcp.client import MCPConnectionError, MCPOperationError
+from app.mcp.github_provider import GitHubProvider
+from app.mcp.repository_provider import (
+    BranchInfo,
+    FileContent,
+    FileInfo,
+    RepositoryInfo,
+    RepositoryProvider,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class RepositoryServiceError(Exception):
     """Base exception for repository service errors"""
+
     pass
 
 
@@ -51,10 +52,7 @@ class RepositoryService:
         self._cache_ttl = 300  # 5 minutes default cache
 
     async def connect(
-        self,
-        session_id: str,
-        provider_name: str,
-        access_token: str
+        self, session_id: str, provider_name: str, access_token: str
     ) -> Dict:
         """
         Connect to a repository provider.
@@ -101,7 +99,7 @@ class RepositoryService:
             return {
                 "success": True,
                 "provider": provider_name,
-                "connected_at": datetime.now().isoformat()
+                "connected_at": datetime.now().isoformat(),
             }
 
         except MCPConnectionError as e:
@@ -157,9 +155,7 @@ class RepositoryService:
         return provider
 
     async def list_repositories(
-        self,
-        session_id: str,
-        username: Optional[str] = None
+        self, session_id: str, username: Optional[str] = None
     ) -> List[RepositoryInfo]:
         """
         List repositories accessible to the session.
@@ -182,10 +178,7 @@ class RepositoryService:
             raise RepositoryServiceError(f"Failed to list repositories: {e}") from e
 
     async def get_repository(
-        self,
-        session_id: str,
-        owner: str,
-        repo: str
+        self, session_id: str, owner: str, repo: str
     ) -> RepositoryInfo:
         """
         Get information about a specific repository.
@@ -208,10 +201,7 @@ class RepositoryService:
             raise RepositoryServiceError(f"Failed to get repository: {e}") from e
 
     async def list_branches(
-        self,
-        session_id: str,
-        owner: str,
-        repo: str
+        self, session_id: str, owner: str, repo: str
     ) -> List[BranchInfo]:
         """
         List branches in a repository.
@@ -240,7 +230,7 @@ class RepositoryService:
         owner: str,
         repo: str,
         path: str = "",
-        branch: Optional[str] = None
+        branch: Optional[str] = None,
     ) -> List[FileInfo]:
         """
         Browse repository tree.
@@ -264,10 +254,12 @@ class RepositoryService:
                 if file.type == "file":
                     file_lower = file.name.lower()
                     # Check if it's likely an OpenAPI spec
-                    is_yaml_json = file_lower.endswith(('.yaml', '.yml', '.json'))
-                    has_api_keyword = any(kw in file_lower for kw in ['openapi', 'swagger', 'api', 'spec'])
+                    is_yaml_json = file_lower.endswith((".yaml", ".yml", ".json"))
+                    has_api_keyword = any(
+                        kw in file_lower for kw in ["openapi", "swagger", "api", "spec"]
+                    )
                     # Add custom attribute (will need to be in FileInfo or handle separately)
-                    setattr(file, 'is_openapi_spec', is_yaml_json and has_api_keyword)
+                    setattr(file, "is_openapi_spec", is_yaml_json and has_api_keyword)
 
             logger.info(f"Browsed tree {owner}/{repo}/{path}: {len(files)} items")
             return files
@@ -282,7 +274,7 @@ class RepositoryService:
         owner: str,
         repo: str,
         path: str,
-        ref: Optional[str] = None
+        ref: Optional[str] = None,
     ) -> FileContent:
         """
         Read file content from repository.
@@ -313,7 +305,7 @@ class RepositoryService:
         owner: str,
         repo: str,
         pattern: str,
-        branch: Optional[str] = None
+        branch: Optional[str] = None,
     ) -> List[FileInfo]:
         """
         Search for files matching a pattern.
@@ -331,7 +323,9 @@ class RepositoryService:
         try:
             provider = self._get_provider(session_id)
             files = await provider.search_files(owner, repo, pattern, branch)
-            logger.info(f"Found {len(files)} files matching '{pattern}' in {owner}/{repo}")
+            logger.info(
+                f"Found {len(files)} files matching '{pattern}' in {owner}/{repo}"
+            )
             return files
 
         except Exception as e:
@@ -340,11 +334,7 @@ class RepositoryService:
             return []
 
     async def find_openapi_specs(
-        self,
-        session_id: str,
-        owner: str,
-        repo: str,
-        branch: Optional[str] = None
+        self, session_id: str, owner: str, repo: str, branch: Optional[str] = None
     ) -> List[FileInfo]:
         """
         Find OpenAPI specification files in a repository.

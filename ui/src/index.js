@@ -1,14 +1,14 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import './index.css';
-import App from './App';
-import AboutPage from './pages/AboutPage';
-import LoginPage from './pages/LoginPage';
-import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
-import { AuthProvider } from './contexts/AuthContext';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./index.css";
+import App from "./App";
+import AboutPage from "./pages/AboutPage";
+import LoginPage from "./pages/LoginPage";
+import OAuth2RedirectHandler from "./pages/OAuth2RedirectHandler";
+import { AuthProvider } from "./contexts/AuthContext";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <AuthProvider>
@@ -21,5 +21,5 @@ root.render(
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

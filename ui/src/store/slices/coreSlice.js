@@ -1,7 +1,7 @@
 import yaml from "js-yaml";
 import axios from "axios";
 import * as websocketService from "../../api/websocketService";
-import {updateOperation, getSessionSpec} from "../../api/validationService";
+import { updateOperation, getSessionSpec } from "../../api/validationService";
 
 const initialYamlSpec = `openapi: 3.0.4
 info:
@@ -822,97 +822,104 @@ components:
 const initialJsonObject = yaml.load(initialYamlSpec);
 const initialJsonSpec = JSON.stringify(initialJsonObject, null, 2);
 export const coreSlice = (set, get) => ({
-    // --- STATE ---
-    specText: initialJsonSpec, sessionId: null, format: "json", activeTab: "api_explorer", skipNextValidation: false,
+  // --- STATE ---
+  specText: initialJsonSpec,
+  sessionId: null,
+  format: "json",
+  activeTab: "api_explorer",
+  skipNextValidation: false,
 
-    // --- ACTIONS ---
-    setActiveTab: (tabName) => set({activeTab: tabName}),
+  // --- ACTIONS ---
+  setActiveTab: (tabName) => set({ activeTab: tabName }),
 
-    setSkipNextValidation: (skip) => set({skipNextValidation: skip}),
+  setSkipNextValidation: (skip) => set({ skipNextValidation: skip }),
 
-    connectWebSocket: () => {
-      const handleMessage = (message) => {
-          console.log('Broadcast message from server:', message);
+  connectWebSocket: () => {
+    const handleMessage = (message) => {
+      console.log("Broadcast message from server:", message);
+    };
+    websocketService.connect(handleMessage);
+  },
+
+  setSpecText: (newSpecText) => {
+    const currentState = get();
+    let specToStore = newSpecText;
+    let isJson = newSpecText.trim().startsWith("{");
+
+    // If the new text is not JSON (e.g., from a loaded YAML file), convert it before storing.
+    if (!isJson) {
+      try {
+        const jsonObject = yaml.load(newSpecText);
+        specToStore = JSON.stringify(jsonObject, null, 2);
+      } catch (e) {
+        console.error("Invalid YAML input:", e);
+        // If it's invalid YAML, just store it as is so the validator can show an error.
+        set(() => ({ specText: newSpecText }));
+        return;
+      }
+    }
+
+    set(() => ({ specText: specToStore }));
+    // Note: WebSocket sending is handled by debounced useEffect in EditorPanel
+  },
+
+  createSession: async () => {
+    try {
+      // Send the spec in the format expected by CreateSessionRequest
+      const requestBody = {
+        specText: get().specText,
       };
-      websocketService.connect(handleMessage);
-    },
+      const response = await axios.post(
+        "http://localhost:8080/api/v1/sessions",
+        requestBody,
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+      const newSessionId = response.data.sessionId;
+      set({ sessionId: newSessionId });
+      console.log("Session created with ID:", newSessionId);
+      return newSessionId;
+    } catch (error) {
+      console.error("Failed to create session:", error);
+      throw error;
+    }
+  },
 
+  convertToYAML: () => {
+    set({ format: "yaml" });
+  },
 
-    setSpecText: (newSpecText) => {
-        const currentState = get();
-        let specToStore = newSpecText;
-        let isJson = newSpecText.trim().startsWith('{');
+  convertToJSON: () => {
+    set({ format: "json" });
+  },
 
-        // If the new text is not JSON (e.g., from a loaded YAML file), convert it before storing.
-        if (!isJson) {
-            try {
-                const jsonObject = yaml.load(newSpecText);
-                specToStore = JSON.stringify(jsonObject, null, 2);
-            } catch (e) {
-                console.error("Invalid YAML input:", e);
-                // If it's invalid YAML, just store it as is so the validator can show an error.
-                set(() => ({specText: newSpecText}));
-                return;
-            }
+  updateOperationDetails: async (endpoint, formData) => {
+    const state = get();
+    if (!state.sessionId || !endpoint) return;
+
+    const updateRequest = {
+      path: endpoint.path,
+      method: endpoint.method,
+      summary: formData.summary,
+      description: formData.description,
+    };
+
+    try {
+      const result = await updateOperation(state.sessionId, updateRequest);
+      if (result.success) {
+        // After a successful save, re-fetch the entire spec to keep UI in sync
+        const specResult = await getSessionSpec(state.sessionId);
+        if (specResult.success) {
+          state.setSpecText(specResult.data); // Update the main editor's content
         }
-
-        set(() => ({specText: specToStore}));
-        // Note: WebSocket sending is handled by debounced useEffect in EditorPanel
-    },
-
-    createSession: async () => {
-        try {
-            // Send the spec in the format expected by CreateSessionRequest
-            const requestBody = {
-                specText: get().specText
-            };
-            const response = await axios.post("http://localhost:8080/api/v1/sessions", requestBody, {
-                headers: {"Content-Type": "application/json"},
-            });
-            const newSessionId = response.data.sessionId;
-            set({ sessionId: newSessionId });
-            console.log("Session created with ID:", newSessionId);
-            return newSessionId;
-        } catch (error) {
-            console.error("Failed to create session:", error);
-            throw error;
-        }
-    },
-
-    convertToYAML: () => {
-        set({format: 'yaml'});
-    },
-
-    convertToJSON: () => {
-        set({format: 'json'});
-    },
-
-    updateOperationDetails: async (endpoint, formData) => {
-        const state = get();
-        if (!state.sessionId || !endpoint) return;
-
-        const updateRequest = {
-            path: endpoint.path,
-            method: endpoint.method,
-            summary: formData.summary,
-            description: formData.description,
-        };
-
-        try {
-            const result = await updateOperation(state.sessionId, updateRequest);
-            if (result.success) {
-                // After a successful save, re-fetch the entire spec to keep UI in sync
-                const specResult = await getSessionSpec(state.sessionId);
-                if (specResult.success) {
-                    state.setSpecText(specResult.data); // Update the main editor's content
-                }
-                return { success: true, message: "Operation updated successfully!" };
-            } else {
-                return { success: false, error: result.error };
-            }
-        } catch (error) {
-            console.error("Error updating operation:", error);
-            return { success: false, error: "Failed to update operation" };
-        }
-    },
+        return { success: true, message: "Operation updated successfully!" };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error("Error updating operation:", error);
+      return { success: false, error: "Failed to update operation" };
+    }
+  },
 });

@@ -11,21 +11,21 @@ Knowledge Base to retrieve relevant attack patterns and exploitation techniques,
 transforming it from an AI tool into an AI security expert.
 """
 
-import logging
 import json
-from typing import Dict, List, Any, Optional
+import logging
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .base_agent import LLMAgent
 from ...schemas.attack_path_schemas import (
-    AttackPathContext,
     AttackChain,
+    AttackComplexity,
+    AttackPathContext,
     AttackStep,
     AttackStepType,
-    AttackComplexity
 )
 from ...schemas.security_schemas import SecurityIssue, SecuritySeverity
 from ..rag_service import RAGService
+from .base_agent import LLMAgent
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ThreatModelingAgent(LLMAgent):
         super().__init__(
             name="ThreatModeling",
             description="RAG-enhanced agent that discovers multi-step attack chains using offensive security expertise",
-            llm_service=llm_service
+            llm_service=llm_service,
         )
         # Initialize or receive RAG service
         self.rag_service = rag_service or RAGService()
@@ -58,10 +58,12 @@ class ThreatModelingAgent(LLMAgent):
             "vulnerability_correlation",
             "threat_assessment",
             "exploitation_modeling",
-            "impact_analysis"
+            "impact_analysis",
         ]
 
-    async def execute(self, task: Dict[str, Any], context: AttackPathContext) -> Dict[str, Any]:
+    async def execute(
+        self, task: Dict[str, Any], context: AttackPathContext
+    ) -> Dict[str, Any]:
         """
         Execute threat modeling to find attack chains
 
@@ -89,7 +91,7 @@ class ThreatModelingAgent(LLMAgent):
                 return {
                     "success": True,
                     "attack_chains": [],
-                    "analysis_summary": "No vulnerabilities found to chain"
+                    "analysis_summary": "No vulnerabilities found to chain",
                 }
 
             # Get analysis parameters
@@ -110,7 +112,7 @@ class ThreatModelingAgent(LLMAgent):
                 context.spec,
                 max_chain_length,
                 analysis_depth,
-                rag_context
+                rag_context,
             )
 
             # Call LLM to find attack chains with retry logic
@@ -122,13 +124,15 @@ class ThreatModelingAgent(LLMAgent):
 
             for attempt in range(max_retries):
                 try:
-                    logger.info(f"[{self.name}] LLM analysis attempt {attempt + 1}/{max_retries}")
+                    logger.info(
+                        f"[{self.name}] LLM analysis attempt {attempt + 1}/{max_retries}"
+                    )
 
                     response = await self.llm_service.generate(
                         model="mistral:7b-instruct",
                         prompt=prompt,
                         temperature=0.4,  # Lower temperature for more focused analysis
-                        max_tokens=8000  # Allow detailed analysis
+                        max_tokens=8000,  # Allow detailed analysis
                     )
 
                     # Update token usage
@@ -140,32 +144,42 @@ class ThreatModelingAgent(LLMAgent):
                     llm_text = response.get("response", "")
 
                     # Log response details for debugging (using proper logger)
-                    logger.debug(f"[{self.name}] LLM response length: {len(llm_text)} characters")
+                    logger.debug(
+                        f"[{self.name}] LLM response length: {len(llm_text)} characters"
+                    )
                     logger.debug(f"[{self.name}] Response preview: {llm_text[:200]}")
 
                     if not llm_text or len(llm_text.strip()) < 10:
-                        logger.warning(f"[{self.name}] Empty or very short LLM response on attempt {attempt + 1}")
+                        logger.warning(
+                            f"[{self.name}] Empty or very short LLM response on attempt {attempt + 1}"
+                        )
                         if attempt < max_retries - 1:
                             continue
                         else:
-                            logger.error(f"[{self.name}] All retry attempts exhausted with empty responses")
+                            logger.error(
+                                f"[{self.name}] All retry attempts exhausted with empty responses"
+                            )
                             break
 
                     attack_chains = self._parse_attack_chains(
-                        llm_text,
-                        vulnerabilities,
-                        context.spec
+                        llm_text, vulnerabilities, context.spec
                     )
 
                     # Success - break retry loop
                     if attack_chains:
-                        logger.info(f"[{self.name}] Successfully parsed {len(attack_chains)} chains on attempt {attempt + 1}")
+                        logger.info(
+                            f"[{self.name}] Successfully parsed {len(attack_chains)} chains on attempt {attempt + 1}"
+                        )
                         break
                     elif attempt < max_retries - 1:
-                        logger.warning(f"[{self.name}] No chains parsed on attempt {attempt + 1}, retrying...")
+                        logger.warning(
+                            f"[{self.name}] No chains parsed on attempt {attempt + 1}, retrying..."
+                        )
 
                 except Exception as e:
-                    logger.error(f"[{self.name}] Error during LLM analysis attempt {attempt + 1}: {e}")
+                    logger.error(
+                        f"[{self.name}] Error during LLM analysis attempt {attempt + 1}: {e}"
+                    )
                     if attempt < max_retries - 1:
                         logger.info(f"[{self.name}] Retrying with simplified prompt...")
                         # On retry, use simpler prompt (could be customized further)
@@ -194,29 +208,26 @@ class ThreatModelingAgent(LLMAgent):
                 "attack_chains": attack_chains,
                 "analysis_summary": summary,
                 "tokens_used": tokens_used,
-                "execution_time_ms": execution_time
+                "execution_time_ms": execution_time,
             }
 
         except Exception as e:
-            logger.error(f"[{self.name}] Error during threat modeling: {e}", exc_info=True)
+            logger.error(
+                f"[{self.name}] Error during threat modeling: {e}", exc_info=True
+            )
             context.current_stage = "error"
-            return {
-                "success": False,
-                "error": str(e),
-                "attack_chains": []
-            }
+            return {"success": False, "error": str(e), "attack_chains": []}
 
     def can_handle_task(self, task_type: str) -> bool:
         """Check if this agent can handle the given task type"""
         return task_type in [
             "threat_modeling",
             "find_attack_chains",
-            "vulnerability_correlation"
+            "vulnerability_correlation",
         ]
 
     async def _query_attacker_knowledge(
-        self,
-        vulnerabilities: List[SecurityIssue]
+        self, vulnerabilities: List[SecurityIssue]
     ) -> Dict[str, Any]:
         """
         Query the Attacker Knowledge Base for relevant exploitation techniques.
@@ -226,12 +237,10 @@ class ThreatModelingAgent(LLMAgent):
         to the discovered vulnerabilities.
         """
         if not self.rag_service.attacker_kb_available():
-            logger.warning(f"[{self.name}] Attacker KB not available. Operating without RAG enhancement.")
-            return {
-                "context": "",
-                "sources": [],
-                "available": False
-            }
+            logger.warning(
+                f"[{self.name}] Attacker KB not available. Operating without RAG enhancement."
+            )
+            return {"context": "", "sources": [], "available": False}
 
         try:
             # Build RAG query based on vulnerability types and OWASP categories
@@ -249,15 +258,16 @@ class ThreatModelingAgent(LLMAgent):
                 unique_owasp = list(set(owasp_categories))
                 query_parts.append(f"OWASP API Security: {', '.join(unique_owasp)}")
 
-            query_parts.append("exploitation techniques attack patterns vulnerability chaining")
+            query_parts.append(
+                "exploitation techniques attack patterns vulnerability chaining"
+            )
             query = " ".join(query_parts)
 
             logger.info(f"[{self.name}] Querying Attacker KB with: '{query[:100]}...'")
 
             # Query the Attacker Knowledge Base
             rag_result = await self.rag_service.query_attacker_knowledge(
-                query=query,
-                n_results=5  # Get top 5 most relevant attack patterns
+                query=query, n_results=5  # Get top 5 most relevant attack patterns
             )
 
             if rag_result.get("context"):
@@ -271,16 +281,12 @@ class ThreatModelingAgent(LLMAgent):
             return {
                 "context": rag_result.get("context", ""),
                 "sources": rag_result.get("sources", []),
-                "available": True
+                "available": True,
             }
 
         except Exception as e:
             logger.error(f"[{self.name}] Error querying Attacker KB: {e}")
-            return {
-                "context": "",
-                "sources": [],
-                "available": False
-            }
+            return {"context": "", "sources": [], "available": False}
 
     def _build_threat_modeling_prompt(
         self,
@@ -288,7 +294,7 @@ class ThreatModelingAgent(LLMAgent):
         spec: Dict[str, Any],  # Not used anymore - kept for backward compatibility
         max_chain_length: int,
         analysis_depth: str,
-        rag_context: Dict[str, Any]
+        rag_context: Dict[str, Any],
     ) -> str:
         """
         Build the RAG-enhanced prompt for threat modeling analysis.
@@ -410,21 +416,27 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
         self,
         llm_response: str,
         vulnerabilities: List[SecurityIssue],
-        spec: Dict[str, Any]
+        spec: Dict[str, Any],
     ) -> List[AttackChain]:
         """Parse LLM response into AttackChain objects"""
         try:
             # Clean up response - remove markdown code blocks if present
             response_text = llm_response.strip()
 
-            logger.info(f"[{self.name}] Parsing LLM response (length: {len(response_text)} chars)")
+            logger.info(
+                f"[{self.name}] Parsing LLM response (length: {len(response_text)} chars)"
+            )
             logger.debug(f"[{self.name}] First 500 chars: {response_text[:500]}")
 
             if response_text.startswith("```"):
                 # Remove markdown code block markers
                 lines = response_text.split("\n")
-                response_text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
-                response_text = response_text.replace("```json", "").replace("```", "").strip()
+                response_text = "\n".join(
+                    lines[1:-1] if lines[-1].strip() == "```" else lines[1:]
+                )
+                response_text = (
+                    response_text.replace("```json", "").replace("```", "").strip()
+                )
                 logger.debug(f"[{self.name}] Removed markdown code blocks")
 
             # Parse JSON
@@ -436,21 +448,35 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                 return []
 
             attack_chains_data = data.get("attack_chains", [])
-            logger.info(f"[{self.name}] Found {len(attack_chains_data)} chains in LLM response")
+            logger.info(
+                f"[{self.name}] Found {len(attack_chains_data)} chains in LLM response"
+            )
 
             if not attack_chains_data:
-                logger.warning(f"[{self.name}] No attack_chains key in response or empty list")
+                logger.warning(
+                    f"[{self.name}] No attack_chains key in response or empty list"
+                )
                 logger.debug(f"[{self.name}] Response data keys: {list(data.keys())}")
                 return []
 
             attack_chains = []
             for chain_idx, chain_data in enumerate(attack_chains_data):
                 try:
-                    logger.debug(f"[{self.name}] Parsing chain {chain_idx + 1}: {chain_data.get('name', 'unknown')}")
+                    logger.debug(
+                        f"[{self.name}] Parsing chain {chain_idx + 1}: {chain_data.get('name', 'unknown')}"
+                    )
 
                     # Validate required chain fields
-                    required_chain_fields = ["name", "attack_goal", "severity", "complexity", "steps"]
-                    missing_fields = [f for f in required_chain_fields if f not in chain_data]
+                    required_chain_fields = [
+                        "name",
+                        "attack_goal",
+                        "severity",
+                        "complexity",
+                        "steps",
+                    ]
+                    missing_fields = [
+                        f for f in required_chain_fields if f not in chain_data
+                    ]
                     if missing_fields:
                         logger.warning(
                             f"[{self.name}] Chain {chain_idx + 1} missing required fields: {missing_fields}. Skipping."
@@ -463,10 +489,17 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                         try:
                             # Validate required step fields
                             required_step_fields = [
-                                "step_number", "step_type", "vulnerability_id",
-                                "endpoint", "http_method", "description", "technical_detail"
+                                "step_number",
+                                "step_type",
+                                "vulnerability_id",
+                                "endpoint",
+                                "http_method",
+                                "description",
+                                "technical_detail",
                             ]
-                            missing_step_fields = [f for f in required_step_fields if f not in step_data]
+                            missing_step_fields = [
+                                f for f in required_step_fields if f not in step_data
+                            ]
                             if missing_step_fields:
                                 logger.warning(
                                     f"[{self.name}] Chain {chain_idx + 1}, step {step_idx + 1} "
@@ -474,7 +507,9 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                                 )
 
                             # Convert step_type string to enum (handle variations)
-                            step_type_str = step_data.get("step_type", "initial_access").lower()
+                            step_type_str = step_data.get(
+                                "step_type", "initial_access"
+                            ).lower()
                             step_type_map = {
                                 "reconnaissance": AttackStepType.RECONNAISSANCE,
                                 "initial_access": AttackStepType.INITIAL_ACCESS,
@@ -483,24 +518,38 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                                 "lateral_movement": AttackStepType.LATERAL_MOVEMENT,
                                 "persistence": AttackStepType.PERSISTENCE,
                                 "defense_evasion": AttackStepType.DEFENSE_EVASION,
-                                "exploitation": AttackStepType.INITIAL_ACCESS  # Fallback for generic "exploitation"
+                                "exploitation": AttackStepType.INITIAL_ACCESS,  # Fallback for generic "exploitation"
                             }
-                            step_type = step_type_map.get(step_type_str, AttackStepType.INITIAL_ACCESS)
+                            step_type = step_type_map.get(
+                                step_type_str, AttackStepType.INITIAL_ACCESS
+                            )
 
                             step = AttackStep(
                                 step_number=step_data.get("step_number", step_idx + 1),
                                 step_type=step_type,
-                                vulnerability_id=step_data.get("vulnerability_id", "unknown"),
+                                vulnerability_id=step_data.get(
+                                    "vulnerability_id", "unknown"
+                                ),
                                 endpoint=step_data.get("endpoint", "/unknown"),
                                 http_method=step_data.get("http_method", "GET"),
-                                description=step_data.get("description", "No description provided"),
-                                technical_detail=step_data.get("technical_detail", "No technical details provided"),
+                                description=step_data.get(
+                                    "description", "No description provided"
+                                ),
+                                technical_detail=step_data.get(
+                                    "technical_detail", "No technical details provided"
+                                ),
                                 example_request=step_data.get("example_request"),
                                 example_payload=step_data.get("example_payload"),
                                 expected_response=step_data.get("expected_response"),
-                                information_gained=step_data.get("information_gained", []),
-                                requires_authentication=step_data.get("requires_authentication", False),
-                                requires_previous_steps=step_data.get("requires_previous_steps", [])
+                                information_gained=step_data.get(
+                                    "information_gained", []
+                                ),
+                                requires_authentication=step_data.get(
+                                    "requires_authentication", False
+                                ),
+                                requires_previous_steps=step_data.get(
+                                    "requires_previous_steps", []
+                                ),
                             )
                             steps.append(step)
 
@@ -521,7 +570,14 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                     # Determine OWASP categories from vulnerabilities
                     owasp_categories = []
                     for step in steps:
-                        vuln = next((v for v in vulnerabilities if v.id == step.vulnerability_id), None)
+                        vuln = next(
+                            (
+                                v
+                                for v in vulnerabilities
+                                if v.id == step.vulnerability_id
+                            ),
+                            None,
+                        )
                         if vuln and vuln.owasp_category:
                             if vuln.owasp_category not in owasp_categories:
                                 owasp_categories.append(vuln.owasp_category)
@@ -534,7 +590,7 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                         "HIGH": SecuritySeverity.HIGH,
                         "MEDIUM": SecuritySeverity.MEDIUM,
                         "LOW": SecuritySeverity.LOW,
-                        "INFO": SecuritySeverity.INFO
+                        "INFO": SecuritySeverity.INFO,
                     }
                     severity = severity_map.get(severity_str, SecuritySeverity.MEDIUM)
 
@@ -544,9 +600,11 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                         "low": AttackComplexity.LOW,
                         "medium": AttackComplexity.MEDIUM,
                         "high": AttackComplexity.HIGH,
-                        "critical": AttackComplexity.CRITICAL
+                        "critical": AttackComplexity.CRITICAL,
                     }
-                    complexity = complexity_map.get(complexity_str, AttackComplexity.MEDIUM)
+                    complexity = complexity_map.get(
+                        complexity_str, AttackComplexity.MEDIUM
+                    )
 
                     chain = AttackChain(
                         name=chain_data["name"],
@@ -556,20 +614,31 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
                         impact_score=chain_data.get("impact_score", 7.0),
                         steps=steps,
                         attack_goal=chain_data["attack_goal"],
-                        attacker_profile=chain_data.get("attacker_profile", "Skilled Attacker"),
+                        attacker_profile=chain_data.get(
+                            "attacker_profile", "Skilled Attacker"
+                        ),
                         business_impact=chain_data.get("business_impact", ""),
                         owasp_categories=owasp_categories,
-                        remediation_priority=chain_data.get("remediation_priority", "HIGH"),
-                        remediation_steps=chain_data.get("remediation_steps", [])
+                        remediation_priority=chain_data.get(
+                            "remediation_priority", "HIGH"
+                        ),
+                        remediation_steps=chain_data.get("remediation_steps", []),
                     )
                     attack_chains.append(chain)
 
                 except Exception as e:
-                    logger.error(f"[{self.name}] Error parsing chain {chain_idx + 1}: {e}", exc_info=True)
-                    logger.error(f"[{self.name}] Chain data: {json.dumps(chain_data, indent=2)[:500]}")
+                    logger.error(
+                        f"[{self.name}] Error parsing chain {chain_idx + 1}: {e}",
+                        exc_info=True,
+                    )
+                    logger.error(
+                        f"[{self.name}] Chain data: {json.dumps(chain_data, indent=2)[:500]}"
+                    )
                     continue
 
-            logger.info(f"[{self.name}] Successfully parsed {len(attack_chains)} attack chains")
+            logger.info(
+                f"[{self.name}] Successfully parsed {len(attack_chains)} attack chains"
+            )
             return attack_chains
 
         except json.JSONDecodeError as e:
@@ -577,7 +646,9 @@ Use this expert knowledge to inform your attack chain analysis. Look for pattern
             logger.error(f"Response was: {llm_response[:500]}")
             return []
         except Exception as e:
-            logger.error(f"[{self.name}] Error parsing attack chains: {e}", exc_info=True)
+            logger.error(
+                f"[{self.name}] Error parsing attack chains: {e}", exc_info=True
+            )
             logger.error(f"Full response: {llm_response[:1000]}")
             return []
 

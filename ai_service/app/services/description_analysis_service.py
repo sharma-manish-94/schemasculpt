@@ -2,16 +2,18 @@
 AI-powered description quality analysis service.
 Analyzes description quality and generates JSON Patch operations for improvements.
 """
+
 import logging
 from typing import List
+
 from app.schemas.description_schemas import (
     DescriptionAnalysisRequest,
     DescriptionAnalysisResponse,
-    DescriptionQuality,
     DescriptionItem,
+    DescriptionQuality,
     Issue,
     JsonPatchOperation,
-    QualityLevel
+    QualityLevel,
 )
 from app.services.llm_adapter import LLMAdapter
 
@@ -22,7 +24,9 @@ class DescriptionAnalysisService:
     def __init__(self, llm_adapter: LLMAdapter):
         self.llm_adapter = llm_adapter
 
-    async def analyze(self, request: DescriptionAnalysisRequest) -> DescriptionAnalysisResponse:
+    async def analyze(
+        self, request: DescriptionAnalysisRequest
+    ) -> DescriptionAnalysisResponse:
         """
         Analyze description quality for multiple items in batch.
         Returns quality scores, issues, and JSON Patch operations.
@@ -40,9 +44,7 @@ class DescriptionAnalysisService:
 
         logger.info(f"Description analysis complete. Overall score: {overall_score}")
         return DescriptionAnalysisResponse(
-            results=results,
-            overall_score=overall_score,
-            patches=patches
+            results=results, overall_score=overall_score, patches=patches
         )
 
     async def _batch_analyze_descriptions(
@@ -58,18 +60,15 @@ class DescriptionAnalysisService:
         messages = [
             {
                 "role": "system",
-                "content": "You are an API documentation quality analyzer specialized in OpenAPI/Swagger specifications."
+                "content": "You are an API documentation quality analyzer specialized in OpenAPI/Swagger specifications.",
             },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "user", "content": prompt},
         ]
 
         llm_response = await self.llm_adapter.call_llm(
             messages=messages,
             max_tokens=4000,
-            temperature=0.3  # Lower temperature for more consistent quality analysis
+            temperature=0.3,  # Lower temperature for more consistent quality analysis
         )
 
         # Parse LLM response and create results
@@ -173,7 +172,9 @@ Be concise and actionable. Focus on practical improvements."""
 
         return results
 
-    def _parse_single_item(self, block: str, item: DescriptionItem) -> DescriptionQuality:
+    def _parse_single_item(
+        self, block: str, item: DescriptionItem
+    ) -> DescriptionQuality:
         """Parse a single item block from LLM response"""
         lines = block.strip().split("\n")
 
@@ -213,7 +214,7 @@ Be concise and actionable. Focus on practical improvements."""
         patch = JsonPatchOperation(
             op="replace" if item.current_description else "add",
             path=item.path,
-            value=suggested
+            value=suggested,
         )
 
         return DescriptionQuality(
@@ -222,7 +223,7 @@ Be concise and actionable. Focus on practical improvements."""
             level=level,
             issues=issues,
             suggested_description=suggested,
-            patch=patch
+            patch=patch,
         )
 
     def _parse_issue_line(self, line: str) -> Issue | None:
@@ -239,7 +240,7 @@ Be concise and actionable. Focus on practical improvements."""
             severity = line[sev_start:sev_end].strip()
 
             # Extract description (after second ])
-            desc = line[sev_end + 1:].strip()
+            desc = line[sev_end + 1 :].strip()
 
             return Issue(type=issue_type, severity=severity, description=desc)
         except:
@@ -256,13 +257,15 @@ Be concise and actionable. Focus on practical improvements."""
                 path=item.path,
                 quality_score=0,
                 level=QualityLevel.MISSING,
-                issues=[Issue(
-                    type="completeness",
-                    severity="high",
-                    description="Description is missing"
-                )],
+                issues=[
+                    Issue(
+                        type="completeness",
+                        severity="high",
+                        description="Description is missing",
+                    )
+                ],
                 suggested_description=suggested,
-                patch=JsonPatchOperation(op="add", path=item.path, value=suggested)
+                patch=JsonPatchOperation(op="add", path=item.path, value=suggested),
             )
 
         elif len(current) < 20:
@@ -272,13 +275,15 @@ Be concise and actionable. Focus on practical improvements."""
                 path=item.path,
                 quality_score=40,
                 level=QualityLevel.POOR,
-                issues=[Issue(
-                    type="completeness",
-                    severity="medium",
-                    description="Description is too brief"
-                )],
+                issues=[
+                    Issue(
+                        type="completeness",
+                        severity="medium",
+                        description="Description is too brief",
+                    )
+                ],
                 suggested_description=suggested,
-                patch=JsonPatchOperation(op="replace", path=item.path, value=suggested)
+                patch=JsonPatchOperation(op="replace", path=item.path, value=suggested),
             )
 
         else:
@@ -289,7 +294,7 @@ Be concise and actionable. Focus on practical improvements."""
                 level=QualityLevel.GOOD,
                 issues=[],
                 suggested_description=current,
-                patch=JsonPatchOperation(op="replace", path=item.path, value=current)
+                patch=JsonPatchOperation(op="replace", path=item.path, value=current),
             )
 
     def _generate_fallback_description(self, item: DescriptionItem) -> str:

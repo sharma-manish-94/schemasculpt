@@ -12,8 +12,8 @@ This can reduce repeated AI calls by 80-90% during iterative development.
 import hashlib
 import json
 import logging
-from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +36,7 @@ class AttackChainCache:
         """
         self.cache: Dict[str, Dict[str, Any]] = {}
         self.ttl = timedelta(hours=ttl_hours)
-        self.stats = {
-            "hits": 0,
-            "misses": 0,
-            "partial_hits": 0
-        }
+        self.stats = {"hits": 0, "misses": 0, "partial_hits": 0}
 
     def get_full_analysis(self, spec_hash: str) -> Optional[Dict[str, Any]]:
         """
@@ -70,8 +66,7 @@ class AttackChainCache:
         return None
 
     def get_partial_analysis(
-        self,
-        finding_signature: str
+        self, finding_signature: str
     ) -> Optional[List[Dict[str, Any]]]:
         """
         Get cached attack chains for specific finding patterns
@@ -98,11 +93,7 @@ class AttackChainCache:
 
         return None
 
-    def store_full_analysis(
-        self,
-        spec_hash: str,
-        result: Dict[str, Any]
-    ) -> None:
+    def store_full_analysis(self, spec_hash: str, result: Dict[str, Any]) -> None:
         """
         Store complete analysis result
 
@@ -112,17 +103,12 @@ class AttackChainCache:
         """
         cache_key = f"full:{spec_hash}"
 
-        self.cache[cache_key] = {
-            "timestamp": datetime.utcnow(),
-            "result": result
-        }
+        self.cache[cache_key] = {"timestamp": datetime.utcnow(), "result": result}
 
         logger.info(f"[Cache] Stored full analysis for spec {spec_hash[:8]}")
 
     def store_partial_analysis(
-        self,
-        finding_signature: str,
-        attack_chains: List[Dict[str, Any]]
+        self, finding_signature: str, attack_chains: List[Dict[str, Any]]
     ) -> None:
         """
         Store attack chains for specific finding patterns
@@ -135,15 +121,14 @@ class AttackChainCache:
 
         self.cache[cache_key] = {
             "timestamp": datetime.utcnow(),
-            "result": attack_chains
+            "result": attack_chains,
         }
 
-        logger.info(f"[Cache] Stored partial analysis for findings {finding_signature[:8]}")
+        logger.info(
+            f"[Cache] Stored partial analysis for findings {finding_signature[:8]}"
+        )
 
-    def compute_finding_signature(
-        self,
-        findings: List[Dict[str, Any]]
-    ) -> str:
+    def compute_finding_signature(self, findings: List[Dict[str, Any]]) -> str:
         """
         Compute a signature for a set of findings
 
@@ -157,21 +142,22 @@ class AttackChainCache:
         """
         # Sort findings by category and severity for consistent hashing
         sorted_findings = sorted(
-            findings,
-            key=lambda f: (f.get("category", ""), f.get("severity", ""))
+            findings, key=lambda f: (f.get("category", ""), f.get("severity", ""))
         )
 
         # Create signature from key attributes
         signature_data = []
         for f in sorted_findings:
-            signature_data.append({
-                "category": f.get("category"),
-                "severity": f.get("severity"),
-                "affected_endpoint": f.get("affected_endpoint"),
-                "affected_schema": f.get("affected_schema"),
-                "is_public": f.get("is_public"),
-                "authentication_required": f.get("authentication_required")
-            })
+            signature_data.append(
+                {
+                    "category": f.get("category"),
+                    "severity": f.get("severity"),
+                    "affected_endpoint": f.get("affected_endpoint"),
+                    "affected_schema": f.get("affected_schema"),
+                    "is_public": f.get("is_public"),
+                    "authentication_required": f.get("authentication_required"),
+                }
+            )
 
         # Hash it
         signature_json = json.dumps(signature_data, sort_keys=True)
@@ -179,17 +165,21 @@ class AttackChainCache:
 
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
-        total_requests = self.stats["hits"] + self.stats["misses"] + self.stats["partial_hits"]
+        total_requests = (
+            self.stats["hits"] + self.stats["misses"] + self.stats["partial_hits"]
+        )
         hit_rate = 0.0
         if total_requests > 0:
-            hit_rate = (self.stats["hits"] + self.stats["partial_hits"]) / total_requests * 100
+            hit_rate = (
+                (self.stats["hits"] + self.stats["partial_hits"]) / total_requests * 100
+            )
 
         return {
             "total_entries": len(self.cache),
             "full_hits": self.stats["hits"],
             "partial_hits": self.stats["partial_hits"],
             "misses": self.stats["misses"],
-            "hit_rate_percentage": round(hit_rate, 2)
+            "hit_rate_percentage": round(hit_rate, 2),
         }
 
     def clear_expired(self) -> int:

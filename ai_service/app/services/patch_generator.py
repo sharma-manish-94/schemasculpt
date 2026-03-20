@@ -5,9 +5,10 @@ Generates precise RFC 6902 JSON Patch operations instead of full spec regenerati
 
 import json
 import logging
-from typing import List, Dict, Any
-from app.services.llm_service import LLMService
+from typing import Any, Dict, List
+
 from app.schemas.patch_schemas import JsonPatchOperation, PatchGenerationResponse
+from app.services.llm_service import LLMService
 
 logger = logging.getLogger("schemasculpt_ai.patch_generator")
 
@@ -19,11 +20,7 @@ class PatchGenerator:
         self.llm_service = llm_service
 
     async def generate_patch(
-        self,
-        spec: dict,
-        rule_id: str,
-        context: dict,
-        suggestion_message: str = None
+        self, spec: dict, rule_id: str, context: dict, suggestion_message: str = None
     ) -> PatchGenerationResponse:
         """
         Generate JSON Patch operations for a specific fix.
@@ -46,7 +43,7 @@ class PatchGenerator:
         llm_response = await self.llm_service.generate_json_response(
             prompt=prompt,
             schema_description="JSON Patch RFC 6902 operations array with explanation",
-            max_tokens=1000  # Patches are much smaller than full specs
+            max_tokens=1000,  # Patches are much smaller than full specs
         )
 
         # Parse LLM response into patch operations
@@ -60,14 +57,16 @@ class PatchGenerator:
             ]
 
             # Validate and fix patches to ensure parent paths exist
-            validated_patches = self._ensure_parent_paths_exist(patches, spec, rule_id, context)
+            validated_patches = self._ensure_parent_paths_exist(
+                patches, spec, rule_id, context
+            )
 
             return PatchGenerationResponse(
                 patches=validated_patches,
                 explanation=response_data.get("explanation", "Applied fix"),
                 rule_id=rule_id,
                 confidence=response_data.get("confidence", 0.9),
-                warnings=response_data.get("warnings", [])
+                warnings=response_data.get("warnings", []),
             )
 
         except Exception as e:
@@ -80,15 +79,11 @@ class PatchGenerator:
                 explanation=f"Failed to generate patch: {str(e)}",
                 rule_id=rule_id,
                 confidence=0.0,
-                warnings=[f"Patch generation failed: {str(e)}"]
+                warnings=[f"Patch generation failed: {str(e)}"],
             )
 
     def _build_patch_prompt(
-        self,
-        spec: dict,
-        rule_id: str,
-        context: dict,
-        suggestion_message: str = None
+        self, spec: dict, rule_id: str, context: dict, suggestion_message: str = None
     ) -> str:
         """Build a focused prompt for JSON Patch generation."""
 
@@ -119,7 +114,9 @@ class PatchGenerator:
 """
 
         # Provide rule-specific examples
-        rule_examples = self._get_rule_specific_examples(rule_id, api_path, api_method, spec)
+        rule_examples = self._get_rule_specific_examples(
+            rule_id, api_path, api_method, spec
+        )
 
         # Build example based on actual target
         example_patch_path = "/paths/~1example/get/summary"
@@ -157,11 +154,7 @@ Rules:
         return prompt
 
     def _ensure_parent_paths_exist(
-        self,
-        patches: List[JsonPatchOperation],
-        spec: dict,
-        rule_id: str,
-        context: dict
+        self, patches: List[JsonPatchOperation], spec: dict, rule_id: str, context: dict
     ) -> List[JsonPatchOperation]:
         """
         Ensure parent paths exist for all patch operations.
@@ -180,7 +173,9 @@ Rules:
             # Check if securitySchemes exists
             if "securitySchemes" not in spec.get("components", {}):
                 additional_patches.append(
-                    JsonPatchOperation(op="add", path="/components/securitySchemes", value={})
+                    JsonPatchOperation(
+                        op="add", path="/components/securitySchemes", value={}
+                    )
                 )
 
             # ONLY add a default security scheme if NO schemes exist at all
@@ -193,8 +188,8 @@ Rules:
                         value={
                             "type": "http",
                             "scheme": "bearer",
-                            "bearerFormat": "JWT"
-                        }
+                            "bearerFormat": "JWT",
+                        },
                     )
                 )
 
@@ -202,14 +197,16 @@ Rules:
         for patch in patches:
             if patch.op == "add" and patch.path:
                 # Get parent path
-                path_parts = patch.path.rstrip('/').split('/')
+                path_parts = patch.path.rstrip("/").split("/")
 
                 # For paths like /paths/~1user~1{username}/put/security
                 # We need to ensure /paths/~1user~1{username}/put exists
                 if len(path_parts) > 2:
                     # Build parent paths and check they exist
                     current_path = ""
-                    for i, part in enumerate(path_parts[1:-1], 1):  # Skip first empty and last part
+                    for i, part in enumerate(
+                        path_parts[1:-1], 1
+                    ):  # Skip first empty and last part
                         current_path += "/" + part
 
                         # Navigate spec to check if path exists
@@ -217,7 +214,9 @@ Rules:
                             # Add patch to create missing parent
                             logger.info(f"Adding missing parent path: {current_path}")
                             additional_patches.append(
-                                JsonPatchOperation(op="add", path=current_path, value={})
+                                JsonPatchOperation(
+                                    op="add", path=current_path, value={}
+                                )
                             )
 
         # Return additional patches first, then original patches
@@ -230,12 +229,12 @@ Rules:
 
         # Parse JSON Pointer manually
         # Convert /paths/~1user/get to ["paths", "/user", "get"]
-        parts = json_pointer.lstrip('/').split('/')
+        parts = json_pointer.lstrip("/").split("/")
         current = spec
 
         for part in parts:
             # Unescape ~1 to / and ~0 to ~
-            unescaped = part.replace('~1', '/').replace('~0', '~')
+            unescaped = part.replace("~1", "/").replace("~0", "~")
 
             if isinstance(current, dict):
                 if unescaped not in current:
@@ -254,20 +253,28 @@ Rules:
 
         return True
 
-    def _get_rule_specific_examples(self, rule_id: str, api_path: str, api_method: str, spec: dict) -> str:
+    def _get_rule_specific_examples(
+        self, rule_id: str, api_path: str, api_method: str, spec: dict
+    ) -> str:
         """Get rule-specific examples to guide the LLM."""
-        escaped_path = api_path.replace("~", "~0").replace("/", "~1") if api_path else "~1users"
+        escaped_path = (
+            api_path.replace("~", "~0").replace("/", "~1") if api_path else "~1users"
+        )
         method = api_method.lower() if api_method else "get"
 
         # Get existing security schemes from spec
-        existing_schemes = list(spec.get("components", {}).get("securitySchemes", {}).keys())
-        schemes_list = ", ".join(existing_schemes) if existing_schemes else "none defined"
+        existing_schemes = list(
+            spec.get("components", {}).get("securitySchemes", {}).keys()
+        )
+        schemes_list = (
+            ", ".join(existing_schemes) if existing_schemes else "none defined"
+        )
 
         # Build example using first existing scheme or a generic one
         example_scheme = existing_schemes[0] if existing_schemes else "bearerAuth"
 
         examples = {
-            "add-operation-security": f'''CRITICAL: Use EXISTING security schemes, do NOT create new ones!
+            "add-operation-security": f"""CRITICAL: Use EXISTING security schemes, do NOT create new ones!
 
 **Existing Security Schemes**: {schemes_list}
 
@@ -285,13 +292,12 @@ Example (using existing scheme "{example_scheme}"):
 WRONG - DO NOT DO THIS:
 - Do NOT use "example" as a scheme name
 - Do NOT replace /components/securitySchemes
-- Do NOT add new schemes unless they don't exist''',
+- Do NOT add new schemes unless they don't exist""",
             "add-success-response": f'Example path: "/paths/{escaped_path}/{method}/responses/200"',
-            "generate-operation-id": f'Example path: "/paths/{escaped_path}/{method}/operationId"'
+            "generate-operation-id": f'Example path: "/paths/{escaped_path}/{method}/operationId"',
         }
 
         return examples.get(rule_id, "")
-
 
     def _extract_relevant_spec(self, spec: dict, context: dict) -> dict:
         """
@@ -313,28 +319,36 @@ WRONG - DO NOT DO THIS:
                     "target_method": api_method,
                     "operation": operation,
                     "components": {
-                        "securitySchemes": spec.get("components", {}).get("securitySchemes", {})
-                    }
+                        "securitySchemes": spec.get("components", {}).get(
+                            "securitySchemes", {}
+                        )
+                    },
                 }
             except Exception as e:
-                logger.warning(f"Could not extract {api_method.upper()} {api_path}: {e}")
+                logger.warning(
+                    f"Could not extract {api_method.upper()} {api_path}: {e}"
+                )
 
         # For security rules, return minimal security context
         if rule_id := context.get("ruleId"):
             if "security" in rule_id.lower():
                 return {
-                    "securitySchemes": spec.get("components", {}).get("securitySchemes", {}),
-                    "security": spec.get("security", [])
+                    "securitySchemes": spec.get("components", {}).get(
+                        "securitySchemes", {}
+                    ),
+                    "security": spec.get("security", []),
                 }
 
         # Default: return minimal spec structure
         return {
             "info": {"title": spec.get("info", {}).get("title", "API")},
-            "openapi": spec.get("openapi", "3.0.0")
+            "openapi": spec.get("openapi", "3.0.0"),
         }
 
 
-async def apply_json_patch(spec: dict, patches: List[JsonPatchOperation]) -> Dict[str, Any]:
+async def apply_json_patch(
+    spec: dict, patches: List[JsonPatchOperation]
+) -> Dict[str, Any]:
     """
     Apply JSON Patch operations to a spec.
     Returns {"success": bool, "result": dict, "errors": list}
@@ -354,22 +368,18 @@ async def apply_json_patch(spec: dict, patches: List[JsonPatchOperation]) -> Dic
         # Apply patch
         result = patch.apply(spec)
 
-        return {
-            "success": True,
-            "result": result,
-            "errors": []
-        }
+        return {"success": True, "result": result, "errors": []}
     except jsonpatch.JsonPatchException as e:
         logger.error(f"JSON Patch application failed: {e}")
         return {
             "success": False,
             "result": spec,  # Return original spec
-            "errors": [str(e)]
+            "errors": [str(e)],
         }
     except Exception as e:
         logger.error(f"Unexpected error applying patch: {e}")
         return {
             "success": False,
             "result": spec,
-            "errors": [f"Unexpected error: {str(e)}"]
+            "errors": [f"Unexpected error: {str(e)}"],
         }

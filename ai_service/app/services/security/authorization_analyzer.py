@@ -4,11 +4,15 @@ Analyzes authorization controls and RBAC implementation in OpenAPI specs.
 """
 
 import json
-from typing import Dict, Any, List, Set
-from ...schemas.security_schemas import (
-    AuthorizationAnalysis, SecurityIssue, SecuritySeverity, OWASPCategory
-)
+from typing import Any, Dict, List, Set
+
 from ...core.logging import get_logger
+from ...schemas.security_schemas import (
+    AuthorizationAnalysis,
+    OWASPCategory,
+    SecurityIssue,
+    SecuritySeverity,
+)
 
 logger = get_logger("security.authorization_analyzer")
 
@@ -28,8 +32,15 @@ class AuthorizationAnalyzer:
 
     # Paths that are typically sensitive
     SENSITIVE_PATH_PATTERNS = [
-        "/admin", "/user", "/account", "/profile", "/payment",
-        "/order", "/transaction", "/settings", "/config"
+        "/admin",
+        "/user",
+        "/account",
+        "/profile",
+        "/payment",
+        "/order",
+        "/transaction",
+        "/settings",
+        "/config",
     ]
 
     def __init__(self):
@@ -63,25 +74,30 @@ class AuthorizationAnalyzer:
             rbac_implemented = True
             # Check if scopes are actually used
             if not self._scopes_are_used(spec, oauth_scopes):
-                issues.append(SecurityIssue(
-                    id="authz-unused-scopes",
-                    title="OAuth2 Scopes Defined But Not Used",
-                    description="OAuth2 scopes are defined but not applied to any endpoints",
-                    severity=SecuritySeverity.MEDIUM,
-                    owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
-                    location={"components": {"securitySchemes": {}}},
-                    recommendation="Apply OAuth2 scopes to endpoints based on required permissions",
-                    remediation_example=json.dumps({
-                        "paths": {
-                            "/admin/users": {
-                                "get": {
-                                    "security": [{"oauth2": ["admin:read"]}]
+                issues.append(
+                    SecurityIssue(
+                        id="authz-unused-scopes",
+                        title="OAuth2 Scopes Defined But Not Used",
+                        description="OAuth2 scopes are defined but not applied to any endpoints",
+                        severity=SecuritySeverity.MEDIUM,
+                        owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
+                        location={"components": {"securitySchemes": {}}},
+                        recommendation="Apply OAuth2 scopes to endpoints based on required permissions",
+                        remediation_example=json.dumps(
+                            {
+                                "paths": {
+                                    "/admin/users": {
+                                        "get": {
+                                            "security": [{"oauth2": ["admin:read"]}]
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                    }, indent=2),
-                    cwe_id="CWE-285"
-                ))
+                            },
+                            indent=2,
+                        ),
+                        cwe_id="CWE-285",
+                    )
+                )
 
         # Analyze paths
         paths = spec.get("paths", {})
@@ -117,19 +133,21 @@ class AuthorizationAnalyzer:
 
         # Issue for sensitive unprotected endpoints
         if sensitive_unprotected:
-            issues.append(SecurityIssue(
-                id="authz-sensitive-unprotected",
-                title="Sensitive Endpoints Without Authorization",
-                description=f"Found {len(sensitive_unprotected)} sensitive endpoint(s) without authorization controls",
-                severity=SecuritySeverity.CRITICAL,
-                owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
-                location={"paths": sensitive_unprotected[:5]},
-                recommendation="Apply appropriate authorization controls to all sensitive endpoints",
-                cwe_id="CWE-862",
-                references=[
-                    "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
-                ]
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="authz-sensitive-unprotected",
+                    title="Sensitive Endpoints Without Authorization",
+                    description=f"Found {len(sensitive_unprotected)} sensitive endpoint(s) without authorization controls",
+                    severity=SecuritySeverity.CRITICAL,
+                    owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
+                    location={"paths": sensitive_unprotected[:5]},
+                    recommendation="Apply appropriate authorization controls to all sensitive endpoints",
+                    cwe_id="CWE-862",
+                    references=[
+                        "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
+                    ],
+                )
+            )
 
         # Check for admin endpoints
         admin_issues = self._check_admin_endpoints(paths, global_security)
@@ -137,14 +155,20 @@ class AuthorizationAnalyzer:
 
         # Generate recommendations
         if not rbac_implemented:
-            recommendations.append("Implement Role-Based Access Control (RBAC) using OAuth2 scopes")
+            recommendations.append(
+                "Implement Role-Based Access Control (RBAC) using OAuth2 scopes"
+            )
 
-        recommendations.append("Ensure all sensitive operations require proper authorization")
+        recommendations.append(
+            "Ensure all sensitive operations require proper authorization"
+        )
         recommendations.append("Implement resource-level authorization checks")
         recommendations.append("Use principle of least privilege for API access")
 
         if sensitive_unprotected:
-            recommendations.append(f"Add authorization to {len(sensitive_unprotected)} unprotected sensitive endpoints")
+            recommendations.append(
+                f"Add authorization to {len(sensitive_unprotected)} unprotected sensitive endpoints"
+            )
 
         # Calculate score
         score = self._calculate_score(
@@ -152,7 +176,7 @@ class AuthorizationAnalyzer:
             unprotected_endpoints,
             sensitive_unprotected,
             rbac_implemented,
-            issues
+            issues,
         )
 
         has_authorization = protected_endpoints > 0 or rbac_implemented
@@ -164,7 +188,7 @@ class AuthorizationAnalyzer:
             rbac_implemented=rbac_implemented,
             issues=issues,
             recommendations=recommendations,
-            score=score
+            score=score,
         )
 
     def _extract_oauth_scopes(self, security_schemes: Dict[str, Any]) -> Set[str]:
@@ -203,9 +227,7 @@ class AuthorizationAnalyzer:
         return any(pattern in path_lower for pattern in self.SENSITIVE_PATH_PATTERNS)
 
     def _check_object_level_authorization(
-        self,
-        paths: Dict[str, Any],
-        security_schemes: Dict[str, Any]
+        self, paths: Dict[str, Any], security_schemes: Dict[str, Any]
     ) -> List[SecurityIssue]:
         """Check for Broken Object Level Authorization (BOLA) vulnerabilities."""
         issues = []
@@ -214,7 +236,10 @@ class AuthorizationAnalyzer:
         for path, path_item in paths.items():
             if "{" in path:  # Has path parameters
                 # Check for common ID parameters
-                if any(param in path.lower() for param in ["id}", "userid}", "accountid}", "objectid}"]):
+                if any(
+                    param in path.lower()
+                    for param in ["id}", "userid}", "accountid}", "objectid}"]
+                ):
                     for method in ["get", "put", "patch", "delete"]:
                         if method in path_item:
                             operation = path_item[method]
@@ -225,30 +250,35 @@ class AuthorizationAnalyzer:
 
                             mentions_authz = any(
                                 keyword in description or keyword in summary
-                                for keyword in ["owner", "authorize", "permission", "access control"]
+                                for keyword in [
+                                    "owner",
+                                    "authorize",
+                                    "permission",
+                                    "access control",
+                                ]
                             )
 
                             if not mentions_authz:
-                                issues.append(SecurityIssue(
-                                    id=f"authz-bola-{path}-{method}",
-                                    title="Potential Broken Object Level Authorization",
-                                    description=f"Endpoint {method.upper()} {path} accesses objects by ID but doesn't document authorization checks",
-                                    severity=SecuritySeverity.HIGH,
-                                    owasp_category=OWASPCategory.BROKEN_OBJECT_LEVEL_AUTH,
-                                    location={"path": path, "method": method},
-                                    recommendation="Implement and document object-level authorization checks to ensure users can only access their own resources",
-                                    cwe_id="CWE-639",
-                                    references=[
-                                        "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
-                                    ]
-                                ))
+                                issues.append(
+                                    SecurityIssue(
+                                        id=f"authz-bola-{path}-{method}",
+                                        title="Potential Broken Object Level Authorization",
+                                        description=f"Endpoint {method.upper()} {path} accesses objects by ID but doesn't document authorization checks",
+                                        severity=SecuritySeverity.HIGH,
+                                        owasp_category=OWASPCategory.BROKEN_OBJECT_LEVEL_AUTH,
+                                        location={"path": path, "method": method},
+                                        recommendation="Implement and document object-level authorization checks to ensure users can only access their own resources",
+                                        cwe_id="CWE-639",
+                                        references=[
+                                            "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
+                                        ],
+                                    )
+                                )
 
         return issues
 
     def _check_function_level_authorization(
-        self,
-        paths: Dict[str, Any],
-        global_security: List[Dict[str, Any]]
+        self, paths: Dict[str, Any], global_security: List[Dict[str, Any]]
     ) -> List[SecurityIssue]:
         """Check for Broken Function Level Authorization (BFLA) vulnerabilities."""
         issues = []
@@ -262,48 +292,52 @@ class AuthorizationAnalyzer:
                         operation_security = operation.get("security", global_security)
 
                         # Admin endpoints should have specific security requirements
-                        has_specific_security = operation_security and operation_security != global_security
+                        has_specific_security = (
+                            operation_security and operation_security != global_security
+                        )
 
                         if not has_specific_security:
-                            issues.append(SecurityIssue(
-                                id=f"authz-bfla-admin-{path}-{method}",
-                                title="Admin Function Without Specific Authorization",
-                                description=f"Administrative endpoint {method.upper()} {path} lacks function-level authorization",
-                                severity=SecuritySeverity.CRITICAL,
-                                owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
-                                location={"path": path, "method": method},
-                                recommendation="Apply role-based authorization (e.g., admin scope) to administrative functions",
-                                remediation_example=json.dumps({
-                                    "security": [{"oauth2": ["admin"]}]
-                                }, indent=2),
-                                cwe_id="CWE-285",
-                                references=[
-                                    "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
-                                ]
-                            ))
+                            issues.append(
+                                SecurityIssue(
+                                    id=f"authz-bfla-admin-{path}-{method}",
+                                    title="Admin Function Without Specific Authorization",
+                                    description=f"Administrative endpoint {method.upper()} {path} lacks function-level authorization",
+                                    severity=SecuritySeverity.CRITICAL,
+                                    owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
+                                    location={"path": path, "method": method},
+                                    recommendation="Apply role-based authorization (e.g., admin scope) to administrative functions",
+                                    remediation_example=json.dumps(
+                                        {"security": [{"oauth2": ["admin"]}]}, indent=2
+                                    ),
+                                    cwe_id="CWE-285",
+                                    references=[
+                                        "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
+                                    ],
+                                )
+                            )
 
         return issues
 
     def _check_admin_endpoints(
-        self,
-        paths: Dict[str, Any],
-        global_security: List[Dict[str, Any]]
+        self, paths: Dict[str, Any], global_security: List[Dict[str, Any]]
     ) -> List[SecurityIssue]:
         """Check admin endpoint security."""
         issues = []
         admin_paths = [p for p in paths.keys() if "/admin" in p.lower()]
 
         if admin_paths and not global_security:
-            issues.append(SecurityIssue(
-                id="authz-admin-no-global-security",
-                title="Admin Endpoints Without Global Security",
-                description=f"Found {len(admin_paths)} admin endpoint(s) but no global security defined",
-                severity=SecuritySeverity.CRITICAL,
-                owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
-                location={"paths": admin_paths[:3]},
-                recommendation="Define global security requirements or ensure each admin endpoint has security requirements",
-                cwe_id="CWE-306"
-            ))
+            issues.append(
+                SecurityIssue(
+                    id="authz-admin-no-global-security",
+                    title="Admin Endpoints Without Global Security",
+                    description=f"Found {len(admin_paths)} admin endpoint(s) but no global security defined",
+                    severity=SecuritySeverity.CRITICAL,
+                    owasp_category=OWASPCategory.BROKEN_FUNCTION_AUTH,
+                    location={"paths": admin_paths[:3]},
+                    recommendation="Define global security requirements or ensure each admin endpoint has security requirements",
+                    cwe_id="CWE-306",
+                )
+            )
 
         return issues
 
@@ -313,7 +347,7 @@ class AuthorizationAnalyzer:
         unprotected: int,
         sensitive_unprotected: List[str],
         rbac: bool,
-        issues: List[SecurityIssue]
+        issues: List[SecurityIssue],
     ) -> float:
         """Calculate authorization security score (0-100)."""
         if protected + unprotected == 0:
@@ -338,7 +372,7 @@ class AuthorizationAnalyzer:
             SecuritySeverity.HIGH: 12,
             SecuritySeverity.MEDIUM: 6,
             SecuritySeverity.LOW: 2,
-            SecuritySeverity.INFO: 1
+            SecuritySeverity.INFO: 1,
         }
 
         penalty = sum(severity_penalties.get(issue.severity, 0) for issue in issues)
