@@ -82,7 +82,8 @@ class SchemaGeneratorAgent(LLMAgent):
                 "No entities data provided for schema generation"
             )
 
-        system_prompt = self._build_system_prompt("""
+        system_prompt = self._build_system_prompt(
+            """
 You are an expert OpenAPI schema architect specializing in creating comprehensive, production-ready schemas.
 
 **Schema Generation Principles:**
@@ -128,7 +129,8 @@ You are an expert OpenAPI schema architect specializing in creating comprehensiv
   }},
   "recommendations": ["list of optimization recommendations"]
 }}
-""")
+"""
+        )
 
         options_text = f"""
 **Generation Options:**
@@ -194,7 +196,8 @@ Create production-ready schemas with:
         if not existing_schemas:
             return self._create_error_result("No schemas provided for optimization")
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are a schema optimization expert focusing on performance, maintainability, and best practices.
 
 **Optimization Areas:**
@@ -220,7 +223,8 @@ You are a schema optimization expert focusing on performance, maintainability, a
   }},
   "recommendations": ["additional optimization suggestions"]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Optimize the following OpenAPI schemas:
@@ -270,7 +274,8 @@ Focus on:
                 "No schemas provided for validation enhancement"
             )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are a validation specialist expert in JSON Schema validation and business rule implementation.
 
 **Validation Categories:**
@@ -299,7 +304,8 @@ You are a validation specialist expert in JSON Schema validation and business ru
     {{"schema": "schema_name", "valid_example": {{}}, "invalid_example": {{}}, "error_message": "expected error"}}
   ]
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Add comprehensive validation rules to the following schemas:
@@ -349,7 +355,8 @@ Focus on creating robust validation that catches common errors while maintaining
                 "No schemas provided for example generation"
             )
 
-        system_prompt = self._build_system_prompt(f"""
+        system_prompt = self._build_system_prompt(
+            f"""
 You are an example generation specialist creating realistic, comprehensive examples for API schemas.
 
 **Example Categories:**
@@ -388,7 +395,8 @@ You are an example generation specialist creating realistic, comprehensive examp
     "coverage_score": "1-10"
   }}
 }}
-""")
+"""
+        )
 
         user_message = f"""
 Generate comprehensive examples for the following schemas:
