@@ -1,0 +1,26 @@
+meta {
+  name: Validate Spec
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/spec/validate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Validate Spec
+
+  Runs OpenAPI spec validation against the current session spec.
+  Returns errors, warnings, and suggestions.
+}
+
+assert {
+  res.status: eq 200
+}

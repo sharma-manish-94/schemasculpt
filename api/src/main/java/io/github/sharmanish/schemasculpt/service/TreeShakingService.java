@@ -1,5 +1,6 @@
 package io.github.sharmanish.schemasculpt.service;
 
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -14,17 +15,10 @@ import java.util.Queue;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
 @Service
 @Slf4j
 public class TreeShakingService {
-  private final JsonMapper jsonMapper;
-
-  public TreeShakingService(JsonMapper jsonMapper) {
-    this.jsonMapper = jsonMapper;
-  }
 
   public OpenAPI extractOperationWithDependencies(OpenAPI fullSpec, String path, String method) {
     if (fullSpec == null || fullSpec.getPaths() == null) {
@@ -47,9 +41,13 @@ public class TreeShakingService {
 
     // Create a clean OpenAPI response that will serialize properly
     try {
+      // CRITICAL: Use Swagger's internal mapper (Jackson 2) for OpenAPI models.
+      // Jackson 3 doesn't yet support all Swagger custom deserializers (like additionalProperties).
+      com.fasterxml.jackson.databind.ObjectMapper swaggerMapper = Json.mapper();
+
       // Convert to JSON and back to ensure clean serialization
-      String fullSpecJson = jsonMapper.writeValueAsString(fullSpec);
-      OpenAPI cleanFullSpec = jsonMapper.readValue(fullSpecJson, OpenAPI.class);
+      String fullSpecJson = swaggerMapper.writeValueAsString(fullSpec);
+      OpenAPI cleanFullSpec = swaggerMapper.readValue(fullSpecJson, OpenAPI.class);
 
       // Extract only what we need
       OpenAPI miniSpec = new OpenAPI();
@@ -88,29 +86,34 @@ public class TreeShakingService {
 
   private Set<String> findDependencies(Operation operation, OpenAPI fullSpec) {
     Set<String> foundRefs = new HashSet<>();
-    Queue<JsonNode> nodesToVisit = new LinkedList<>();
-    nodesToVisit.add(jsonMapper.valueToTree(operation));
+
+    // Use Jackson 2 JsonNode for traversing Swagger models
+    Queue<com.fasterxml.jackson.databind.JsonNode> nodesToVisit = new LinkedList<>();
+    com.fasterxml.jackson.databind.ObjectMapper mapper = Json.mapper();
+
+    nodesToVisit.add(mapper.valueToTree(operation));
     while (!nodesToVisit.isEmpty()) {
-      JsonNode currentNode = nodesToVisit.poll();
+      com.fasterxml.jackson.databind.JsonNode currentNode = nodesToVisit.poll();
       if (currentNode.isObject()) {
-        currentNode
-            .properties()
-            .forEach(
-                property -> {
-                  if ("$ref".equals(property.getKey()) && property.getValue().isTextual()) {
-                    String refPath = property.getValue().asText();
-                    String schemaName = refPath.substring("#/components/schemas/".length());
-                    if (!foundRefs.contains(schemaName)) {
-                      foundRefs.add(schemaName);
-                      Schema schemaDef = fullSpec.getComponents().getSchemas().get(schemaName);
-                      if (schemaDef != null) {
-                        nodesToVisit.add(jsonMapper.valueToTree(schemaDef));
-                      }
-                    }
-                  } else {
-                    nodesToVisit.add(property.getValue());
-                  }
-                });
+        java.util.Iterator<Map.Entry<String, com.fasterxml.jackson.databind.JsonNode>> fields = currentNode.fields();
+        while (fields.hasNext()) {
+          Map.Entry<String, com.fasterxml.jackson.databind.JsonNode> property = fields.next();
+          if ("$ref".equals(property.getKey()) && property.getValue().isTextual()) {
+            String refPath = property.getValue().asText();
+            if (refPath.startsWith("#/components/schemas/")) {
+              String schemaName = refPath.substring("#/components/schemas/".length());
+              if (!foundRefs.contains(schemaName)) {
+                foundRefs.add(schemaName);
+                Schema schemaDef = fullSpec.getComponents().getSchemas().get(schemaName);
+                if (schemaDef != null) {
+                  nodesToVisit.add(mapper.valueToTree(schemaDef));
+                }
+              }
+            }
+          } else {
+            nodesToVisit.add(property.getValue());
+          }
+        }
       } else if (currentNode.isArray()) {
         currentNode.forEach(nodesToVisit::add);
       }

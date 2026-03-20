@@ -20,7 +20,6 @@ Thread Safety:
 """
 
 import asyncio
-import json
 import logging
 import random
 import uuid
@@ -132,7 +131,7 @@ async def start_mock_server(request: MockStartRequest) -> MockStartResponse:
     correlation_id = set_correlation_id()
 
     logger.info(
-        f"Creating mock server",
+        "Creating mock server",
         extra={"correlation_id": correlation_id, "mock_id": mock_id},
     )
 
@@ -348,7 +347,7 @@ async def delete_mock_server(mock_id: str) -> Dict[str, Any]:
         )
 
     logger.info(
-        f"Mock server deleted",
+        "Mock server deleted",
         extra={
             "correlation_id": correlation_id,
             "mock_id": mock_id,

@@ -7,10 +7,6 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from .agents.base_agent import CoordinatorAgent
-from .agents.domain_analyzer import DomainAnalyzerAgent
-from .agents.path_generator import PathGeneratorAgent
-from .agents.schema_generator import SchemaGeneratorAgent
 from ..core.logging import get_logger
 from ..schemas.ai_schemas import (
     AIResponse,
@@ -18,6 +14,10 @@ from ..schemas.ai_schemas import (
     OperationType,
     PerformanceMetrics,
 )
+from .agents.base_agent import CoordinatorAgent
+from .agents.domain_analyzer import DomainAnalyzerAgent
+from .agents.path_generator import PathGeneratorAgent
+from .agents.schema_generator import SchemaGeneratorAgent
 
 
 class AgentManager:

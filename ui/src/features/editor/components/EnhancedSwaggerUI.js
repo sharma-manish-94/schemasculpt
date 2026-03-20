@@ -159,7 +159,7 @@ function MockDataTab() {
         console.error("Failed to parse spec:", e);
       }
     }
-  }, [specText]);
+  }, [specText, selectedPath]);
 
   const generateMockData = async () => {
     setLoading(true);
@@ -339,7 +339,7 @@ function TestCasesTab() {
         console.error("Failed to parse spec:", e);
       }
     }
-  }, [specText]);
+  }, [specText, selectedPath]);
 
   const generateTestCases = async () => {
     setLoading(true);

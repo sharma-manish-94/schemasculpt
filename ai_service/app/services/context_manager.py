@@ -3,12 +3,10 @@ Context Management Service for SchemaSculpt AI.
 Provides conversation continuity, session management, and intelligent context caching.
 """
 
-import json
-import time
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
 from ..core.config import settings
@@ -192,7 +190,7 @@ class ContextManager:
             return {"error": "Session not found"}
 
         conversation = self._conversations[session_id]
-        metrics = self._performance_metrics.get(session_id)
+        _ = self._performance_metrics.get(session_id)
 
         # Analyze conversation patterns
         operation_counts = defaultdict(int)

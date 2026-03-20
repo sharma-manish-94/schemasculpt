@@ -1,0 +1,30 @@
+meta {
+  name: Attack Path Simulation
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{aiServiceUrl}}/ai/security/attack-path-simulation
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_content": "openapi: 3.0.0\ninfo:\n  title: My API\n  version: 1.0.0\npaths:\n  /users:\n    get:\n      operationId: listUsers\n      responses:\n        '200':\n          description: OK\n  /users/{id}:\n    put:\n      operationId: updateUser\n      parameters:\n        - name: id\n          in: path\n          required: true\n          schema:\n            type: string\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n      responses:\n        '200':\n          description: OK",
+    "analysis_depth": "standard",
+    "max_chain_length": 5
+  }
+}
+
+docs {
+  # Attack Path Simulation (Direct AI Service)
+
+  Runs the full AI-powered attack path simulation directly on the Python AI service.
+  Returns multi-step attack chains with severity and remediation guidance.
+}
+
+assert {
+  res.status: eq 200
+}

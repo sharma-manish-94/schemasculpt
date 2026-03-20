@@ -32,7 +32,7 @@ const RepositoryBrowser = ({ repoInfo, onFileSelect }) => {
       // Load root directory
       browseRepositoryTree(sessionId, repoInfo.owner, repoInfo.name, "", null);
     }
-  }, [repoInfo, sessionId]);
+  }, [repoInfo, sessionId, browseRepositoryTree, setCurrentRepository]);
 
   const handleFileClick = async (file) => {
     if (file.type === "dir") {

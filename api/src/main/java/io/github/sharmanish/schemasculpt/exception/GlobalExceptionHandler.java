@@ -28,6 +28,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles authorization failures (user lacks permission). Maps to HTTP 403 Forbidden.
+   *
+   * @param e the authorization exception
+   * @return 403 Forbidden response with error details
    */
   @ExceptionHandler(AuthorizationException.class)
   public ResponseEntity<ErrorResponse> handleAuthorization(AuthorizationException e) {
@@ -38,6 +41,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles resource not found errors. Maps to HTTP 404 Not Found.
+   *
+   * @param e the resource not found exception
+   * @return 404 Not Found response with error details
    */
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException e) {
@@ -48,6 +54,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles client errors (invalid input, validation failures). Maps to HTTP 400 or 409.
+   *
+   * @param e the client exception
+   * @return 400 or 409 response with error details
    */
   @ExceptionHandler(ClientException.class)
   public ResponseEntity<ErrorResponse> handleClientError(ClientException e) {
@@ -58,6 +67,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles external service failures (AI service, proxy). Maps to HTTP 502 Bad Gateway.
+   *
+   * @param e the service exception
+   * @return 502 Bad Gateway response with error details
    */
   @ExceptionHandler(ServiceException.class)
   public ResponseEntity<ErrorResponse> handleServiceError(ServiceException e) {
@@ -68,6 +80,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles Spring validation errors from @Valid annotations.
+   *
+   * @param e the method argument not valid exception
+   * @return 400 Bad Request response with validation error details
    */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
@@ -81,6 +96,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles illegal argument exceptions.
+   *
+   * @param e the illegal argument exception
+   * @return 400 Bad Request response with error details
    */
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException e) {
@@ -90,6 +108,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Handles Java security exceptions.
+   *
+   * @param e the security exception
+   * @return 403 Forbidden response
    */
   @ExceptionHandler(SecurityException.class)
   public ResponseEntity<ErrorResponse> handleSecurity(SecurityException e) {
@@ -100,6 +121,9 @@ public class GlobalExceptionHandler {
 
   /**
    * Fallback handler for unexpected exceptions.
+   *
+   * @param e the unexpected exception
+   * @return 500 Internal Server Error response
    */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGeneral(Exception e) {

@@ -200,7 +200,7 @@ function AIAssistantTab() {
 }
 
 function AIHardeningTab() {
-  const { sessionId, specText, setSpecText } = useSpecStore();
+  const { sessionId, setSpecText } = useSpecStore();
   const [selectedPath, setSelectedPath] = useState("/users");
   const [selectedMethod, setSelectedMethod] = useState("GET");
   const [rateLimit, setRateLimit] = useState("100/hour");

@@ -129,15 +129,15 @@ public class ExampleRule implements LinterRule {
         || "array".equals(type)
         ||
         // Also useful for enums and complex string patterns
-        (schema.getEnum() != null && !schema.getEnum().isEmpty())
-        || ("string".equals(type) && (schema.getPattern() != null || schema.getFormat() != null));
+        schema.getEnum() != null && !schema.getEnum().isEmpty()
+        || "string".equals(type) && (schema.getPattern() != null || schema.getFormat() != null);
   }
 
   private boolean hasExample(Schema schema) {
     return schema.getExample() != null
         ||
         // Check for examples in properties for object schemas
-        (schema.getProperties() != null && hasPropertyExamples(schema));
+        schema.getProperties() != null && hasPropertyExamples(schema);
   }
 
   private boolean hasPropertyExamples(Schema schema) {
@@ -161,17 +161,17 @@ public class ExampleRule implements LinterRule {
 
   private boolean hasResponseExample(MediaType content) {
     return content.getExample() != null
-        || (content.getExamples() != null && !content.getExamples().isEmpty())
+        || content.getExamples() != null && !content.getExamples().isEmpty()
         ||
         // Check if schema has examples
-        (content.getSchema() != null && hasExample(content.getSchema()));
+        content.getSchema() != null && hasExample(content.getSchema());
   }
 
   private boolean isSuccessResponse(String responseCode) {
     try {
       int code = Integer.parseInt(responseCode);
       return code >= 200 && code < 300;
-    } catch (NumberFormatException e) {
+    } catch (NumberFormatException _) {
       return false;
     }
   }

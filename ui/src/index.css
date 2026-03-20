@@ -1,34 +1,22 @@
-/* Global base styles - Modern Light Theme */
-* {
-  box-sizing: border-box;
-}
+/* SchemaSculpt Design System - Main Entry Point */
+@import "./styles/design-tokens.css";
+@import "./styles/reset.css";
+@import "./styles/typography.css";
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", sans-serif;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  color: #334155;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* Layout styles */
+@import "./styles/layouts/three-panel.css";
+@import "./styles/layouts/header.css";
+
+/* Component styles */
+@import "./styles/components/buttons.css";
+@import "./styles/components/forms.css";
+@import "./styles/components/cards.css";
+@import "./styles/components/panels.css";
+@import "./styles/components/badges.css";
+@import "./styles/components/tabs.css";
+@import "./styles/components/tables.css";
 
 #root {
   height: 100%;
   width: 100%;
-}
-
-code {
-  font-family:
-    "SF Mono", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
-  background-color: #f1f5f9;
-  color: #475569;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-size: 0.9em;
 }

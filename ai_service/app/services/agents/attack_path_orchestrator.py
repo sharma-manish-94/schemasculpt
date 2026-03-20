@@ -10,13 +10,16 @@ specialized knowledge bases (Attacker KB + Governance KB) throughout the analysi
 
 import hashlib
 import logging
+import os
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Dict, List, Optional
 
 from ...schemas.attack_path_schemas import (
+    AttackChain,
     AttackPathAnalysisReport,
     AttackPathAnalysisRequest,
     AttackPathContext,
+    EnrichedSecurityFindingsRequest,
 )
 from ..rag_service import RAGService
 from .security_reporter_agent import SecurityReporterAgent
@@ -24,6 +27,20 @@ from .threat_modeling_agent import ThreatModelingAgent
 from .vulnerability_scanner_agent import VulnerabilityScannerAgent
 
 logger = logging.getLogger(__name__)
+
+
+def _step_type_to_vuln(step_type: str) -> str:
+    """Map AttackStepType enum values to RepoMind vulnerability type names."""
+    mapping = {
+        "reconnaissance": "information_disclosure",
+        "initial_access": "broken_authentication",
+        "privilege_escalation": "broken_function_level_authorization",
+        "data_exfiltration": "data_exposure",
+        "lateral_movement": "bola",
+        "persistence": "broken_authentication",
+        "defense_evasion": "broken_authentication",
+    }
+    return mapping.get(str(step_type).lower(), str(step_type).lower())
 
 
 class AttackPathOrchestrator:
@@ -46,16 +63,13 @@ class AttackPathOrchestrator:
         Args:
             llm_service: LLM service for agents that need it
         """
-        # Initialize shared RAG service for all agents
         logger.info("[AttackPathOrchestrator] Initializing RAG service...")
         self.rag_service = RAGService()
 
-        # Initialize agents with RAG support
         self.scanner_agent = VulnerabilityScannerAgent()
         self.threat_agent = ThreatModelingAgent(llm_service, self.rag_service)
         self.reporter_agent = SecurityReporterAgent(llm_service, self.rag_service)
 
-        # Log RAG availability
         if self.rag_service.is_available():
             attacker_kb_status = (
                 "✓" if self.rag_service.attacker_kb_available() else "✗"
@@ -71,8 +85,137 @@ class AttackPathOrchestrator:
             logger.warning(
                 "[AttackPathOrchestrator] RAG service not available. Operating in basic mode."
             )
-
         logger.info("[AttackPathOrchestrator] Initialized with all agents")
+
+    async def run_analysis_from_enriched_findings(
+        self, request: EnrichedSecurityFindingsRequest
+    ) -> AttackPathAnalysisReport:
+        """
+        Run Code-Aware attack path analysis from findings already enriched with code context.
+        """
+        logger.info(
+            "[AttackPathOrchestrator] Starting Code-Aware analysis from enriched findings"
+        )
+        start_time = datetime.utcnow()
+
+        try:
+            # Initialize context with the enriched findings
+            context = AttackPathContext(
+                goal="Find critical multi-step attack paths based on code-aware findings",
+                spec={},  # Spec is not needed as findings are pre-computed
+                spec_hash="enriched-analysis",
+                individual_vulnerabilities=[
+                    f.original_finding for f in request.findings
+                ],
+                code_context_map={
+                    f.original_finding.endpoint: f.code_context
+                    for f in request.findings
+                    if f.original_finding.endpoint and f.code_context
+                },
+                current_stage="initialized",
+                progress_percentage=0.0,
+                current_activity="Initializing code-aware analysis...",
+            )
+            context.stages_completed.append("scanning")  # Skip scanning stage
+
+            logger.info(
+                f"[AttackPathOrchestrator] MCP Context created: {context.context_id}"
+            )
+
+            # STAGE 1 is SKIPPED (Vulnerability Scanning)
+            logger.info(
+                "[AttackPathOrchestrator] Stage 1: Skipped (using pre-computed findings)"
+            )
+            context.progress_percentage = 33.0
+
+            # STAGE 2: Threat Modeling (Attack Chain Discovery)
+            logger.info("[AttackPathOrchestrator] Stage 2: Threat Modeling")
+            context.current_stage = "analyzing_chains"
+            context.current_activity = "Analyzing attack chains with code context..."
+            context.progress_percentage = 35.0
+
+            threat_task = {
+                "task_type": "threat_modeling",
+                "max_chain_length": request.max_chain_length,
+                "analysis_depth": request.analysis_depth,
+                "is_enriched": True,
+            }
+            threat_result = await self.threat_agent.execute(threat_task, context)
+
+            if not threat_result.get("success"):
+                logger.warning(
+                    f"Threat modeling had issues: {threat_result.get('error')}"
+                )
+
+            logger.info(
+                f"Threat agent found {len(context.attack_chains)} attack chains"
+            )
+
+            # STAGE 2.5: RepoMind Code Validation (optional, non-blocking)
+            repo_name = getattr(request, "repo_name", None)
+            if (
+                context.attack_chains
+                and os.environ.get("REPOMIND_ENABLED", "false").lower() == "true"
+            ):
+                logger.info(
+                    "[AttackPathOrchestrator] Stage 2.5: RepoMind Code Validation"
+                )
+                context.current_activity = (
+                    "Validating attack chains against source code..."
+                )
+                chain_validations = await self._validate_chains_with_repomind(
+                    context.attack_chains, repo_name
+                )
+                if chain_validations:
+                    context.code_context_map["_chain_validations"] = chain_validations
+                    confirmed_count = sum(
+                        1
+                        for v in chain_validations.values()
+                        if v.get("overall_verdict")
+                        in ("FULLY_EXPLOITABLE", "PARTIALLY_EXPLOITABLE")
+                    )
+                    logger.info(
+                        f"[RepoMind] {confirmed_count}/{len(chain_validations)} chains "
+                        "have code-confirmed exploitability"
+                    )
+
+            # STAGE 3: Report Generation
+            logger.info("[AttackPathOrchestrator] Stage 3: Report Generation")
+            context.current_stage = "reporting"
+            context.current_activity = "Generating code-aware security report..."
+            context.progress_percentage = 75.0
+
+            reporter_task = {
+                "task_type": "generate_report",
+                "analysis_depth": request.analysis_depth,
+                "is_enriched": True,
+            }
+            reporter_result = await self.reporter_agent.execute(reporter_task, context)
+
+            if not reporter_result.get("success"):
+                raise Exception(f"Reporter failed: {reporter_result.get('error')}")
+
+            report: AttackPathAnalysisReport = reporter_result["attack_path_report"]
+            logger.info(
+                f"Analysis complete! Risk: {report.risk_level}, Score: {report.overall_security_score:.1f}/100"
+            )
+
+            # Attach RepoMind chain validations to the report so the UI can show badges
+            chain_validations = context.code_context_map.get("_chain_validations")
+            if chain_validations:
+                report.chain_validations = chain_validations
+
+            total_time = (datetime.utcnow() - start_time).total_seconds() * 1000
+            report.execution_time_ms = total_time
+
+            return report
+
+        except Exception as e:
+            logger.error(
+                f"[AttackPathOrchestrator] Critical error in enriched analysis: {e}",
+                exc_info=True,
+            )
+            raise
 
     async def run_attack_path_analysis(
         self,
@@ -81,23 +224,11 @@ class AttackPathOrchestrator:
     ) -> AttackPathAnalysisReport:
         """
         Run complete attack path simulation analysis
-
-        Args:
-            request: Analysis request with spec and parameters
-            progress_callback: Optional callback for progress updates (for WebSocket)
-                              Signature: async def callback(stage: str, progress: float, message: str)
-
-        Returns:
-            AttackPathAnalysisReport with all findings
-
-        Raises:
-            Exception if any stage fails critically
         """
         logger.info("[AttackPathOrchestrator] Starting attack path analysis")
         start_time = datetime.utcnow()
 
         try:
-            # Parse the spec
             import json
 
             import yaml
@@ -107,10 +238,7 @@ class AttackPathOrchestrator:
             except json.JSONDecodeError:
                 spec = yaml.safe_load(request.spec_text)
 
-            # Generate spec hash for caching
             spec_hash = hashlib.sha256(request.spec_text.encode()).hexdigest()
-
-            # Initialize MCP context
             context = AttackPathContext(
                 goal="Find critical multi-step attack paths",
                 spec=spec,
@@ -124,7 +252,6 @@ class AttackPathOrchestrator:
                 f"[AttackPathOrchestrator] MCP Context created: {context.context_id}"
             )
 
-            # Send initial progress
             if progress_callback:
                 await progress_callback(
                     context.current_stage,
@@ -132,9 +259,7 @@ class AttackPathOrchestrator:
                     context.current_activity,
                 )
 
-            # ====================================================================
             # STAGE 1: Vulnerability Scanning
-            # ====================================================================
             logger.info("[AttackPathOrchestrator] Stage 1: Vulnerability Scanning")
             context.current_stage = "scanning"
             context.current_activity = "Scanning for security vulnerabilities..."
@@ -154,8 +279,7 @@ class AttackPathOrchestrator:
                 raise Exception(f"Scanner failed: {scanner_result.get('error')}")
 
             logger.info(
-                f"[AttackPathOrchestrator] Scanner found "
-                f"{len(context.individual_vulnerabilities)} vulnerabilities"
+                f"Scanner found {len(context.individual_vulnerabilities)} vulnerabilities"
             )
 
             if progress_callback:
@@ -165,9 +289,7 @@ class AttackPathOrchestrator:
                     f"Found {len(context.individual_vulnerabilities)} vulnerabilities",
                 )
 
-            # ====================================================================
             # STAGE 2: Threat Modeling (Attack Chain Discovery)
-            # ====================================================================
             logger.info("[AttackPathOrchestrator] Stage 2: Threat Modeling")
             context.current_stage = "analyzing_chains"
             context.current_activity = "Analyzing attack chains..."
@@ -189,14 +311,11 @@ class AttackPathOrchestrator:
 
             if not threat_result.get("success"):
                 logger.warning(
-                    f"[AttackPathOrchestrator] Threat modeling had issues: "
-                    f"{threat_result.get('error')}"
+                    f"Threat modeling had issues: {threat_result.get('error')}"
                 )
-                # Continue anyway - we can still report isolated vulnerabilities
 
             logger.info(
-                f"[AttackPathOrchestrator] Threat agent found "
-                f"{len(context.attack_chains)} attack chains"
+                f"Threat agent found {len(context.attack_chains)} attack chains"
             )
 
             if progress_callback:
@@ -206,9 +325,11 @@ class AttackPathOrchestrator:
                     f"Found {len(context.attack_chains)} attack chains",
                 )
 
-            # ====================================================================
+            # STAGE 2.5: RepoMind Code Validation (optional, non-blocking)
+            repo_name = getattr(request, "repo_name", None)
+            await self._run_repomind_stage(context, repo_name, progress_callback)
+
             # STAGE 3: Report Generation
-            # ====================================================================
             logger.info("[AttackPathOrchestrator] Stage 3: Report Generation")
             context.current_stage = "reporting"
             context.current_activity = "Generating security report..."
@@ -231,32 +352,144 @@ class AttackPathOrchestrator:
                 raise Exception(f"Reporter failed: {reporter_result.get('error')}")
 
             report: AttackPathAnalysisReport = reporter_result["attack_path_report"]
-
             logger.info(
-                f"[AttackPathOrchestrator] Analysis complete! "
-                f"Risk: {report.risk_level}, Score: {report.overall_security_score:.1f}/100"
+                f"Analysis complete! Risk: {report.risk_level}, Score: {report.overall_security_score:.1f}/100"
             )
 
-            # Final progress update
+            # Attach RepoMind chain validations to the report so the UI can show badges
+            chain_validations = context.code_context_map.get("_chain_validations")
+            if chain_validations:
+                report.chain_validations = chain_validations
+
             if progress_callback:
                 await progress_callback(
                     "completed", 100.0, "Attack path analysis complete!"
                 )
 
-            # Calculate total execution time
             total_time = (datetime.utcnow() - start_time).total_seconds() * 1000
             report.execution_time_ms = total_time
-
             return report
 
         except Exception as e:
             logger.error(f"[AttackPathOrchestrator] Critical error: {e}", exc_info=True)
-
-            # Send error progress update
             if progress_callback:
                 await progress_callback("error", 0.0, f"Analysis failed: {str(e)}")
-
             raise
+
+    async def _run_repomind_stage(
+        self,
+        context: AttackPathContext,
+        repo_name: Optional[str],
+        progress_callback: Optional[callable],
+    ) -> None:
+        """Run optional Stage 2.5: validate attack chains against source code via RepoMind."""
+        if not context.attack_chains:
+            return
+        if os.environ.get("REPOMIND_ENABLED", "false").lower() != "true":
+            return
+
+        logger.info("[AttackPathOrchestrator] Stage 2.5: RepoMind Code Validation")
+        context.current_activity = "Validating attack chains against source code..."
+        if progress_callback:
+            await progress_callback(
+                "validating_code",
+                context.progress_percentage,
+                context.current_activity,
+            )
+
+        chain_validations = await self._validate_chains_with_repomind(
+            context.attack_chains, repo_name
+        )
+        if chain_validations:
+            context.code_context_map["_chain_validations"] = chain_validations
+            confirmed_count = sum(
+                1
+                for v in chain_validations.values()
+                if v.get("overall_verdict")
+                in ("FULLY_EXPLOITABLE", "PARTIALLY_EXPLOITABLE")
+            )
+            logger.info(
+                f"[RepoMind] {confirmed_count}/{len(chain_validations)} chains "
+                "have code-confirmed exploitability"
+            )
+
+    async def _validate_chains_with_repomind(
+        self,
+        chains: List[AttackChain],
+        repo_name: Optional[str],
+    ) -> Dict[str, Dict]:
+        """
+        Validate AI-generated attack chains against actual source code via RepoMind.
+
+        For each chain, calls RepoMind's validate_attack_chain tool which:
+        - Finds the code handler for each attack step (correlate_spec_to_code)
+        - Checks vulnerability patterns vs mitigations in the code
+        - Returns per-step verdicts: CODE_CONFIRMED / CODE_DISPUTED / PARTIAL / UNVERIFIABLE
+
+        Returns a dict mapping chain_id → validation result dict.
+        Non-blocking: logs and returns empty dict on any error.
+        """
+        from ..repomind_client import RepoMindClient
+
+        results: Dict[str, Dict] = {}
+
+        try:
+            async with RepoMindClient() as client:
+                for chain in chains:
+                    # Convert AttackChain steps to the format expected by validate_attack_chain
+                    raw_steps = []
+                    for step in chain.steps:
+                        # Parse "GET /users/{id}" from the combined endpoint field
+                        endpoint = step.endpoint or ""
+                        method = step.http_method or ""
+                        path = endpoint
+                        if " " in endpoint and not method:
+                            parts = endpoint.split(" ", 1)
+                            method, path = parts[0], parts[1]
+                        elif method and not path.startswith("/"):
+                            path = endpoint  # endpoint is already the path
+
+                        raw_steps.append(
+                            {
+                                "step_number": step.step_number,
+                                "endpoint": f"{method} {path}".strip(),
+                                "method": method,
+                                "path": path,
+                                # Map AttackStepType to vulnerability type names
+                                "vulnerability_type": _step_type_to_vuln(
+                                    step.step_type
+                                ),
+                                "description": step.description,
+                                "owasp": (
+                                    chain.owasp_categories[0].value
+                                    if chain.owasp_categories
+                                    else ""
+                                ),
+                            }
+                        )
+
+                    try:
+                        result = await client.validate_attack_chain(
+                            attack_chain=raw_steps,
+                            repo_name=repo_name,
+                            chain_id=chain.chain_id,
+                            chain_description=chain.name,
+                        )
+                        results[chain.chain_id] = result
+                        logger.info(
+                            f"[RepoMind] Chain '{chain.name}': "
+                            f"{result.get('overall_verdict', 'unknown')} "
+                            f"(score={result.get('exploitability_score', 0):.2f})"
+                        )
+                    except Exception as exc:
+                        logger.warning(
+                            f"[RepoMind] Chain validation failed for '{chain.chain_id}': {exc}"
+                        )
+
+        except Exception as exc:
+            logger.warning(f"[RepoMind] Code validation stage skipped: {exc}")
+
+        return results
 
     def get_analysis_stages(self) -> Dict[str, str]:
         """Get descriptions of all analysis stages for UI display"""

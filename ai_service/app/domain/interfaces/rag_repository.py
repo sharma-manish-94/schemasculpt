@@ -74,7 +74,6 @@ class IRAGRepository(ABC):
         Returns:
             RAGQueryResult containing matching documents and similarity scores.
         """
-        pass
 
     @abstractmethod
     async def add_documents(
@@ -98,7 +97,6 @@ class IRAGRepository(ABC):
         Returns:
             Number of documents added.
         """
-        pass
 
     @abstractmethod
     async def delete_documents(
@@ -118,7 +116,6 @@ class IRAGRepository(ABC):
         Returns:
             Number of documents deleted.
         """
-        pass
 
     @abstractmethod
     async def get_collections(self) -> List[str]:
@@ -128,7 +125,6 @@ class IRAGRepository(ABC):
         Returns:
             List of collection names.
         """
-        pass
 
     @abstractmethod
     async def get_collection_stats(self, collection: str) -> Dict[str, Any]:
@@ -141,7 +137,6 @@ class IRAGRepository(ABC):
         Returns:
             Dictionary with collection statistics (document count, etc.).
         """
-        pass
 
     @abstractmethod
     def is_available(self) -> bool:
@@ -151,7 +146,6 @@ class IRAGRepository(ABC):
         Returns:
             True if available, False otherwise.
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -161,4 +155,3 @@ class IRAGRepository(ABC):
         Returns:
             True if healthy, False otherwise.
         """
-        pass

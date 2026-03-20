@@ -1,0 +1,25 @@
+meta {
+  name: Delete Session
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Delete Session
+
+  Deletes the editor session and frees server-side resources.
+}
+
+assert {
+  res.status: eq 204
+}

@@ -3,18 +3,11 @@ LLM Adapter Service - Provides backward compatibility with existing LLMService i
 Uses the new provider abstraction layer while maintaining the same API.
 """
 
-import time
 from typing import Any, Dict, List, Optional
 
 from ..core.exceptions import LLMError
 from ..core.logging import get_logger
 from ..providers.provider_factory import get_llm_provider
-from ..schemas.ai_schemas import (
-    AIRequest,
-    AIResponse,
-    OperationType,
-    PerformanceMetrics,
-)
 
 logger = get_logger("llm_adapter")
 

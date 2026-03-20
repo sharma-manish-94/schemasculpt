@@ -1,0 +1,22 @@
+meta {
+  name: RAG Status
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{aiServiceUrl}}/ai/rag/status
+  body: none
+  auth: none
+}
+
+docs {
+  # RAG Status
+
+  Returns the status of the RAG (Retrieval-Augmented Generation) knowledge base,
+  including document count, vector store stats, and readiness.
+}
+
+assert {
+  res.status: eq 200
+}

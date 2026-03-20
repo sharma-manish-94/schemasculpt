@@ -1,0 +1,22 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{aiServiceUrl}}/ai/health
+  body: none
+  auth: none
+}
+
+docs {
+  # AI Service Health Check
+
+  Checks if the Python AI service is running and all agents are healthy.
+  Hits the AI service directly (port 8000), not the Java API gateway.
+}
+
+assert {
+  res.status: eq 200
+}

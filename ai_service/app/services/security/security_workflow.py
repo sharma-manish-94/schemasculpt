@@ -218,9 +218,6 @@ class SecurityAnalysisWorkflow:
             1 for i in all_issues if i.severity == SecuritySeverity.CRITICAL
         )
         high_count = sum(1 for i in all_issues if i.severity == SecuritySeverity.HIGH)
-        medium_count = sum(
-            1 for i in all_issues if i.severity == SecuritySeverity.MEDIUM
-        )
 
         # Get API info
         info = spec.get("info", {})

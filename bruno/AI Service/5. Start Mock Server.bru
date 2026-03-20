@@ -1,0 +1,38 @@
+meta {
+  name: Start Mock Server
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{aiServiceUrl}}/mock/start
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_content": "openapi: 3.0.0\ninfo:\n  title: Mock API\n  version: 1.0.0\npaths:\n  /pets:\n    get:\n      operationId: listPets\n      responses:\n        '200':\n          description: A list of pets\n          content:\n            application/json:\n              schema:\n                type: array\n                items:\n                  type: object\n                  properties:\n                    id: {type: integer}\n                    name: {type: string}"
+  }
+}
+
+docs {
+  # Start Mock Server
+
+  Starts a mock server for the given OpenAPI spec. Returns a mockId.
+  Use the mockId to make requests to the mock endpoints: {{aiServiceUrl}}/mock/{mockId}/...
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const mockId = res.body.mock_id || res.body.mockId;
+    if (mockId) {
+      bru.setEnvVar("mockId", mockId);
+      console.log("Mock server started:", mockId);
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}

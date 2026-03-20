@@ -11,6 +11,7 @@ import {
   readFile,
   getConnectionStatus,
 } from "../../api/repositoryService";
+import { projectAPI } from "../../api/projectAPI";
 
 export const createRepositorySlice = (set, get) => ({
   // --- STATE ---
@@ -38,7 +39,31 @@ export const createRepositorySlice = (set, get) => ({
   oauthInProgress: false,
   accessToken: null,
 
+  // Local repository state
+  localRepositoryPath: null,
+  isLinkingLocalRepo: false,
+  linkLocalRepoError: null,
+
   // --- ACTIONS ---
+
+  /**
+   * Link a local repository to the current project.
+   */
+  linkLocalRepository: async (projectId, path) => {
+    set({ isLinkingLocalRepo: true, linkLocalRepoError: null });
+    try {
+      const updatedProject = await projectAPI.linkRepository(projectId, path);
+      set({
+        isLinkingLocalRepo: false,
+        localRepositoryPath: updatedProject.repositoryPath,
+      });
+      return { success: true, project: updatedProject };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      set({ isLinkingLocalRepo: false, linkLocalRepoError: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
 
   /**
    * Connect to a repository provider

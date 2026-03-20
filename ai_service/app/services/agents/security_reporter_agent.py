@@ -433,7 +433,7 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
             most_critical = sorted_chains[0] if sorted_chains else None
 
         if risk_level == "CRITICAL":
-            base = f"Our security assessment has identified CRITICAL vulnerabilities in this API that pose an immediate risk to your organization. "
+            base = "Our security assessment has identified CRITICAL vulnerabilities in this API that pose an immediate risk to your organization. "
 
             if most_critical:
                 attack_explanation = (
@@ -446,15 +446,13 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                     f"together to compromise the API. "
                 )
 
-            recommendation = (
-                f"These vulnerabilities could result in unauthorized data access, privilege escalation, or complete "
-                f"system compromise. Recommendation: Do not deploy this API to production until all critical issues "
-                f"are resolved and verified through security testing."
-            )
+            recommendation = """These vulnerabilities could result in unauthorized data access, privilege escalation, or complete
+                system compromise. Recommendation: Do not deploy this API to production until all critical issues
+                are resolved and verified through security testing."""
             return base + attack_explanation + recommendation
 
         elif risk_level == "HIGH":
-            base = f"Our assessment identified HIGH-severity security issues requiring prompt attention. "
+            base = "Our assessment identified HIGH-severity security issues requiring prompt attention. "
 
             if most_critical:
                 attack_explanation = (
@@ -465,14 +463,14 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                 attack_explanation = f"We found {chain_count} attack chain(s) and {vuln_count} individual vulnerabilities. "
 
             recommendation = (
-                f"While not immediately critical, these issues significantly increase your risk exposure to data "
-                f"breaches and compliance violations. Recommendation: Fix all high-priority issues within 7-14 days "
-                f"of deployment and conduct security verification testing."
+                "While not immediately critical, these issues significantly increase your risk exposure to data "
+                "breaches and compliance violations. Recommendation: Fix all high-priority issues within 7-14 days "
+                "of deployment and conduct security verification testing."
             )
             return base + attack_explanation + recommendation
 
         else:
-            base = f"Our security analysis shows this API has moderate security concerns that should be addressed. "
+            base = "Our security analysis shows this API has moderate security concerns that should be addressed. "
 
             if most_critical:
                 attack_explanation = (
@@ -480,13 +478,11 @@ Write ONLY the executive summary text. No JSON, no markdown headers, no lists - 
                     f"of exploitation ({most_critical.complexity}) reduces immediate risk. "
                 )
             else:
-                attack_explanation = f"We found {chain_count} attack chain(s) that could be exploited under specific conditions. "
+                attack_explanation = "We found {chain_count} attack chain(s) that could be exploited under specific conditions. "
 
-            recommendation = (
-                f"These vulnerabilities are manageable and should be remediated to strengthen your security posture. "
-                f"Recommendation: Include all identified fixes in your next development cycle and establish ongoing "
-                f"security testing practices."
-            )
+            recommendation = """These vulnerabilities are manageable and should be remediated to strengthen your security posture.
+                Recommendation: Include all identified fixes in your next development cycle and establish ongoing
+                security testing practices."""
             return base + attack_explanation + recommendation
 
     def _generate_top_risks(self, attack_chains: List[AttackChain]) -> List[str]:

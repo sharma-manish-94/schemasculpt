@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Service for managing user projects */
+/** Service for managing user projects. */
 @SuppressWarnings("checkstyle:SummaryJavadoc")
 @Service
 @Slf4j
@@ -21,14 +21,60 @@ public class ProjectService {
 
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
+  private final RepoMindService repoMindService;
 
   @SuppressWarnings("checkstyle:MissingJavadocMethod")
-  public ProjectService(ProjectRepository projectRepository, UserRepository userRepository) {
+  public ProjectService(
+      ProjectRepository projectRepository,
+      UserRepository userRepository,
+      RepoMindService repoMindService) {
     this.projectRepository = projectRepository;
     this.userRepository = userRepository;
+    this.repoMindService = repoMindService;
   }
 
-  /** Create a new project for a user */
+  /**
+   * Link a source code repository to a project and trigger indexing.
+   *
+   * @param projectId the ID of the project
+   * @param userId the ID of the user
+   * @param repoPath the repository path to link
+   * @return the updated project entity
+   */
+  @Transactional
+  public Project linkRepository(Long projectId, Long userId, String repoPath) {
+    log.info("Linking repository '{}' to project {} for user {}", repoPath, projectId, userId);
+
+    Project project = getProject(projectId, userId);
+    project.setRepositoryPath(repoPath);
+
+    Project updatedProject = projectRepository.save(project);
+    log.info("Updated project {} with repository path", updatedProject.getId());
+
+    // Trigger indexing asynchronously - subscribe to handle the Mono
+    // Errors are logged inside RepoMindServiceImpl; here we just ensure the subscription happens
+    repoMindService
+        .triggerRepoIndex(repoPath, project.getName())
+        .subscribe(
+            _ -> { },
+            error ->
+                log.error(
+                    "Failed to trigger repository indexing for project {}: {}",
+                    projectId,
+                    error.getMessage()));
+
+    return updatedProject;
+  }
+
+  /**
+   * Create a new project for a user.
+   *
+   * @param userId the ID of the user
+   * @param name the project name
+   * @param description the project description
+   * @param isPublic whether the project is public
+   * @return the created project entity
+   */
   @Transactional
   public Project createProject(Long userId, String name, String description, Boolean isPublic) {
     log.info("Creating project '{}' for user {}", name, userId);
@@ -53,14 +99,28 @@ public class ProjectService {
     return savedProject;
   }
 
-  /** Get all projects for a user */
+  /**
+   * Get all projects for a user.
+   *
+   * @param userId the ID of the user
+   * @return list of projects ordered by creation date descending
+   */
   @Transactional(readOnly = true)
   public List<Project> getUserProjects(Long userId) {
     log.debug("Fetching projects for user {}", userId);
     return projectRepository.findByUserIdOrderByCreatedAtDesc(userId);
   }
 
-  /** Update project details */
+  /**
+   * Update project details.
+   *
+   * @param projectId the ID of the project
+   * @param userId the ID of the user
+   * @param name new project name (null to keep existing)
+   * @param description new project description (null to keep existing)
+   * @param isPublic new visibility setting (null to keep existing)
+   * @return the updated project entity
+   */
   @Transactional
   public Project updateProject(
       Long projectId, Long userId, String name, String description, Boolean isPublic) {
@@ -87,7 +147,13 @@ public class ProjectService {
     return projectRepository.save(project);
   }
 
-  /** Get a specific project by ID */
+  /**
+   * Get a specific project by ID.
+   *
+   * @param projectId the ID of the project
+   * @param userId the ID of the requesting user
+   * @return the project entity if found and accessible
+   */
   @SuppressWarnings({"checkstyle:Indentation", "checkstyle:FileTabCharacter"})
   @Transactional(readOnly = true)
   public Project getProject(Long projectId, Long userId) {
@@ -105,7 +171,12 @@ public class ProjectService {
     return project;
   }
 
-  /** Delete a project and all its specifications */
+  /**
+   * Delete a project and all its specifications.
+   *
+   * @param projectId the ID of the project to delete
+   * @param userId the ID of the user requesting deletion
+   */
   @Transactional
   public void deleteProject(Long projectId, Long userId) {
     log.info("Deleting project {} for user {}", projectId, userId);

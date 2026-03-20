@@ -1,0 +1,26 @@
+meta {
+  name: Zombie APIs
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/zombie-apis
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Zombie APIs
+
+  Detects endpoints and schemas that are defined but never referenced —
+  potential dead code or forgotten shadow APIs.
+}
+
+assert {
+  res.status: eq 200
+}

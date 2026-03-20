@@ -313,7 +313,7 @@ public class QuickFixService {
                   try {
                     int statusCode = Integer.parseInt(code);
                     return statusCode >= 200 && statusCode < 400;
-                  } catch (NumberFormatException e) {
+                  } catch (NumberFormatException _) {
                     return false;
                   }
                 });
@@ -459,7 +459,7 @@ public class QuickFixService {
           }
           return "Response";
       }
-    } catch (NumberFormatException e) {
+    } catch (NumberFormatException _) {
       return "Response";
     }
   }

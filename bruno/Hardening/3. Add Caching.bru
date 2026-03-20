@@ -1,0 +1,32 @@
+meta {
+  name: Add Caching
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/hardening/operations/caching
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "defaultTtlSeconds": 300,
+    "applyToGetEndpoints": true
+  }
+}
+
+docs {
+  # Add Caching
+
+  Adds cache-control response headers to GET endpoints in the spec.
+}
+
+assert {
+  res.status: eq 200
+}

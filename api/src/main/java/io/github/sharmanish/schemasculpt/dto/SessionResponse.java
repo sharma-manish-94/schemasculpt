@@ -1,3 +1,3 @@
 package io.github.sharmanish.schemasculpt.dto;
 
-public record SessionResponse(String sessionId) {}
+public record SessionResponse(String sessionId, Long projectId) {}

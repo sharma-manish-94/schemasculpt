@@ -17,9 +17,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- * Entity tracking test data generation history for analytics.
- */
+/** Entity tracking test data generation history for analytics. */
 @Entity
 @Table(name = "test_data_generation_history")
 @Getter
@@ -67,8 +65,12 @@ public class TestDataGenerationHistory {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TestDataGenerationHistory that = (TestDataGenerationHistory) o;
     return id != null && Objects.equals(id, that.id);
   }

@@ -4,15 +4,13 @@ Connects dots between linter findings to detect higher-order patterns.
 """
 
 import json
-from typing import Any, Dict, List
+from typing import Any, List
 
 from ..core.logging import get_logger
 from ..schemas.meta_analysis_schemas import (
     AIInsight,
     AIMetaAnalysisRequest,
     AIMetaAnalysisResponse,
-    ValidationError,
-    ValidationSuggestion,
 )
 
 logger = get_logger("meta_analysis_service")

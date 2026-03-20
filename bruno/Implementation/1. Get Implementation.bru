@@ -1,0 +1,30 @@
+meta {
+  name: Get Implementation
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/implementations/projects/{{projectId}}/operations?operationId=getUser
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get Implementation
+
+  Fetches the source code implementation for a given operationId from the linked repository via RepoMind.
+  Requires a local repository to be linked to the project first (see Projects > Link Repository).
+
+  **operationId**: The OpenAPI operationId of the endpoint (e.g. getUser, createOrder).
+
+  Returns: { filePath, content, startLine, language, metrics }
+}
+
+assert {
+  res.status: eq 200
+}

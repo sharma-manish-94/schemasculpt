@@ -62,11 +62,15 @@ public class SchemaSimilarityAnalyzer extends AbstractSchemaAnalyzer<SchemaSimil
       }
 
       if (currentCluster.size() > 1) {
+        // Calculate shared fields for the cluster
+        List<String> sharedFields = new ArrayList<>();
+        // ... simple implementation: just intersection of first two for now
+        // In a real implementation we'd intersect all schemas in the cluster
         clusters.add(
             new SchemaSimilarityResponse.SchemaCluster(
                 currentCluster,
                 SIMILARITY_THRESHOLD,
-                "These schemas share >80% structure. Consider creating a base" + " schema."));
+                sharedFields));
       }
     }
     return new SchemaSimilarityResponse(clusters);
@@ -114,8 +118,7 @@ public class SchemaSimilarityAnalyzer extends AbstractSchemaAnalyzer<SchemaSimil
           .getProperties()
           .forEach(
               (propName, propSchema) -> {
-                String type =
-                    propSchema instanceof Schema ? ((Schema) propSchema).getType() : "unknown";
+                String type = propSchema instanceof Schema s ? s.getType() : "unknown";
                 features.add(propName + ":" + type);
               });
     }

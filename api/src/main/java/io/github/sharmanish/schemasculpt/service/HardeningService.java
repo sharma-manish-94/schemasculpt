@@ -34,6 +34,13 @@ public class HardeningService {
     this.sessionService = sessionService;
   }
 
+  /**
+   * Harden an API operation with security patterns.
+   *
+   * @param sessionId the session ID
+   * @param request the hardenening request specifying operation and patterns
+   * @return hardening response with applied changes
+   */
   public HardeningResponse hardenOperation(String sessionId, HardenOperationRequest request) {
     log.info(
         "Hardening operation {} {} with patterns: {}",
@@ -243,7 +250,7 @@ public class HardeningService {
     if (!"GET"
         .equalsIgnoreCase(
             operation.getTags() != null && !operation.getTags().isEmpty()
-                ? operation.getTags().get(0)
+                ? operation.getTags().getFirst()
                 : "GET")) {
       // Only apply caching to GET operations primarily
       return;
@@ -307,7 +314,7 @@ public class HardeningService {
     // Add idempotency key for POST/PUT/PATCH operations
     String method =
         operation.getTags() != null && !operation.getTags().isEmpty()
-            ? operation.getTags().get(0)
+            ? operation.getTags().getFirst()
             : "";
 
     if (List.of("POST", "PUT", "PATCH").contains(method.toUpperCase(Locale.ROOT))) {

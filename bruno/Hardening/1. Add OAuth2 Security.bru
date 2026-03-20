@@ -1,0 +1,36 @@
+meta {
+  name: Add OAuth2 Security
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/hardening/operations/oauth2
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "authorizationUrl": "https://auth.example.com/oauth2/authorize",
+    "tokenUrl": "https://auth.example.com/oauth2/token",
+    "scopes": {
+      "read": "Read access",
+      "write": "Write access"
+    }
+  }
+}
+
+docs {
+  # Add OAuth2 Security
+
+  Adds OAuth2 security scheme to the spec and applies it to all public endpoints.
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,5 +1,4 @@
 import { useSpecStore } from "../../../store/specStore";
-import { useAuth } from "../../../contexts/AuthContext";
 import { projectAPI } from "../../../api/projectAPI";
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";

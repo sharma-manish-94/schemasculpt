@@ -1,0 +1,35 @@
+meta {
+  name: Read File
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/repository/file
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "owner": "owner",
+    "repo": "repo",
+    "path": "openapi.yaml",
+    "branch": "main"
+  }
+}
+
+docs {
+  # Read File
+
+  Reads the raw content of a file from a GitHub repository.
+  Used to load an OpenAPI spec file directly from GitHub.
+}
+
+assert {
+  res.status: eq 200
+}

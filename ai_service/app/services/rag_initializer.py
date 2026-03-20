@@ -9,9 +9,8 @@ Two Specialized Knowledge Bases:
 2. Governance Knowledge Base: Risk frameworks (CVSS, DREAD), compliance (GDPR, HIPAA, PCI-DSS)
 """
 
-import asyncio
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ..core.config import settings
 from ..core.logging import get_logger
@@ -439,8 +438,7 @@ API-Specific Tactics: Mass data extraction through BOLA, pagination flaws for fu
 
     def _ingest_cvss_knowledge(self) -> Dict[str, Any]:
         """Ingest CVSS scoring framework knowledge."""
-        documents = [
-            """CVSS v3.1 - Common Vulnerability Scoring System
+        documents = ["""CVSS v3.1 - Common Vulnerability Scoring System
 
 Overview: Standardized method for rating vulnerability severity. Scores range from 0.0 to 10.0.
 
@@ -459,8 +457,7 @@ API Security Examples:
 - Broken Authentication: CVSS 9.0+ (AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H)
 - BOLA/IDOR: CVSS 7.0-8.5 depending on data sensitivity
 - SSRF with cloud metadata: CVSS 9.0+
-- Missing rate limiting: CVSS 5.0-7.0 depending on impact"""
-        ]
+- Missing rate limiting: CVSS 5.0-7.0 depending on impact"""]
 
         metadatas = [
             {"source": "CVSS v3.1", "category": "Risk Scoring", "type": "framework"},
@@ -472,8 +469,7 @@ API Security Examples:
 
     def _ingest_dread_framework(self) -> Dict[str, Any]:
         """Ingest DREAD risk assessment framework."""
-        documents = [
-            """DREAD Risk Assessment Framework
+        documents = ["""DREAD Risk Assessment Framework
 
 Overview: Microsoft risk assessment model. Mnemonic for risk rating based on five categories (1-10 scale each).
 
@@ -492,8 +488,7 @@ API Example - BOLA:
 - Exploitability: 9 (just change ID in URL)
 - Affected Users: 9 (all users)
 - Discoverability: 8 (well-known)
-DREAD Score: 8.8/10 (HIGH RISK)"""
-        ]
+DREAD Score: 8.8/10 (HIGH RISK)"""]
 
         metadatas = [
             {

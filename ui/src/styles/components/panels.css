@@ -1,0 +1,73 @@
+/* Panels - Workspace Containers */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-800);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.panel-body-flush {
+  padding: 0;
+}
+
+.panel-footer {
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  flex-shrink: 0;
+}
+
+/* Panel divider */
+.panel-divider {
+  width: 1px;
+  background: var(--border-subtle);
+  cursor: col-resize;
+  transition: background 0.15s ease;
+}
+
+.panel-divider:hover {
+  background: var(--brand-primary);
+}
+
+/* Collapsible panel */
+.panel-collapsed .panel-body {
+  display: none;
+}
+
+.panel-collapsed .panel-header {
+  border-bottom: none;
+}

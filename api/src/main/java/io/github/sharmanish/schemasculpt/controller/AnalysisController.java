@@ -1,6 +1,12 @@
 package io.github.sharmanish.schemasculpt.controller;
 
-import io.github.sharmanish.schemasculpt.dto.analysis.*;
+import io.github.sharmanish.schemasculpt.dto.analysis.AuthzMatrixResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.BlastRadiusResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.SchemaSimilarityResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.SecurityFinding;
+import io.github.sharmanish.schemasculpt.dto.analysis.SecurityFindingsRequest;
+import io.github.sharmanish.schemasculpt.dto.analysis.TaintAnalysisResponse;
+import io.github.sharmanish.schemasculpt.dto.analysis.ZombieApiResponse;
 import io.github.sharmanish.schemasculpt.dto.diff.DiffRequest;
 import io.github.sharmanish.schemasculpt.dto.diff.DiffResult;
 import io.github.sharmanish.schemasculpt.service.AnalysisService;
@@ -10,15 +16,20 @@ import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/sessions/{sessionId}/analysis")
@@ -44,6 +55,12 @@ public class AnalysisController {
     this.diffService = diffService;
   }
 
+  /**
+   * Get the reverse dependency graph for schemas in the spec.
+   *
+   * @param sessionId the session ID
+   * @return map of schema names to their dependents
+   */
   @GetMapping("/dependencies")
   public ResponseEntity<Map<String, Set<String>>> getDependencyGraph(
       @PathVariable String sessionId) {
@@ -55,6 +72,14 @@ public class AnalysisController {
     return ResponseEntity.ok(graph);
   }
 
+  /**
+   * Get the nesting depth for a specific operation.
+   *
+   * @param sessionId the session ID
+   * @param path the API path
+   * @param method the HTTP method
+   * @return map with depth value
+   */
   @GetMapping("/nesting-depth")
   public ResponseEntity<Map<String, Integer>> getNestingDepth(
       @PathVariable String sessionId, @RequestParam String path, @RequestParam String method) {
@@ -81,6 +106,15 @@ public class AnalysisController {
     return ResponseEntity.ok(Map.of("depth", depth));
   }
 
+  /**
+   * Run an AI-powered attack path simulation against the spec.
+   *
+   * @param sessionId the session ID
+   * @param analysisDepth the analysis depth level
+   * @param maxChainLength maximum attack chain length
+   * @param excludeLowSeverity whether to exclude low severity findings
+   * @return attack path simulation results
+   */
   @PostMapping("/attack-path-simulation")
   public Mono<ResponseEntity<Map<String, Object>>> runAttackPathSimulation(
       @PathVariable String sessionId,
@@ -123,6 +157,15 @@ public class AnalysisController {
             });
   }
 
+  /**
+   * Run attack path analysis using deterministic findings extracted from the spec.
+   *
+   * @param sessionId the session ID
+   * @param analysisDepth the analysis depth level
+   * @param maxChainLength maximum attack chain length
+   * @param excludeLowSeverity whether to exclude low severity findings
+   * @return attack path analysis results based on extracted findings
+   */
   @PostMapping("/attack-path-findings")
   public Mono<ResponseEntity<Map<String, Object>>> runAttackPathAnalysisFromFindings(
       @PathVariable String sessionId,
@@ -135,14 +178,20 @@ public class AnalysisController {
       return Mono.just(ResponseEntity.notFound().build());
     }
 
+    // Get spec text for AI context
+    String specText = sessionService.getSpecTextForSession(sessionId);
+    if (specText == null) {
+      return Mono.just(ResponseEntity.notFound().build());
+    }
+
     // Step 1: Extract FACTUAL security findings using deterministic Java analysis
     // This is FAST and 100% ACCURATE - no AI guessing
     java.util.List<SecurityFinding> findings = securityFindingsExtractor.extractFindings(openApi);
 
-    // Step 2: Build request with findings (NOT the full spec)
-    // This payload is tiny compared to sending the entire 5MB spec!
+    // Step 2: Build request with findings AND spec text for AI context
     SecurityFindingsRequest request =
-        new SecurityFindingsRequest(findings, analysisDepth, maxChainLength, excludeLowSeverity);
+        new SecurityFindingsRequest(
+            specText, findings, analysisDepth, maxChainLength, excludeLowSeverity);
 
     // Step 3: Send findings to AI for REASONING about attack chains
     // AI does what it's best at: Finding patterns and reasoning about security implications
@@ -174,6 +223,12 @@ public class AnalysisController {
             });
   }
 
+  /**
+   * Get the authorization matrix for the API spec.
+   *
+   * @param sessionId the session ID
+   * @return authorization matrix response
+   */
   @GetMapping("/authz-matrix")
   public ResponseEntity<AuthzMatrixResponse> getAuthzMatrix(@PathVariable String sessionId) {
     OpenAPI openApi = sessionService.getSpecForSession(sessionId);
@@ -184,6 +239,12 @@ public class AnalysisController {
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Perform taint analysis on the API spec.
+   *
+   * @param sessionId the session ID
+   * @return taint analysis response
+   */
   @GetMapping("/taint-analysis")
   public ResponseEntity<TaintAnalysisResponse> getTaintAnalysis(@PathVariable String sessionId) {
     OpenAPI openApi = sessionService.getSpecForSession(sessionId);
@@ -194,6 +255,12 @@ public class AnalysisController {
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Analyze schema similarity across the API spec.
+   *
+   * @param sessionId the session ID
+   * @return schema similarity response
+   */
   @GetMapping("/schema-similarity")
   public ResponseEntity<SchemaSimilarityResponse> getSchemaSimilarity(
       @PathVariable String sessionId) {
@@ -204,6 +271,12 @@ public class AnalysisController {
     return ResponseEntity.ok(analysisService.analyzeSchemaSimilarity(openApi));
   }
 
+  /**
+   * Detect zombie (unused) APIs in the spec.
+   *
+   * @param sessionId the session ID
+   * @return zombie API detection response
+   */
   @GetMapping("/zombie-apis")
   public ResponseEntity<ZombieApiResponse> getZombieApis(@PathVariable String sessionId) {
     OpenAPI openApi = sessionService.getSpecForSession(sessionId);
@@ -213,14 +286,27 @@ public class AnalysisController {
     return ResponseEntity.ok(analysisService.detectZombieApis(openApi));
   }
 
+  /**
+   * Analyze the blast radius of changes to a specific schema.
+   *
+   * @param schemaName the name of the schema to analyze
+   * @param sessionId the session ID
+   * @return blast radius analysis showing impact of changes to the schema
+   */
   @PostMapping("/blast-radius")
   public ResponseEntity<BlastRadiusResponse> analyzeBlastRadius(
-      @RequestParam("schemaName") String schemaName, @RequestBody String apiSpec) {
-
+      @RequestParam("schemaName") String schemaName, @PathVariable String sessionId) {
+    String apiSpec = sessionService.getSpecTextForSession(sessionId);
     BlastRadiusResponse response = analysisService.performBlastRadiusAnalysis(apiSpec, schemaName);
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Diff two OpenAPI specifications.
+   *
+   * @param request the diff request containing old and new spec content
+   * @return diff result with categorized changes
+   */
   @PostMapping("/diff")
   public ResponseEntity<DiffResult> diffSpecs(@RequestBody DiffRequest request) {
     // DiffRequest contains String oldSpec, String newSpec

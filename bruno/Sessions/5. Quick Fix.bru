@@ -1,0 +1,31 @@
+meta {
+  name: Quick Fix
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/spec/fix
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "suggestionId": "missing-response"
+  }
+}
+
+docs {
+  # Quick Fix
+
+  Applies an auto-fix for a specific validation suggestion identified by suggestionId.
+}
+
+assert {
+  res.status: eq 200
+}

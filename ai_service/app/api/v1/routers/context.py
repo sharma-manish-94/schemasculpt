@@ -80,7 +80,7 @@ async def get_session_summary(
             "session_summary": summary,
             "suggestions": suggestions,
         }
-    except Exception as e:
+    except Exception:
         logger.warning(f"Session not found: {session_id}")
         raise HTTPException(
             status_code=404,

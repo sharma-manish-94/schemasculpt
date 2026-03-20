@@ -5,7 +5,7 @@
 **Your AI-Powered Co-Pilot for Building Production-Ready APIs**
 
 [![License](https://img.shields.io/badge/License-All_Rights_Reserved-red)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
+[![Java](https://img.shields.io/badge/Java-25-orange)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4-green)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow)](https://www.python.org/)
@@ -28,6 +28,7 @@ _Transform OpenAPI specification authoring from tedious to effortless with intel
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
 - [Advanced Features](#-advanced-features)
+- [RepoMind Integration](#-repomind-integration)
 - [Documentation](#-documentation)
 - [Roadmap](#-roadmap)
 - [Contributing](#-contributing)
@@ -126,6 +127,26 @@ Use plain English to modify your specifications:
 
 The AI understands context and follows OpenAPI best practices.
 
+### 🏛️ Odysseus: Code-Aware API Analysis
+
+Bridge the gap between API design and its actual implementation. The Odysseus feature connects your OpenAPI specification directly to your source code, enabling a new dimension of validation and security analysis.
+
+#### 1. **Repository Intelligence**
+
+- **Link Local Repositories**: Connect your `SchemaSculpt` project to a local git repository to establish a single source of truth.
+- **View Implementing Code**: When you select an API endpoint in the editor, instantly see the corresponding function or method in a dedicated "Implementation" tab. No more context-switching between your editor and IDE.
+
+#### 2. **Code-Confirmed Security Findings**
+
+- **Reduce False Positives**: Security vulnerabilities identified in the API specification (e.g., potential Broken Object Level Authorization - BOLA) are automatically validated against the actual source code.
+- **Enriched Context**: Findings are augmented with code-level details like cyclomatic complexity, test coverage, and code authors, providing a holistic view of the risk.
+- **Evidence-Based Reporting**: Each confirmed finding includes a code snippet highlighting the exact location of the vulnerability, turning vague warnings into actionable issues.
+
+#### 3. **AI-Powered Remediation**
+
+- **Actionable Code Fixes**: For confirmed vulnerabilities, SchemaSculpt's AI can suggest language-specific code fixes.
+- **Visual Diff Viewer**: See a clear, side-by-side comparison of the vulnerable code and the AI-suggested fix, making it easy to understand and apply the remediation.
+
 ### ⚡ Intelligent Linting & Auto-Fix
 
 #### 11+ Built-in Linter Rules:
@@ -191,7 +212,7 @@ Each linter suggestion includes an **⚡ Auto-Fix** or **✨ AI-Fix** button:
 
 ## 🏗️ Architecture
 
-SchemaSculpt uses a **three-tier microservices architecture** optimized for AI workloads with RAG-enhanced security analysis:
+SchemaSculpt uses a **four-tier microservices architecture** that integrates API specification analysis with source code intelligence, powered by the **Odysseus** feature set.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -199,7 +220,7 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 │  React 19 • Monaco Editor • Zustand • WebSockets               │
 │  ├─ Advanced Analysis UI (Taint, AuthZ, Schema, Zombie APIs)   │
 │  ├─ Attack Path Visualization (Multi-step chain explorer)      │
-│  └─ Repository Browser (GitHub/GitLab integration via MCP)     │
+│  └─ Implementation Viewer (Code-aware analysis)                │
 └────────────────┬────────────────────────────────────────────────┘
                  │ REST API + WebSocket
                  ▼
@@ -208,74 +229,51 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 │  Java 21 • Spring Boot 4 • WebFlux • Redis Sessions            │
 │  ├─ Validation Service (swagger-parser)                        │
 │  ├─ Linter Engine (11+ rules)                                  │
-│  ├─ Session Manager (Redis)                                    │
-│  ├─ WebSocket Handler (real-time validation)                   │
-│  ├─ Security Findings Extractor (deterministic analysis)       │
-│  ├─ Analysis Controller (advanced features orchestration)      │
-│  └─ Repository Controller (spec discovery)                     │
-└────────────────┬────────────────────────────────────────────────┘
-                 │ HTTP (AI requests)
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
+│  ├─ RepoMindService (Client for Code Analysis) ───────────────┐
+│  ├─ Security Findings Extractor (deterministic)                │
+│  └─ Analysis Controller (Orchestrates all analysis)            │
+└────────────────┬──────────────────┬─────────────────────────────┘
+                 │ HTTP (AI reqs)   │ HTTP (Code context)
+                 ▼                  │
+┌──────────────────────────────────▼──────────────────────────────┐
 │                    AI Service (Python)                          │
 │  Python 3.10+ • FastAPI • Ollama • LangChain • ChromaDB        │
 │                                                                 │
-│  📊 Core Services:                                              │
-│  ├─ LLM Service (mistral, llama3, etc.)                        │
-│  ├─ Prompt Engineering (optimized for OpenAPI)                 │
-│  ├─ JSON Patch Generator (precise edits)                       │
-│  ├─ Smart Fix Service (AI + deterministic)                     │
-│  ├─ Meta-Analysis Engine (linter augmentation)                 │
-│  └─ Mock Data Generator (context-aware)                        │
+│  📊 Core Services & 🧠 RAG-Enhanced Intelligence (Unchanged)    │
 │                                                                 │
-│  🧠 RAG-Enhanced Intelligence:                                  │
-│  ├─ RAG Service (dual knowledge base architecture)             │
-│  │   ├─ Attacker KB: OWASP API Top 10, MITRE ATT&CK           │
-│  │   └─ Governance KB: CVSS, DREAD, GDPR/HIPAA/PCI-DSS        │
-│  ├─ Multi-Agent System (coordinated security analysis)         │
-│  │   ├─ Vulnerability Scanner Agent                            │
-│  │   ├─ Threat Modeling Agent (RAG-augmented)                  │
-│  │   ├─ Security Reporter Agent (RAG-augmented)                │
-│  │   └─ Attack Path Orchestrator (manages agent coordination)  │
-│  └─ Attack Chain Cache (80-90% AI call reduction)              │
-│                                                                 │
-│  🔍 Advanced Analyzers:                                         │
-│  ├─ Taint Analysis (data flow security vulnerabilities)        │
-│  ├─ Authorization Matrix (access control patterns)             │
-│  ├─ Schema Similarity (code quality & duplication)             │
-│  ├─ Zombie API Detection (shadowed/orphaned endpoints)         │
-│  └─ Comprehensive Architecture Analysis (holistic health)      │
-│                                                                 │
-│  🌐 Repository Integration:                                     │
-│  ├─ MCP Client (Model Context Protocol for repo browsing)      │
-│  └─ Repository Service (GitHub/GitLab spec discovery)          │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 ▼
-    ┌────────────────┬───────────────┬──────────────────┐
-    │                │               │                  │
-    ▼                ▼               ▼                  ▼
-┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌──────────────┐
-│ Ollama   │  │ ChromaDB │  │ Redis Cache  │  │ GitHub/      │
-│ (LLM)    │  │ (Vector  │  │ Sessions +   │  │ GitLab       │
-│ mistral/ │  │ Store)   │  │ Attack Chain │  │ Repositories │
-│ llama3   │  │          │  │ Cache        │  │ (via MCP)    │
-└──────────┘  └──────────┘  └──────────────┘  └──────────────┘
+│  🏛️ Code-Aware Intelligence (Odysseus):                         │
+│  ├─ Code-Aware Validator (Confirms spec findings in code)      │
+│  ├─ Remediation Agent (Suggests code fixes)                    │
+│  └─ RepoMind Client (Fetches code, metrics, tests) ───────────┐
+└────────────────┬──────────────────┬─────────────────────────────┘
+                 │                  │
+                 ▼                  ▼
+    ┌────────────────┬───────────┬───────────────────┬────────────┐
+    │                │           │                   │            │
+    ▼                ▼           ▼                   ▼            ▼
+┌──────────┐  ┌──────────┐  ┌───────────┐  ┌───────────────┐  ┌───────────┐
+│ Ollama   │  │ ChromaDB │  │ RepoMind  │  │ Redis Cache   │  │ GitHub/   │
+│ (LLM)    │  │ (Vector  │  │ (Code     │  │ Sessions +    │  │ GitLab    │
+│ mistral/ │  │ Store)   │  │ Analysis) │  │ Attack Chain  │  │ (via MCP) │
+│ llama3   │  │          │  │           │  │ Cache         │  │           │
+└──────────┘  └──────────┘  └───────────┘  └───────────────┘  └───────────┘
 ```
 
 ### Service Communication
 
-| From                                      | To                | Protocol                     | Purpose                                      |
-| ----------------------------------------- | ----------------- | ---------------------------- | -------------------------------------------- |
-| **UI** → **API Gateway**                  | REST              | `axios`                      | CRUD operations on specs                     |
-| **UI** → **API Gateway**                  | WebSocket         | `SockJS`/`STOMP`             | Real-time validation updates                 |
-| **API Gateway** → **AI Service**          | HTTP              | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis              |
-| **API Gateway** → **Redis**               | TCP               | Spring Data Redis            | Session storage, attack chain caching        |
-| **AI Service** → **Ollama**               | HTTP              | `httpx`                      | LLM inference for all AI features            |
-| **AI Service** → **ChromaDB**             | Local/HTTP        | LangChain + ChromaDB client  | RAG knowledge base queries (vector store)    |
-| **AI Service** → **GitHub/GitLab**        | HTTP              | MCP client + REST APIs       | Repository browsing & spec discovery         |
-| **RAG Service** → **Agents**              | Python in-process | Direct function calls        | Knowledge augmentation for security agents   |
-| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls        | Multi-agent coordination for attack analysis |
+| From                                      | To                | Protocol                     | Purpose                                          |
+| ----------------------------------------- | ----------------- | ---------------------------- | ------------------------------------------------ |
+| **UI** → **API Gateway**                  | REST              | `axios`                      | CRUD operations on specs                         |
+| **UI** → **API Gateway**                  | WebSocket         | `SockJS`/`STOMP`             | Real-time validation updates                     |
+| **API Gateway** → **AI Service**          | HTTP              | `WebClient` (Spring WebFlux) | AI editing, mock data, analysis                  |
+| **API Gateway** → **RepoMind**            | HTTP              | `WebClient` (Spring WebFlux) | Trigger indexing, get code context for an endpoint |
+| **API Gateway** → **Redis**               | TCP               | Spring Data Redis            | Session storage, attack chain caching            |
+| **AI Service** → **Ollama**               | HTTP              | `httpx`                      | LLM inference for all AI features                |
+| **AI Service** → **ChromaDB**             | Local/HTTP        | LangChain + ChromaDB client  | RAG knowledge base queries (vector store)        |
+| **AI Service** → **RepoMind**             | HTTP              | `httpx`                      | Get code metrics, find tests, analyze ownership  |
+| **AI Service** → **GitHub/GitLab**        | HTTP              | MCP client + REST APIs       | Repository browsing & spec discovery (future)    |
+| **RAG Service** → **Agents**              | Python in-process | Direct function calls        | Knowledge augmentation for security agents       |
+| **Attack Path Orchestrator** → **Agents** | Python in-process | Direct function calls        | Multi-agent coordination for attack analysis     |
 
 ### Data Flow Examples
 
@@ -326,8 +324,29 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 12. UI renders interactive attack path visualization with expandable steps
 ```
 
-#### Example 3: Comprehensive Architecture Analysis
+#### Example 3: Code-Aware Security Analysis (Odysseus)
 
+```
+1. User links a local repository via the UI.
+2. UI → API Gateway: POST /projects/{id}/repository (path)
+3. API Gateway → RepoMind: POST /index_repo (path)
+   (RepoMind starts indexing the repository code in the background)
+4. User selects a security finding (e.g., "Potential BOLA on GET /users/{id}").
+5. The finding is based on the spec only and is marked as [POTENTIAL].
+6. API Gateway → RepoMind: GET /get_context?symbol=getUserById
+   (Looks up the code that implements the 'getUserById' operationId)
+7. RepoMind returns the file path, source code, and other metrics.
+8. API Gateway → AI Service: POST /ai/security/confirm-finding
+   (Payload includes the spec finding AND the source code from RepoMind)
+9. AI Service (Code-Aware Validator) analyzes the code snippet.
+   (Prompt: "Does this code check if the current user owns the requested resource?")
+10. AI Service → Ollama: LLM inference request.
+11. Ollama confirms the lack of an ownership check.
+12. AI Service → API Gateway: Returns { "isConfirmed": true, "confirmationDetail": "No ownership check found on line 52" }.
+13. UI updates the finding badge from [POTENTIAL] to [CONFIRMED] and displays the code evidence.
+```
+
+#### Example 4: Comprehensive Architecture Analysis
 ```
 1. User clicks "Run Comprehensive Analysis" in Advanced Analysis tab
 2. UI → API Gateway: POST /sessions/{id}/analysis/comprehensive-architecture
@@ -408,113 +427,160 @@ SchemaSculpt uses a **three-tier microservices architecture** optimized for AI w
 
 Before starting, ensure you have:
 
-- ✅ **Java 21+** ([Download](https://jdk.java.net/))
-- ✅ **Gradle 8.14+** (included with `./gradlew`)
+- ✅ **Java 25+** ([Download](https://jdk.java.net/))
 - ✅ **Node.js 18+** and **npm** ([Download](https://nodejs.org/))
 - ✅ **Python 3.10+** and **pip** ([Download](https://www.python.org/))
-- ✅ **Docker & Docker Compose** ([Download](https://www.docker.com/))
-- ✅ **Ollama** ([Download](https://ollama.com/))
+- ✅ **Docker** ([Download](https://www.docker.com/)) — for PostgreSQL and Redis
+- ✅ **Ollama** ([Download](https://ollama.com/)) — for local LLM inference
 
-### Quick Start (5 Minutes)
+---
 
-Follow these steps in **separate terminal windows**:
+### 🏃 Local Development Setup
 
-#### 1️⃣ Start Infrastructure Services
+Run each service in a **separate terminal window**.
+
+#### 1️⃣ Start Infrastructure (PostgreSQL + Redis)
 
 ```bash
-# Development Mode: Start infrastructure only (PostgreSQL + Redis)
+# Start PostgreSQL and Redis via Docker Compose
 docker-compose up -d
 
-# OR
-
-# Full Deployment: Start entire stack in Docker (requires Ollama on host)
-docker-compose --profile full up -d --build
+# Verify both containers are healthy
+docker-compose ps
 ```
 
-Verify: `docker-compose ps` should show services as healthy.
+- **PostgreSQL** → `localhost:5432` (used by the Java backend)
+- **Redis** → `localhost:6379` (used for session storage)
 
-**Note:** For full deployment mode, skip to step 5 (all services run in Docker). For development mode (recommended), continue with steps 2-5 to run services locally with hot reloading.
+---
 
-For detailed Docker setup instructions, see [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md).
-
-#### 2️⃣ Start Ollama & Pull Model
+#### 2️⃣ Start Ollama & Pull the LLM Model
 
 ```bash
-# Download the Mistral model (first time only)
+# Pull the Mistral model (only needed once, ~4 GB download)
 ollama pull mistral
 
-# Verify Ollama is running
+# Verify Ollama is running and the model is available
 ollama list
 ```
 
-#### 3️⃣ Start AI Service
+Ollama runs as a background service at `http://localhost:11434`.
+
+---
+
+#### 3️⃣ Start the AI Service
 
 ```bash
 cd ai_service
 
-# Create virtual environment (first time only)
+# First time only: create virtual environment and install dependencies
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies (first time only)
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Copy environment template (first time only)
+# First time only: copy environment template
 cp .env.example .env
 
-# Initialize RAG knowledge bases (first time only)
-# This ingests OWASP, MITRE ATT&CK, CVSS, DREAD, and compliance frameworks
+# First time only: initialize RAG knowledge bases
+# Ingests OWASP, MITRE ATT&CK, CVSS, and compliance frameworks
 python app/scripts/ingest_knowledge.py
 
-# Start the service
+# Start the AI service
 uvicorn app.main:app --reload
 ```
 
-✅ AI Service running at `http://localhost:8000`
-✅ RAG knowledge bases initialized at `data/vector_store/`
+✅ **AI Service** running at `http://localhost:8000`
 
-#### 4️⃣ Start Java Backend
+---
+
+#### 4️⃣ Start the Java Backend
 
 ```bash
 cd api
 
-# Start Spring Boot application
+# Start the Spring Boot API gateway
 ./gradlew bootRun
 ```
 
-✅ API Gateway running at `http://localhost:8080`
+✅ **API Gateway** running at `http://localhost:8080`
 
-#### 5️⃣ Start React Frontend
+**First run**: Flyway will auto-create all database tables.
+
+---
+
+#### 5️⃣ Start the React Frontend
 
 ```bash
 cd ui
 
-# Install dependencies (first time only)
+# First time only: install dependencies
 npm install
 
-# Start development server
+# Start the development server
 npm start
 ```
 
-✅ Browser opens automatically at `http://localhost:3000`
+✅ **Frontend** opens automatically at `http://localhost:3000`
+
+---
+
+#### 6️⃣ (Optional) Start RepoMind — Code Intelligence
+
+RepoMind enables **Code-Aware Analysis**: AI that understands your actual implementation, not just your spec.
+
+```bash
+# Install RepoMind (first time only)
+pip install repomind
+# OR from source:
+# git clone https://github.com/sharma-manish-94/repomind.git
+# cd repomind && pip install -e ".[dev]"
+
+# Start RepoMind MCP server
+REPOMIND_ENABLED=true repomind serve
+```
+
+Then set the following in `ai_service/.env`:
+
+```env
+REPOMIND_ENABLED=true
+REPOMIND_COMMAND=repomind
+REPOMIND_ARGS=serve
+```
+
+✅ **RepoMind** running (MCP stdio) — ready for code indexing
+
+To link your codebase: open SchemaSculpt → **Repository** tab → **Connect a Local Repository** → Browse and select your project folder → **Link & Index**.
+
+---
+
+### 📊 Service Summary
+
+| Service       | Technology           | Port  | Required |
+|---------------|----------------------|-------|----------|
+| PostgreSQL    | Docker               | 5432  | ✅ Yes   |
+| Redis         | Docker               | 6379  | ✅ Yes   |
+| Ollama        | Local binary         | 11434 | ✅ Yes   |
+| AI Service    | Python / FastAPI     | 8000  | ✅ Yes   |
+| API Gateway   | Java / Spring Boot   | 8080  | ✅ Yes   |
+| Frontend      | React / Node.js      | 3000  | ✅ Yes   |
+| RepoMind      | Python / MCP stdio   | —     | ⚡ Optional |
+
+---
 
 ### First Steps
 
-1. **Create a New Project** or **Load an Example Spec**
-2. **See Real-time Validation** - The right panel shows errors and suggestions
-3. **Click "Run AI Analysis"** - Get intelligent insights about your API
-4. **Try a Quick Fix** - Click ⚡ or ✨ on any suggestion
-5. **Ask the AI** - Use natural language to edit: "Add a GET /health endpoint"
-6. **Test Your API** - Click the "API Lab" tab and send test requests
-7. **Advanced Analysis** - Navigate to the "Advanced Analysis" tab for:
-   - **Attack Path Simulation** - RAG-enhanced multi-step attack chain detection
-   - **Taint Analysis** - Track sensitive data flow through your API
-   - **Authorization Matrix** - Visualize access control patterns
-   - **Schema Similarity** - Detect duplicate/near-duplicate schemas
-   - **Zombie API Detection** - Find shadowed and orphaned endpoints
-   - **Comprehensive Architecture Analysis** - Get an overall health score (0-100)
+1. **Open** `http://localhost:3000`
+2. **Load an Example Spec** or paste your OpenAPI YAML/JSON into the editor
+3. **See Real-time Validation** — the right panel shows errors and suggestions
+4. **Run AI Analysis** — click "Run AI Analysis" for intelligent insights
+5. **Try Auto-fix** — click ⚡ or ✨ on any suggestion to apply it
+6. **Advanced Analysis** — navigate to the "Advanced Analysis" tab for:
+   - **Attack Path Simulation** — RAG-enhanced multi-step attack chain detection
+   - **Taint Analysis** — track sensitive data flow through your API
+   - **Authorization Matrix** — visualize access control patterns
+   - **Zombie API Detection** — find shadowed and orphaned endpoints
+7. **Code Intelligence** (optional) — link your repository via the Repository tab to enable code-aware attack chain validation with RepoMind
 
----
 
 ## 🎓 Advanced Features
 
@@ -675,6 +741,199 @@ Beyond attack paths, SchemaSculpt provides four specialized analyzers:
 - **Multi-level Cache Strategy**: Spec cache → Finding signature cache → Graph structure cache
 - **24-hour TTL**: Automatic cache expiration
 - **Deterministic Findings Extraction**: Java-based pre-processing reduces payload size by 90%
+
+---
+
+## 🔗 RepoMind Integration
+
+SchemaSculpt integrates with [RepoMind](https://github.com/sharma-manish-94/repomind), an AI-powered code intelligence MCP server, to bridge the gap between **what your OpenAPI spec says** and **what your code actually does**.
+
+When connected, RepoMind provides four specialized tools that transform SchemaSculpt's AI-generated attack chains from spec-level hypotheses into code-confirmed (or code-disputed) findings.
+
+### How It Works
+
+```
+SchemaSculpt AI ──generates──► Attack Chain (spec-level analysis)
+                                        │
+                            RepoMind MCP Server (37 tools)
+                                        │
+               ┌────────────────────────▼───────────────────────────┐
+               │  correlate_spec_to_code     — Find the code handler │
+               │  verify_auth_contract_deep  — Compare auth schemes  │
+               │  validate_attack_chain      — Confirm chain in code │
+               │  trace_schema_field_to_sink — Trace injection risk  │
+               └────────────────────────┬───────────────────────────┘
+                                        │
+                            Code-Level Evidence
+                   (CODE_CONFIRMED / CODE_DISPUTED / PARTIAL)
+```
+
+### Setup
+
+**Step 1: Install and Start RepoMind**
+
+```bash
+# Install via pip (recommended)
+pip install repomind
+
+# OR install from source
+git clone https://github.com/sharma-manish-94/repomind.git
+cd repomind && pip install -e ".[dev]"
+
+# Start the MCP server
+REPOMIND_ENABLED=true repomind serve
+```
+
+**Step 2: Enable RepoMind in the AI Service**
+
+In `ai_service/.env`, add:
+
+```env
+REPOMIND_ENABLED=true
+REPOMIND_COMMAND=repomind
+REPOMIND_ARGS=serve
+```
+
+Then restart the AI service (`uvicorn app.main:app --reload`).
+
+**Step 3: Link your codebase in the UI**
+
+Open SchemaSculpt → **Repository** tab → **Connect a Local Repository** → click **Browse** to navigate to your project folder → **Link & Index**.
+
+RepoMind will index your code using tree-sitter AST parsing and BGE-base embeddings — 100% locally.
+
+**Step 4: Run code-aware analysis**
+
+Navigate to the **Advanced Analysis** tab. Attack chain findings are now enriched with code-level evidence (CODE_CONFIRMED / CODE_DISPUTED / PARTIAL).
+
+### The Four Integration Tools
+
+#### `correlate_spec_to_code` — Spec-to-Code Mapping
+
+Given an OpenAPI path and HTTP method, finds the implementing route handler in indexed source code.
+
+```json
+Input:  { "openapi_path": "/users/{id}", "http_method": "DELETE" }
+Output: {
+  "handler": "delete_user",
+  "file": "src/routes/users.py",
+  "start_line": 87,
+  "confidence": 1.0,
+  "has_auth": true,
+  "auth_mechanisms": ["jwt"],
+  "callees": ["verify_token", "db.delete"]
+}
+```
+
+Path normalization handles all framework syntaxes automatically:
+- `{id}` (FastAPI / Spring / OpenAPI)
+- `:id` (Express / NestJS)
+- `<int:id>` (Flask)
+
+**Use case in SchemaSculpt:** When you select an endpoint in the editor, the Implementation tab instantly shows the corresponding code, file path, and line number — no IDE context-switching.
+
+#### `verify_auth_contract_deep` — Auth Contract Audit
+
+Compares OpenAPI security scheme declarations against what the code actually enforces.
+
+| Verdict | Meaning |
+|---------|---------|
+| `PASS` | Spec and code agree — same auth type enforced |
+| `NO AUTH IN CODE` | Spec requires Bearer JWT, handler has no auth check |
+| `WRONG AUTH SCHEME` | Spec says OAuth2, code uses API key |
+| `SCOPE NOT ENFORCED` | OAuth2 scope required in spec, not checked in code |
+
+**Use case in SchemaSculpt:** Security findings marked as [POTENTIAL] are automatically promoted to [CONFIRMED] or [DISPUTED] with code-level evidence instead of relying on spec-only analysis.
+
+#### `validate_attack_chain` — Attack Chain Code Validation
+
+Takes the multi-step attack chain generated by SchemaSculpt's AI agents and validates each step against real code.
+
+```json
+Input: {
+  "attack_steps": [
+    {
+      "step": 1, "endpoint": "/users/{id}", "method": "GET",
+      "vulnerability_type": "bola", "owasp": "API1:2023"
+    },
+    {
+      "step": 2, "endpoint": "/users/{id}/orders", "method": "GET",
+      "vulnerability_type": "excessive_data_exposure", "owasp": "API3:2023"
+    }
+  ]
+}
+Output: {
+  "chain_verdict": "FULLY_EXPLOITABLE",
+  "steps": [
+    { "step": 1, "verdict": "CODE_CONFIRMED", "evidence": "No ownership check found" },
+    { "step": 2, "verdict": "CODE_CONFIRMED", "evidence": "Full model serialized" }
+  ]
+}
+```
+
+**Chain verdicts:**
+- `FULLY_EXPLOITABLE` — All steps confirmed in code
+- `PARTIALLY_EXPLOITABLE` — Some steps confirmed, others disputed
+- `MITIGATED` — Majority of steps have code-level mitigations
+- `INSUFFICIENT_DATA` — Handler not indexed or too many unknowns
+
+**Use case in SchemaSculpt:** Attack chains generated by the RAG-enhanced Attack Path Orchestrator are validated against real code before being presented, dramatically reducing false positives.
+
+#### `trace_schema_field_to_sink` — Injection Risk Tracing
+
+Traces a request schema field (e.g., `user_id`, `query`, `filename`) from the route handler to dangerous code sinks.
+
+**Sinks detected:**
+- `SQL_QUERY` — raw SQL with user input (injection risk)
+- `OS_COMMAND` — subprocess/exec with user data (RCE risk)
+- `FILE_OPERATION` — file read/write with user path (traversal risk)
+- `TEMPLATE_RENDER` — template with user data (SSTI/XSS risk)
+- `EVAL` — eval/exec with user input (RCE risk)
+- `HTTP_REQUEST` — outbound request with user URL (SSRF risk)
+- `DATABASE_WRITE` — ORM save with unfiltered fields (mass assignment risk)
+
+**Special cases:**
+- Fields named `role`, `is_admin` → mass assignment CRITICAL
+- Fields named `password`, `token` flowing to logs → HIGH
+
+**Use case in SchemaSculpt:** Taint Analysis findings from the Advanced Analysis tab are enriched with a direct code path from the request field to the dangerous sink, including whether sanitization was detected between them.
+
+### Example: Code-Confirmed BOLA Attack Chain
+
+**Before RepoMind integration** (spec-only):
+```
+[POTENTIAL] API1:2023 BOLA: GET /users/{id} may expose other users' data
+Chain: GET /users/{id} → GET /users/{id}/orders → DELETE /users/{id}
+Confidence: 65% (spec-level reasoning only)
+```
+
+**After RepoMind integration** (code-confirmed):
+```
+[CONFIRMED] API1:2023 BOLA: GET /users/{id} exposes other users' data
+Chain: FULLY_EXPLOITABLE (3/3 steps confirmed in code)
+
+Step 1 — GET /users/{id}: CODE_CONFIRMED
+  Handler: get_user() @ src/routes/users.py:52
+  Evidence: No ownership check between token.user_id and path param id
+
+Step 2 — GET /users/{id}/orders: CODE_CONFIRMED
+  Handler: get_orders() @ src/routes/orders.py:89
+  Evidence: Returns full Order model with payment details (no field filtering)
+
+Step 3 — DELETE /users/{id}: CODE_CONFIRMED
+  Handler: delete_user() @ src/routes/users.py:134
+  Evidence: Deletes by path param id without checking requester ownership
+```
+
+### Supported Frameworks
+
+RepoMind's route linker recognizes handlers from:
+
+| Language | Frameworks |
+|----------|-----------|
+| Python | Flask, FastAPI, Django REST Framework |
+| JavaScript/TypeScript | Express.js, NestJS |
+| Java | Spring MVC, Spring Boot (`@GetMapping`, `@RestController`) |
 
 ---
 

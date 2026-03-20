@@ -48,7 +48,6 @@ class ICacheRepository(ABC):
         Returns:
             The cached value if found, None otherwise.
         """
-        pass
 
     @abstractmethod
     async def set(
@@ -65,7 +64,6 @@ class ICacheRepository(ABC):
             value: The value to cache (must be JSON-serializable).
             ttl: Time-to-live for the cached value. None = use default TTL.
         """
-        pass
 
     @abstractmethod
     async def delete(self, key: str) -> bool:
@@ -78,7 +76,6 @@ class ICacheRepository(ABC):
         Returns:
             True if the key was deleted, False if it didn't exist.
         """
-        pass
 
     @abstractmethod
     async def exists(self, key: str) -> bool:
@@ -91,7 +88,6 @@ class ICacheRepository(ABC):
         Returns:
             True if the key exists, False otherwise.
         """
-        pass
 
     @abstractmethod
     async def clear(self, pattern: Optional[str] = None) -> int:
@@ -105,7 +101,6 @@ class ICacheRepository(ABC):
         Returns:
             Number of keys deleted, or -1 if full flush was performed.
         """
-        pass
 
     @abstractmethod
     async def get_many(self, keys: List[str]) -> Dict[str, Any]:
@@ -118,7 +113,6 @@ class ICacheRepository(ABC):
         Returns:
             Dictionary mapping keys to their values. Missing keys are omitted.
         """
-        pass
 
     @abstractmethod
     async def set_many(
@@ -133,7 +127,6 @@ class ICacheRepository(ABC):
             items: Dictionary mapping keys to values.
             ttl: Time-to-live for all cached values.
         """
-        pass
 
     @abstractmethod
     async def get_stats(self) -> Dict[str, Any]:
@@ -143,7 +136,6 @@ class ICacheRepository(ABC):
         Returns:
             Dictionary with cache statistics (size, hits, misses, etc.).
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -153,4 +145,3 @@ class ICacheRepository(ABC):
         Returns:
             True if healthy, False otherwise.
         """
-        pass

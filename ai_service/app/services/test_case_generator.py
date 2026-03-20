@@ -356,7 +356,7 @@ class TestCaseGeneratorService:
                     assertions=[
                         "Response status should be 400",
                         "Response should indicate validation error",
-                        f"Error should mention missing required field",
+                        "Error should mention missing required field",
                     ],
                 )
             )

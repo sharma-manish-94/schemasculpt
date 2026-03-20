@@ -1,0 +1,26 @@
+meta {
+  name: Authorization Matrix
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/authz-matrix
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Authorization Matrix
+
+  Generates a matrix of endpoints vs security schemes,
+  highlighting gaps in authorization coverage.
+}
+
+assert {
+  res.status: eq 200
+}

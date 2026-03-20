@@ -5,7 +5,6 @@ This module provides a wrapper around the MCP SDK for managing connections
 to various MCP servers (GitHub, GitLab, etc.)
 """
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
@@ -25,19 +24,13 @@ logger = logging.getLogger(__name__)
 class MCPClientError(Exception):
     """Base exception for MCP client errors"""
 
-    pass
-
 
 class MCPConnectionError(MCPClientError):
     """Error connecting to MCP server"""
 
-    pass
-
 
 class MCPOperationError(MCPClientError):
     """Error performing MCP operation"""
-
-    pass
 
 
 class MCPClient:

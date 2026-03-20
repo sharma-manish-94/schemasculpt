@@ -1,0 +1,25 @@
+meta {
+  name: Disconnect
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/repository/disconnect
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Disconnect
+
+  Disconnects the GitHub repository from the current session.
+}
+
+assert {
+  res.status: eq 200
+}

@@ -1,6 +1,5 @@
 package io.github.sharmanish.schemasculpt.util;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -10,13 +9,15 @@ import java.util.function.Supplier;
  *
  * <p>Virtual threads (JEP 444) allow blocking I/O to scale efficiently. Instead of blocking
  * platform threads (expensive), we block virtual threads (cheap). This is ideal for:
+ *
  * <ul>
- *   <li>WebClient .block() calls to AI service</li>
- *   <li>Database queries</li>
- *   <li>Any I/O-bound operation</li>
+ *   <li>WebClient .block() calls to AI service
+ *   <li>Database queries
+ *   <li>Any I/O-bound operation
  * </ul>
  *
  * <p>Usage:
+ *
  * <pre>{@code
  * // Instead of:
  * Response response = webClient.get().retrieve().bodyToMono(Response.class).block();

@@ -1,0 +1,26 @@
+meta {
+  name: Taint Analysis
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/taint-analysis
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Taint Analysis
+
+  Traces sensitive data flows from input fields through to output schemas,
+  identifying potential data leakage paths.
+}
+
+assert {
+  res.status: eq 200
+}

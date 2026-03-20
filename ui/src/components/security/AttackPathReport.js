@@ -34,16 +34,44 @@ const AttackPathReport = ({ report, onClose }) => {
     total_vulnerabilities,
     vulnerabilities_in_chains,
     isolated_vulnerabilities,
+    chain_validations = {},
   } = report;
 
   const riskInfo = formatRiskLevel(risk_level);
   const scoreColor = getSecurityScoreColor(overall_security_score);
+
+  const getChainValidationBadge = (chainId) => {
+    const v = chain_validations[chainId];
+    if (!v) return null;
+    const verdict = v.overall_verdict || "";
+    const score =
+      v.exploitability_score != null
+        ? (v.exploitability_score * 100).toFixed(0)
+        : null;
+    if (verdict === "FULLY_EXPLOITABLE") {
+      return {
+        label: `CODE CONFIRMED${score ? ` (${score}%)` : ""}`,
+        className: "validation-confirmed",
+      };
+    }
+    if (verdict === "PARTIALLY_EXPLOITABLE") {
+      return {
+        label: `PARTIALLY CONFIRMED${score ? ` (${score}%)` : ""}`,
+        className: "validation-partial",
+      };
+    }
+    if (verdict === "NOT_EXPLOITABLE") {
+      return { label: "CODE DISPUTED", className: "validation-disputed" };
+    }
+    return { label: "UNVERIFIED", className: "validation-unverified" };
+  };
 
   const renderAttackChain = (chain) => {
     // Safe defaults for missing fields
     const likelihood = chain.likelihood ?? 0.7;
     const complexity = chain.complexity || "Medium";
     const steps = Array.isArray(chain.steps) ? chain.steps : [];
+    const validationBadge = getChainValidationBadge(chain.chain_id);
 
     return (
       <div
@@ -60,6 +88,13 @@ const AttackPathReport = ({ report, onClose }) => {
             >
               {formatSeverity(chain.severity || "MEDIUM").label}
             </span>
+            {validationBadge && (
+              <span
+                className={`chain-validation-badge ${validationBadge.className}`}
+              >
+                {validationBadge.label}
+              </span>
+            )}
             <h3>{chain.name || "Unknown Attack"}</h3>
           </div>
           <div className="attack-chain-meta">

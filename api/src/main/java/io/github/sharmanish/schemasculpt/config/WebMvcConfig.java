@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -15,6 +16,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
   public WebMvcConfig(@Qualifier("cleanJsonMapper") JsonMapper cleanJsonMapper) {
     this.cleanJsonMapper = cleanJsonMapper;
+  }
+
+  @Override
+  public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+    // Increased timeout for long-running AI operations
+    configurer.setDefaultTimeout(300000); // 5 minutes in milliseconds
   }
 
   @Override
