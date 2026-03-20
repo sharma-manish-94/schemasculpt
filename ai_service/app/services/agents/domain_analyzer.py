@@ -67,8 +67,7 @@ class DomainAnalyzerAgent(LLMAgent):
         user_prompt = task.get("input_data", {}).get("prompt", "")
         domain = task.get("input_data", {}).get("domain")
 
-        system_prompt = self._build_system_prompt(
-            """
+        system_prompt = self._build_system_prompt("""
 You are an expert business analyst and API domain specialist. Your task is to analyze user requirements and provide comprehensive domain analysis.
 
 **Analysis Framework:**
@@ -95,8 +94,7 @@ You are an expert business analyst and API domain specialist. Your task is to an
   "complexity_assessment": "simple/medium/complex",
   "recommended_patterns": ["list of recommended API patterns"]
 }}
-"""
-        )
+""")
 
         user_message = f"""
 Analyze the following API requirements:
@@ -136,8 +134,7 @@ Provide a comprehensive domain analysis following the specified format.
                     if result["data"].get("business_processes"):
                         domain_context += f"Business Processes: {', '.join([p['name'] for p in result['data']['business_processes']])}\n"
 
-        system_prompt = self._build_system_prompt(
-            f"""
+        system_prompt = self._build_system_prompt(f"""
 You are an expert data modeler and entity relationship specialist. Your task is to extract entities and their properties from business requirements.
 
 {domain_context}
@@ -174,8 +171,7 @@ You are an expert data modeler and entity relationship specialist. Your task is 
   "complexity_score": "1-10",
   "suggested_patterns": ["list of recommended patterns"]
 }}
-"""
-        )
+""")
 
         user_message = f"""
 Extract entities and their properties from the following requirements:
@@ -224,8 +220,7 @@ Focus on identifying:
                 "No entities data provided for relationship mapping"
             )
 
-        system_prompt = self._build_system_prompt(
-            """
+        system_prompt = self._build_system_prompt("""
 You are an expert system architect specializing in entity relationship modeling and dependency analysis.
 
 **Relationship Mapping Tasks:**
@@ -252,8 +247,7 @@ You are an expert system architect specializing in entity relationship modeling 
   ],
   "complexity_warnings": ["list of potential complexity issues"]
 }}
-"""
-        )
+""")
 
         entity_list = [entity["name"] for entity in entities_data]
         entity_descriptions = "\n".join(
