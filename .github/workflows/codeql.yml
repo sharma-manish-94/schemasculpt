@@ -29,14 +29,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Set up JDK 25 (Java only)
+      if: matrix.language == 'java'
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25-ea'
+        distribution: 'oracle'
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-        # If you have specific build commands, you can specify them here,
-        # but the default 'autobuild' below works for 95% of standard Spring/Python projects.
 
-    - name: Autobuild
+    - name: Build Java project
+      if: matrix.language == 'java'
+      working-directory: api
+      run: ./gradlew classes testClasses -x test --no-daemon
+
+    - name: Autobuild (non-Java)
+      if: matrix.language != 'java'
       uses: github/codeql-action/autobuild@v3
 
     - name: Perform CodeQL Analysis
