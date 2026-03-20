@@ -4,12 +4,12 @@
 set -e
 
 echo "🎨 Formatting Java code with Google Java Format..."
-./mvnw spotless:apply
+./gradlew spotlessApply
 
 echo "✓ Java code formatted successfully!"
 echo ""
 echo "To check formatting without applying changes:"
-echo "  ./mvnw spotless:check"
+echo "  ./gradlew spotlessCheck"
 echo ""
 echo "To run Checkstyle validation:"
-echo "  ./mvnw checkstyle:check"
+echo "  ./gradlew check"

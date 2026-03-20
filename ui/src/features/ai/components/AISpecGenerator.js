@@ -31,13 +31,8 @@ const AUTHENTICATION_TYPES = [
 ];
 
 function AISpecGenerator() {
-  const {
-    generateSpecification,
-    isAiProcessing,
-    aiResponse,
-    aiError,
-    clearAiResponse,
-  } = useSpecStore();
+  const { generateSpecification, isAiProcessing, aiError, clearAiResponse } =
+    useSpecStore();
 
   const [formData, setFormData] = useState({
     domain: "",

@@ -60,7 +60,6 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     def _get_provider_type(self) -> ProviderType:
         """Return the provider type."""
-        pass
 
     @abstractmethod
     async def chat(
@@ -86,7 +85,6 @@ class BaseLLMProvider(ABC):
         Returns:
             LLMResponse with the model's output
         """
-        pass
 
     @abstractmethod
     async def chat_stream(
@@ -110,7 +108,6 @@ class BaseLLMProvider(ABC):
         Yields:
             LLMStreamResponse chunks
         """
-        pass
 
     @abstractmethod
     async def generate(
@@ -134,7 +131,6 @@ class BaseLLMProvider(ABC):
         Returns:
             LLMResponse with the model's output
         """
-        pass
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -144,7 +140,6 @@ class BaseLLMProvider(ABC):
         Returns:
             True if healthy, False otherwise
         """
-        pass
 
     @abstractmethod
     def get_available_models(self) -> List[str]:
@@ -154,7 +149,6 @@ class BaseLLMProvider(ABC):
         Returns:
             List of model names
         """
-        pass
 
     def get_provider_info(self) -> Dict[str, Any]:
         """

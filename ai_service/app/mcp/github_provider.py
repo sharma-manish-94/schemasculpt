@@ -8,7 +8,7 @@ import base64
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from .client import MCPClient, MCPConnectionError, MCPOperationError
 from .repository_provider import (

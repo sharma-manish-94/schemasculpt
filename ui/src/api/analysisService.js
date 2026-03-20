@@ -336,7 +336,7 @@ export const runBlastRadiusAnalysis = async (
       specContent,
       {
         headers: {
-          "Content-Type": "text/plain",
+          "Content-Type": "application/json",
         },
         timeout: 30000,
       },

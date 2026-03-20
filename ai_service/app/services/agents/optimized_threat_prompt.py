@@ -148,8 +148,6 @@ Finding {i}: [{category}] {severity.upper()}
 
 def _build_graph_summary(findings: List[Dict[str, Any]]) -> str:
     """Build a summary of graph relationships"""
-    relationships = []
-
     # Extract all dependencies and build relationship map
     schema_to_endpoints = {}
     endpoint_dependencies = []

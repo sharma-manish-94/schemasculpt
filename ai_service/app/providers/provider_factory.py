@@ -3,7 +3,6 @@ Provider Factory for LLM providers.
 Handles provider initialization and selection based on configuration.
 """
 
-from functools import lru_cache
 from typing import Any, Dict, Optional
 
 from ..core.exceptions import LLMError

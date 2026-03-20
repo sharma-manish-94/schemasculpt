@@ -868,7 +868,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
                 from prance import ResolvingParser
 
                 # Use spec_dict parameter correctly
-                parser = ResolvingParser(spec_dict=spec_data)
+                ResolvingParser(spec_dict=spec_data)
                 # If we get here, the spec is valid according to OpenAPI specification
             except ImportError:
                 warnings.append(
@@ -990,7 +990,7 @@ You are a JSON Patch specialist for OpenAPI specifications.
                 ),
                 "complexity_level": self._assess_complexity(spec_data),
             }
-        except:
+        except Exception:
             return {
                 "version": "unknown",
                 "path_count": 0,

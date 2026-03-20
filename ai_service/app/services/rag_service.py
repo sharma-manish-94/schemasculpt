@@ -11,9 +11,8 @@ Each agent consults its specialized KB, becoming a domain expert.
 """
 
 import hashlib
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 try:
     import chromadb
@@ -320,7 +319,7 @@ class RAGService:
 
             return stats
 
-        except Exception as e:
+        except Exception:
             # Log full exception details on the server, but do not expose them to clients
             self.logger.error("Error getting knowledge base stats", exc_info=True)
             return {

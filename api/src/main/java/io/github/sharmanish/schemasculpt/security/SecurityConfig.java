@@ -16,7 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/** Security Configuration for OAuth2 and JWT */
+/** Security Configuration for OAuth2 and JWT. */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -33,6 +33,14 @@ public class SecurityConfig {
     this.customOAuth2UserService = customOAuth2UserService;
   }
 
+  /**
+   * Configure the security filter chain.
+   *
+   * @param http the HttpSecurity to configure
+   * @param jwtAuthenticationFilter the JWT authentication filter
+   * @return the configured security filter chain
+   * @throws Exception if configuration fails
+   */
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -48,7 +56,8 @@ public class SecurityConfig {
                         "/api/v1/repository/**",
                         "/api/v1/projects/**",
                         "/api/v1/specifications/**",
-                        "/proxy/**"))
+                        "/proxy/**",
+                        "/api/v1/filesystem/**"))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(
@@ -80,6 +89,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/api/v1/repository/**")
                     .permitAll()
+                    .requestMatchers("/api/v1/filesystem/**")
+                    .permitAll()
                     .requestMatchers("/proxy/**")
                     .permitAll()
                     .requestMatchers("/ws/**")
@@ -101,6 +112,11 @@ public class SecurityConfig {
     return http.build();
   }
 
+  /**
+   * Configure CORS settings.
+   *
+   * @return the CORS configuration source
+   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
@@ -120,6 +136,13 @@ public class SecurityConfig {
     return source;
   }
 
+  /**
+   * Create the JWT authentication filter bean.
+   *
+   * @param tokenProvider the JWT token provider
+   * @param userRepository the user repository
+   * @return the JWT authentication filter
+   */
   @Bean
   public JwtAuthenticationFilter jwtAuthenticationFilter(
       JwtTokenProvider tokenProvider, UserRepository userRepository) {

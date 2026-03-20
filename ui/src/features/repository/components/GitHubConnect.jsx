@@ -17,7 +17,6 @@ const GitHubConnect = ({ onConnected }) => {
   const {
     sessionId,
     isConnected,
-    provider,
     isConnecting,
     connectionError,
     connectToRepository,

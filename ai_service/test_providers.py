@@ -11,8 +11,8 @@ from pathlib import Path
 # Add app to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from app.core.config import settings
-from app.providers.provider_factory import ProviderFactory
+from app.core.config import settings  # noqa: E402
+from app.providers.provider_factory import ProviderFactory  # noqa: E402
 
 
 def _redact_sensitive_config(config: dict) -> dict:
@@ -57,7 +57,7 @@ async def test_provider(provider_type: str):
         # Create provider
         print(f"Initializing {provider_type} provider...")
         provider = ProviderFactory.create_provider(provider_type, config)
-        print(f"✓ Provider initialized successfully\n")
+        print("✓ Provider initialized successfully\n")
 
         # Test health check
         print("Running health check...")
@@ -67,7 +67,7 @@ async def test_provider(provider_type: str):
 
         if not is_healthy:
             print(
-                f"⚠ Provider is unhealthy. Check configuration and service availability."
+                "⚠ Provider is unhealthy. Check configuration and service availability."
             )
             return
 
@@ -85,7 +85,7 @@ async def test_provider(provider_type: str):
             messages=messages, temperature=0.1, max_tokens=50
         )
 
-        print(f"✓ Chat completed")
+        print("✓ Chat completed")
         print(f"  Model: {response.model}")
         print(f"  Provider: {response.provider}")
         print(f"  Response: {response.content[:100]}...")
@@ -131,10 +131,10 @@ async def test_provider(provider_type: str):
 async def main():
     """Main test function."""
     print(f"\n{'#'*60}")
-    print(f"  SchemaSculpt AI Service - Provider Tests")
+    print("  SchemaSculpt AI Service - Provider Tests")
     print(f"{'#'*60}\n")
 
-    print(f"Current configuration:")
+    print("Current configuration:")
     print(f"  LLM_PROVIDER: {settings.llm_provider}")
     print(f"  DEFAULT_MODEL: {settings.default_model}")
 

@@ -14,12 +14,11 @@ Key features:
 import json
 import logging
 import uuid
-from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 from prance import ResolvingParser
 
-from app.api.deps import get_llm_service, get_patch_generator, get_smart_fix_service
+from app.api.deps import get_patch_generator, get_smart_fix_service
 from app.core.logging import set_correlation_id
 from app.schemas.patch_schemas import (
     PatchApplicationRequest,
@@ -29,7 +28,6 @@ from app.schemas.patch_schemas import (
     SmartAIFixRequest,
     SmartAIFixResponse,
 )
-from app.services.llm_service import LLMService
 from app.services.patch_generator import PatchGenerator, apply_json_patch
 from app.services.smart_fix_service import SmartFixService
 
@@ -142,7 +140,7 @@ async def apply_patch(
             # Validate the patched spec
             try:
                 spec_json = json.dumps(result["result"])
-                parser = ResolvingParser(spec_string=spec_json)
+                _ = ResolvingParser(spec_string=spec_json)
                 logger.info("Patched spec is valid")
             except Exception as e:
                 validation_errors.append(f"Validation failed: {str(e)}")

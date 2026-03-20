@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * Request to browse repository tree.
  *
- * @param owner  Repository owner (user or organization)
- * @param repo   Repository name
- * @param path   Path within the repository (defaults to root "")
+ * @param owner Repository owner (user or organization)
+ * @param repo Repository name
+ * @param path Path within the repository (defaults to root "")
  * @param branch Optional branch name
  */
 public record BrowseTreeRequest(
@@ -16,9 +16,7 @@ public record BrowseTreeRequest(
     String path,
     String branch) {
 
-  /**
-   * Canonical constructor with default path value.
-   */
+  /** Canonical constructor with default path value. */
   public BrowseTreeRequest {
     path = path != null ? path : "";
   }

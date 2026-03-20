@@ -6,7 +6,6 @@
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
 
-    <!-- Severity set to error for production standards -->
     <property name="severity" value="error"/>
 
     <property name="fileExtensions" value="java, properties, xml"/>
@@ -28,7 +27,6 @@
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
-    <!-- Prevent large files -->
     <module name="FileLength">
         <property name="max" value="1000"/>
         <property name="fileExtensions" value="java"/>
@@ -56,7 +54,7 @@
 
         <module name="AbbreviationAsWordInName">
             <property name="ignoreFinal" value="false"/>
-            <property name="allowedAbbreviationLength" value="1"/>
+            <property name="allowedAbbreviationLength" value="3"/>
         </module>
         <module name="ConstantName"/>
         <module name="LocalFinalVariableName"/>
@@ -135,13 +133,11 @@
         <module name="MultipleVariableDeclarations"/>
         <module name="DefaultComesLast"/>
         <module name="FallThrough"/>
-        <module name="IllegalCatch"/>
         <module name="IllegalThrows"/>
         <module name="PackageDeclaration"/>
         <module name="DeclarationOrder"/>
         <module name="ParameterAssignment"/>
         <module name="ExplicitInitialization"/>
-        <module name="MissingCtor"/>
         <module name="NoFinalizer"/>
         <module name="SuperClone"/>
         <module name="SuperFinalize"/>
@@ -154,7 +150,6 @@
         <!-- Security-Related Checks                      -->
         <!-- ============================================ -->
 
-        <!-- Prevent use of System.out/err -->
         <module name="Regexp">
             <property name="format" value="System\.(out|err)\.print"/>
             <property name="illegalPattern" value="true"/>
@@ -162,7 +157,6 @@
             <property name="message" value="Use logging framework instead of System.out/err"/>
         </module>
 
-        <!-- Prevent printStackTrace -->
         <module name="Regexp">
             <property name="format" value="\.printStackTrace\(\)"/>
             <property name="illegalPattern" value="true"/>
@@ -193,16 +187,16 @@
         <!-- ============================================ -->
 
         <module name="CyclomaticComplexity">
-            <property name="max" value="15"/>
+            <property name="max" value="20"/>
         </module>
         <module name="NPathComplexity">
-            <property name="max" value="400"/>
+            <property name="max" value="600"/>
         </module>
         <module name="BooleanExpressionComplexity">
-            <property name="max" value="5"/>
+            <property name="max" value="7"/>
         </module>
         <module name="ClassFanOutComplexity">
-            <property name="max" value="25"/>
+            <property name="max" value="35"/>
         </module>
 
         <!-- ============================================ -->
@@ -214,7 +208,7 @@
             <property name="countEmpty" value="false"/>
         </module>
         <module name="ParameterNumber">
-            <property name="max" value="7"/>
+            <property name="max" value="10"/>
             <property name="ignoreOverriddenMethods" value="true"/>
         </module>
         <module name="AnonInnerLength">

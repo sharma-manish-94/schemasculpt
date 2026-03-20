@@ -126,7 +126,7 @@ public class ValidationServiceImpl implements ValidationService {
     } catch (Exception jsonException) {
       try {
         return Yaml.pretty(openApi);
-      } catch (Exception yamlException) {
+      } catch (Exception _) {
         throw new Exception(
             "Failed to serialize OpenAPI specification: " + jsonException.getMessage(),
             jsonException);

@@ -1,0 +1,108 @@
+/* Attack Path Diagram - Flow Visualization */
+
+.attack-path-diagram {
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+.path-flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: max-content;
+}
+
+.path-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  min-width: 180px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.path-node:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.path-node.severity-critical {
+  border-left: 4px solid var(--status-critical);
+}
+
+.path-node.severity-high {
+  border-left: 4px solid var(--status-high);
+}
+
+.path-node.severity-medium {
+  border-left: 4px solid var(--status-medium);
+}
+
+.path-node.severity-low {
+  border-left: 4px solid var(--status-low);
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.node-method {
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+
+.node-endpoint {
+  color: var(--gray-700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-vulnerability {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+.path-connector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--gray-400);
+}
+
+.connector-line {
+  width: 24px;
+  height: 2px;
+  background: var(--gray-300);
+}
+
+.connector-arrow {
+  font-size: var(--text-lg);
+  color: var(--gray-400);
+  animation: pulse-arrow 2s infinite;
+}
+
+@keyframes pulse-arrow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.attack-path-empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--gray-500);
+}

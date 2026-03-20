@@ -64,20 +64,24 @@ public class User {
   }
 
   /**
-   * Equals based on business key (githubId) for proper JPA identity.
-   * Per Hibernate best practices: use business key, not generated ID.
+   * Equals based on business key (githubId) for proper JPA identity. Per Hibernate best practices:
+   * use business key, not generated ID.
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     User user = (User) o;
     return githubId != null && Objects.equals(githubId, user.githubId);
   }
 
   /**
-   * HashCode based on business key for consistency with equals.
-   * Returns constant when githubId is null to maintain contract.
+   * HashCode based on business key for consistency with equals. Returns constant when githubId is
+   * null to maintain contract.
    */
   @Override
   public int hashCode() {

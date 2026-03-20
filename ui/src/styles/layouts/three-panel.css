@@ -1,0 +1,195 @@
+/* Three Panel Layout - Premium Security Platform */
+
+.main-layout {
+  height: 100%;
+  width: 100%;
+  background: var(--gray-50);
+}
+
+.panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface-base);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin: var(--space-1);
+}
+
+/* Resize Handle */
+.resize-handle {
+  width: 4px;
+  background: var(--border-subtle);
+  cursor: col-resize;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.resize-handle:hover {
+  background: var(--brand-primary);
+}
+
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 24px;
+  background: var(--gray-300);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.resize-handle:hover::before {
+  opacity: 1;
+  background: white;
+}
+
+/* Panel Header - Refined */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-800);
+  flex-shrink: 0;
+}
+
+.panel-icon {
+  font-size: var(--text-base);
+  opacity: 0.8;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.editor-panel-content {
+  padding: 0;
+}
+
+/* Navigation Panel - API Tree */
+.nav-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.nav-path-group {
+  margin-bottom: var(--space-2);
+}
+
+.nav-path-header {
+  padding: var(--space-2) var(--space-3);
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-1);
+}
+
+.nav-path-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--gray-700);
+  word-break: break-all;
+}
+
+.nav-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: var(--space-3);
+}
+
+.nav-method-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.nav-method-item:hover {
+  background: var(--gray-100);
+}
+
+.nav-method-item.active {
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.method-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  min-width: 48px;
+  text-align: center;
+}
+
+.method-get .method-badge {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.method-post .method-badge {
+  background: #d1fae5;
+  color: #065f46;
+}
+.method-put .method-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+.method-delete .method-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.method-patch .method-badge {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.operation-id {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--gray-500);
+}
+
+.nav-empty-state .empty-icon {
+  font-size: 32px;
+  margin-bottom: var(--space-3);
+  opacity: 0.5;
+}
+
+/* Right Panel Wrapper */
+.right-panel-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

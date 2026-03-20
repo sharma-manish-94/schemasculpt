@@ -4,14 +4,13 @@ Provides advanced prompt templates, context management, and dynamic prompt optim
 """
 
 import json
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..core.logging import get_logger
-from ..schemas.ai_schemas import AIRequest, LLMParameters, OperationType
+from ..schemas.ai_schemas import AIRequest, OperationType
 
 
 class PromptTemplate(str, Enum):
@@ -128,7 +127,7 @@ class PromptEngine:
             else:
                 return "complex"
 
-        except:
+        except (json.JSONDecodeError, TypeError, AttributeError):
             return "unknown"
 
     def _needs_cot(self, request: AIRequest) -> bool:

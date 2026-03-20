@@ -37,6 +37,13 @@ public class ExplanationController {
     this.jsonMapper = jsonMapper;
   }
 
+  /**
+   * Generate an explanation for a validation issue.
+   *
+   * @param request the explanation request containing the rule and context
+   * @param sessionId optional session ID for spec context
+   * @return explanation response with suggested fixes
+   */
   @PostMapping("/explain")
   public ResponseEntity<ExplanationResponse> explainValidationIssue(
       @RequestBody ExplanationRequest request, @RequestParam(required = false) String sessionId) {
@@ -53,7 +60,7 @@ public class ExplanationController {
         try {
           OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
           if (openAPI != null) {
-            specText = jsonMapper.writeValueAsString(openAPI);
+            specText = io.swagger.v3.core.util.Json.pretty(openAPI);
           }
         } catch (Exception e) {
           log.warn(
@@ -112,6 +119,11 @@ public class ExplanationController {
     }
   }
 
+  /**
+   * Check the health of the explanation service.
+   *
+   * @return health status map
+   */
   @GetMapping("/health")
   public ResponseEntity<Map<String, Object>> healthCheck() {
     Map<String, Object> health = new HashMap<>();

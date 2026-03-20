@@ -21,7 +21,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 # Add parent directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -60,14 +60,14 @@ class DocumentIngestionTool:
         try:
             self.attacker_kb = self.client.get_collection("attacker_knowledge")
             print(f"✅ Attacker KB: {self.attacker_kb.count()} documents")
-        except:
+        except Exception:
             print("⚠️  Attacker KB not found. Run init_knowledge_base.py first.")
             self.attacker_kb = None
 
         try:
             self.governance_kb = self.client.get_collection("governance_knowledge")
             print(f"✅ Governance KB: {self.governance_kb.count()} documents")
-        except:
+        except Exception:
             print("⚠️  Governance KB not found. Run init_knowledge_base.py first.")
             self.governance_kb = None
 
@@ -325,7 +325,7 @@ Defenses:
             print(f"📋 Reading JSON file: {file_path.name}")
             documents_to_add = self.read_json_file(file_path)
             if not documents_to_add:
-                print(f"⚠️  No documents extracted from JSON")
+                print("⚠️  No documents extracted from JSON")
                 return 0
 
             # Add source file to metadata

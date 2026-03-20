@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when AI service operations fail. Maps to HTTP 502 Bad Gateway.
- */
+/** Exception thrown when AI service operations fail. Maps to HTTP 502 Bad Gateway. */
 public final class AIServiceException extends ServiceException {
 
   public AIServiceException(String message) {

@@ -38,14 +38,12 @@ class BaseAgent(ABC):
     @abstractmethod
     def _define_capabilities(self) -> List[str]:
         """Define the specific capabilities of this agent."""
-        pass
 
     @abstractmethod
     async def execute(
         self, task: Dict[str, Any], context: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Execute the agent's primary task."""
-        pass
 
     async def _pre_execution_hook(self, task: Dict[str, Any]) -> None:
         """Hook called before task execution."""

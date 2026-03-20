@@ -1,5 +1,4 @@
 import { useSpecStore } from "../../../store/specStore";
-import { useAuth } from "../../../contexts/AuthContext";
 import { projectAPI } from "../../../api/projectAPI";
 import React, { useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";

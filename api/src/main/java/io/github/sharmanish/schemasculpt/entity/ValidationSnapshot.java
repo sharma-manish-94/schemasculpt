@@ -19,9 +19,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/**
- * ValidationSnapshot entity storing validation results for a specification version.
- */
+/** ValidationSnapshot entity storing validation results for a specification version. */
 @Entity
 @Table(name = "validation_snapshots")
 @Getter
@@ -52,8 +50,12 @@ public class ValidationSnapshot {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ValidationSnapshot that = (ValidationSnapshot) o;
     return id != null && Objects.equals(id, that.id);
   }

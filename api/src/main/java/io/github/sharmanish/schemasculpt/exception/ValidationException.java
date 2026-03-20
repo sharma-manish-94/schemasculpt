@@ -1,8 +1,6 @@
 package io.github.sharmanish.schemasculpt.exception;
 
-/**
- * Exception thrown when validation operations fail. Maps to HTTP 400 Bad Request.
- */
+/** Exception thrown when validation operations fail. Maps to HTTP 400 Bad Request. */
 public final class ValidationException extends ClientException {
 
   public ValidationException(String message) {

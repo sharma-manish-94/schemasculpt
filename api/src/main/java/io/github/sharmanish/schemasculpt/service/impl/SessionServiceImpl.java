@@ -169,8 +169,8 @@ public class SessionServiceImpl implements SessionService {
     }
 
     try {
-      // Convert OpenAPI object to JSON string
-      return jsonMapper.writeValueAsString(openAPI);
+      // Convert OpenAPI object to JSON string using Swagger's mapper
+      return io.swagger.v3.core.util.Json.pretty(openAPI);
     } catch (Exception e) {
       log.error(
           "Failed to serialize OpenAPI spec for session {}: {}", sessionId, e.getMessage(), e);

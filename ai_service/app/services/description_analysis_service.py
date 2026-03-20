@@ -189,7 +189,7 @@ Be concise and actionable. Focus on practical improvements."""
             if line.startswith("SCORE:"):
                 try:
                     score = int(line.split(":")[1].strip())
-                except:
+                except Exception:
                     score = 0
 
             elif line.startswith("LEVEL:"):
@@ -243,7 +243,7 @@ Be concise and actionable. Focus on practical improvements."""
             desc = line[sev_end + 1 :].strip()
 
             return Issue(type=issue_type, severity=severity, description=desc)
-        except:
+        except Exception:
             return None
 
     def _fallback_analysis(self, item: DescriptionItem) -> DescriptionQuality:

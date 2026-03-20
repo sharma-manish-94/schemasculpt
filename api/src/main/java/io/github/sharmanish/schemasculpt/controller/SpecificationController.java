@@ -7,11 +7,11 @@ import io.github.sharmanish.schemasculpt.dto.DescriptionAnalysisRequest;
 import io.github.sharmanish.schemasculpt.dto.DescriptionAnalysisResponse;
 import io.github.sharmanish.schemasculpt.dto.QuickFixRequest;
 import io.github.sharmanish.schemasculpt.dto.ValidationResult;
+import io.github.sharmanish.schemasculpt.exception.EnumFixingException;
 import io.github.sharmanish.schemasculpt.service.SessionService;
 import io.github.sharmanish.schemasculpt.service.ValidationService;
 import io.github.sharmanish.schemasculpt.service.ai.AIService;
 import io.github.sharmanish.schemasculpt.service.fix.QuickFixService;
-import io.github.sharmanish.schemasculpt.exception.EnumFixingException;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
 import io.github.sharmanish.schemasculpt.util.OpenApiEnumFixer;
 import io.swagger.v3.core.util.Json;
@@ -47,6 +47,12 @@ public class SpecificationController {
     this.aiService = aiService;
   }
 
+  /**
+   * Validate the OpenAPI specification for the session.
+   *
+   * @param sessionId the session ID
+   * @return validation result with errors and suggestions
+   */
   @PostMapping("/validate")
   public ResponseEntity<ValidationResult> validateSpecification(@PathVariable String sessionId) {
     OpenAPI openAPI = sessionService.getSpecForSession(sessionId);
@@ -54,6 +60,12 @@ public class SpecificationController {
     return ResponseEntity.ok(validationResult);
   }
 
+  /**
+   * Perform AI meta-analysis on the specification.
+   *
+   * @param sessionId the session ID
+   * @return AI meta-analysis response
+   */
   @PostMapping("/ai-analysis")
   public ResponseEntity<AIMetaAnalysisResponse> performAIMetaAnalysis(
       @PathVariable String sessionId) {
@@ -75,6 +87,12 @@ public class SpecificationController {
     return ResponseEntity.ok(aiAnalysis);
   }
 
+  /**
+   * Analyze description quality in the specification.
+   *
+   * @param sessionId the session ID
+   * @return description analysis response
+   */
   @PostMapping("/analyze-descriptions")
   public ResponseEntity<DescriptionAnalysisResponse> analyzeDescriptions(
       @PathVariable String sessionId) {
@@ -92,6 +110,13 @@ public class SpecificationController {
     return ResponseEntity.ok(analysis);
   }
 
+  /**
+   * Apply a quick fix to the specification.
+   *
+   * @param sessionId the session ID
+   * @param quickFixRequest the quick fix request
+   * @return updated spec as a map with fixed enums
+   */
   @PostMapping("/fix")
   public ResponseEntity<Map<String, Object>> applyQuickFix(
       @PathVariable String sessionId, @RequestBody QuickFixRequest quickFixRequest) {
@@ -130,6 +155,13 @@ public class SpecificationController {
     }
   }
 
+  /**
+   * Execute an AI transformation action on the specification.
+   *
+   * @param sessionId the session ID
+   * @param request the AI proxy request containing the transformation prompt
+   * @return updated spec as a map after AI transformation
+   */
   @PostMapping("/transform")
   public ResponseEntity<Map<String, Object>> executeAIAction(
       @PathVariable String sessionId, @RequestBody AIProxyRequest request) {

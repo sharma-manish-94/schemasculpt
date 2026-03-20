@@ -29,7 +29,7 @@ COPY src ./src
 RUN gradle bootJar --no-daemon -x test
 
 # Stage 2: Runtime image
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 

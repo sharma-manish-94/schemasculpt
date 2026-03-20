@@ -29,7 +29,7 @@ public class MissingSummaryRule implements LinterRule {
         final PathItem.HttpMethod method = opEntry.getKey();
         final Operation operation = opEntry.getValue();
         if (operation.getSummary() == null || operation.getSummary().isBlank()) {
-          String message = String.format("Operation '%s %s' is missing a summary.", method, path);
+          String message = "Operation '%s %s' is missing a summary.".formatted(method, path);
           Map<String, Object> context =
               Map.of(
                   "path",

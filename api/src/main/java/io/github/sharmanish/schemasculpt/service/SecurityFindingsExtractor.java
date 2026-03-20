@@ -49,7 +49,12 @@ public class SecurityFindingsExtractor {
 
   private static final String COMPONENTS_SCHEMAS_PREFIX = "#/components/schemas/";
 
-  /** Main entry point: Extract all security findings from an OpenAPI spec. */
+  /**
+   * Main entry point: Extract all security findings from an OpenAPI spec.
+   *
+   * @param openApi the OpenAPI specification to analyze
+   * @return list of security findings extracted from the specification
+   */
   public List<SecurityFinding> extractFindings(OpenAPI openApi) {
     if (openApi == null || openApi.getPaths() == null) {
       return Collections.emptyList();
@@ -96,7 +101,7 @@ public class SecurityFindingsExtractor {
                               .getRequestBody()
                               .getContent()
                               .forEach(
-                                  (mediaTypeStr, mediaType) -> {
+                                  (_, mediaType) -> {
                                     if (mediaType.getSchema() != null) {
                                       String schemaName = extractSchemaName(mediaType.getSchema());
                                       if (schemaName != null) {
@@ -126,12 +131,12 @@ public class SecurityFindingsExtractor {
                           operation
                               .getResponses()
                               .forEach(
-                                  (statusCode, response) -> {
+                                  (_, response) -> {
                                     if (response.getContent() != null) {
                                       response
                                           .getContent()
                                           .forEach(
-                                              (mediaTypeStr, mediaType) -> {
+                                              (_, mediaType) -> {
                                                 if (mediaType.getSchema() != null) {
                                                   String schemaName =
                                                       extractSchemaName(mediaType.getSchema());
@@ -174,9 +179,7 @@ public class SecurityFindingsExtractor {
                           String fieldName = String.valueOf(fieldNameObj);
                           if (isSensitiveWord(fieldName)) {
                             String fieldType =
-                                fieldSchema instanceof Schema
-                                    ? ((Schema<?>) fieldSchema).getType()
-                                    : "unknown";
+                                fieldSchema instanceof Schema<?> s ? s.getType() : "unknown";
                             findings.add(
                                 SecurityFinding.schemaContainsSensitiveField(
                                     schemaName,

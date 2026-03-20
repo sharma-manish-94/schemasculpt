@@ -55,7 +55,7 @@ public class SchemaTraversalUtil {
       String refPath = schema.get$ref();
       if (refPath.startsWith(COMPONENTS_SCHEMAS_PREFIX)) {
         String schemaName = refPath.substring(COMPONENTS_SCHEMAS_PREFIX.length());
-        reverseGraph.computeIfAbsent(schemaName, k -> new java.util.HashSet<>()).add(dependentName);
+        reverseGraph.computeIfAbsent(schemaName, _ -> new java.util.HashSet<>()).add(dependentName);
       }
     }
   }

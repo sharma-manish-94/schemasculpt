@@ -21,9 +21,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
-/**
- * Entity storing cached mock data for API operations.
- */
+/** Entity storing cached mock data for API operations. */
 @Entity
 @Table(
     name = "operation_mock_data",
@@ -82,8 +80,12 @@ public class OperationMockData {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     OperationMockData that = (OperationMockData) o;
     return id != null && Objects.equals(id, that.id);
   }

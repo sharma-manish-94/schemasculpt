@@ -53,7 +53,7 @@ public class HttpsOnlyRule implements LinterRule {
         } else {
           suggestions.add(
               new ValidationSuggestion(
-                  String.format("Server URL '%s' should use HTTPS for security.", serverUrl),
+                  "Server URL '%s' should use HTTPS for security.".formatted(serverUrl),
                   "use-https",
                   "error",
                   "security",

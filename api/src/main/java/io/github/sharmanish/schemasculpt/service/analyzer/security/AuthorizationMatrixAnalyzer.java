@@ -47,7 +47,7 @@ public class AuthorizationMatrixAnalyzer extends AbstractSchemaAnalyzer<AuthzMat
                                 .forEach(
                                     requirement -> {
                                       requirement.forEach(
-                                          (scheme, scopes) -> {
+                                          (_, scopes) -> {
                                             allUniqueScopes.addAll(scopes);
                                             opScopes.addAll(scopes);
                                           });
@@ -62,7 +62,7 @@ public class AuthorizationMatrixAnalyzer extends AbstractSchemaAnalyzer<AuthzMat
                                 .forEach(
                                     requirement -> {
                                       requirement.forEach(
-                                          (scheme, scopes) -> {
+                                          (_, scopes) -> {
                                             allUniqueScopes.addAll(scopes);
                                             opScopes.addAll(scopes);
                                           });

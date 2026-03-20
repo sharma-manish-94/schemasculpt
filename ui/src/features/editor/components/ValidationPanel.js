@@ -1,5 +1,5 @@
 import { useSpecStore } from "../../../store/specStore";
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useState } from "react";
 import ValidationSuggestion from "../../../components/validation/ValidationSuggestion";
 import AIInsightsPanel from "../../../components/validation/AIInsightsPanel";
 import DescriptionQualityPanel from "../../../components/validation/DescriptionQualityPanel";
@@ -126,7 +126,11 @@ const ValidationPanel = React.memo(() => {
         sug.category !== "ai-friendliness",
     );
     const noFixSuggestions = suggestions.filter(
-      (sug) => !sug.ruleId && sug.category !== "ai-friendliness",
+      (sug) =>
+        (!sug.ruleId || !autoFixableRules.includes(sug.ruleId)) &&
+        sug.category !== "ai-friendliness" &&
+        !autoFixSuggestions.includes(sug) &&
+        !aiFixSuggestions.includes(sug),
     );
 
     // NEW: Separate AI-friendly suggestions
@@ -141,12 +145,6 @@ const ValidationPanel = React.memo(() => {
       aiFriendlySuggestions,
     };
   };
-
-  // Group suggestions by category
-  const groupedByCategory = useMemo(
-    () => groupSuggestionsByCategory(suggestions),
-    [suggestions],
-  );
 
   const suggestionsSummary = useMemo(
     () => getSuggestionsSummary(suggestions),
@@ -263,18 +261,10 @@ const ValidationPanel = React.memo(() => {
               {expandedSections.aiFriendly && (
                 <div className="suggestions-list">
                   {aiFriendlySuggestions.map((sug, index) => {
-                    const suggestion = {
-                      message: sug.message,
-                      ruleId: sug.ruleId,
-                      severity: sug.severity || "info",
-                      context: sug.context || {},
-                      explainable: true,
-                    };
-
                     return (
                       <ValidationSuggestion
                         key={`ai-friendly-${index}`}
-                        suggestion={suggestion}
+                        suggestion={sug}
                         sessionId={sessionId}
                         specText={specText}
                         isAIFriendly={true}
@@ -301,15 +291,6 @@ const ValidationPanel = React.memo(() => {
               {expandedSections.autoFix && (
                 <div className="suggestions-list">
                   {autoFixSuggestions.map((sug, index) => {
-                    // Convert to ValidationSuggestion format
-                    const suggestion = {
-                      message: sug.message,
-                      ruleId: sug.ruleId,
-                      severity: "info",
-                      context: sug.context || {},
-                      explainable: true,
-                    };
-
                     const fixButton = (
                       <button
                         className={getFixButtonClass(sug.ruleId)}
@@ -323,7 +304,7 @@ const ValidationPanel = React.memo(() => {
                     return (
                       <ValidationSuggestion
                         key={`auto-${index}`}
-                        suggestion={suggestion}
+                        suggestion={sug}
                         sessionId={sessionId}
                         specText={specText}
                         additionalActions={fixButton}
@@ -350,15 +331,6 @@ const ValidationPanel = React.memo(() => {
               {expandedSections.aiFix && (
                 <div className="suggestions-list">
                   {aiFixSuggestions.map((sug, index) => {
-                    // Convert to ValidationSuggestion format
-                    const suggestion = {
-                      message: sug.message,
-                      ruleId: sug.ruleId,
-                      severity: "warning",
-                      context: sug.context || {},
-                      explainable: true,
-                    };
-
                     const fixButton = (
                       <button
                         className={getFixButtonClass(sug.ruleId)}
@@ -372,7 +344,7 @@ const ValidationPanel = React.memo(() => {
                     return (
                       <ValidationSuggestion
                         key={`ai-${index}`}
-                        suggestion={suggestion}
+                        suggestion={sug}
                         sessionId={sessionId}
                         specText={specText}
                         additionalActions={fixButton}
@@ -399,18 +371,10 @@ const ValidationPanel = React.memo(() => {
               {expandedSections.noFix && (
                 <div className="suggestions-list">
                   {noFixSuggestions.map((sug, index) => {
-                    // Convert to ValidationSuggestion format
-                    const suggestion = {
-                      message: sug.message,
-                      ruleId: sug.ruleId || "general-suggestion",
-                      severity: "info",
-                      context: sug.context || {},
-                      explainable: true,
-                    };
                     return (
                       <ValidationSuggestion
                         key={`general-${index}`}
-                        suggestion={suggestion}
+                        suggestion={sug}
                         sessionId={sessionId}
                         specText={specText}
                       />

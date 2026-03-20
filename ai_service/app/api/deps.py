@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Optional
 
 from fastapi import Depends, Request
 
-from app.core.config import get_settings, settings
+from app.core.config import settings
 from app.domain.interfaces.cache_repository import ICacheRepository
 from app.domain.interfaces.llm_provider import ILLMProvider
 from app.domain.interfaces.rag_repository import IRAGRepository

@@ -5,7 +5,7 @@ Provides comprehensive data validation and serialization.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, validator
@@ -183,7 +183,7 @@ class GenerateSpecRequest(BaseModel):
     api_style: str = Field(
         default="REST", description="API style (REST, GraphQL, gRPC)"
     )
-    openapi_version: str = Field(default="3.0.0", pattern="^3\.[0-9]+\.[0-9]+$")
+    openapi_version: str = Field(default="3.0.0", pattern=r"^3\.[0-9]+\.[0-9]+$")
     include_examples: bool = Field(default=True)
     include_security: bool = Field(default=True)
 

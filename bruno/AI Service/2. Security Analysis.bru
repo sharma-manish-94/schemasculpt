@@ -1,0 +1,31 @@
+meta {
+  name: Security Analysis
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{aiServiceUrl}}/ai/security/analyze
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "spec_content": "openapi: 3.0.0\ninfo:\n  title: Vulnerable API\n  version: 1.0.0\npaths:\n  /users/{id}:\n    get:\n      operationId: getUser\n      parameters:\n        - name: id\n          in: path\n          required: true\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  id: {type: string}\n                  email: {type: string}\n                  password_hash: {type: string}",
+    "force_refresh": false
+  }
+}
+
+docs {
+  # Security Analysis (Direct AI Service)
+
+  Runs the full multi-agent security analysis pipeline directly on the Python AI service.
+  Returns OWASP Top 10 findings, attack chains, and recommendations.
+
+  Note: The Java API gateway also proxies this via /api/v1/sessions/{sessionId}/analysis/attack-path-simulation.
+}
+
+assert {
+  res.status: eq 200
+}

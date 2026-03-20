@@ -3,7 +3,9 @@ package io.github.sharmanish.schemasculpt.controller.project;
 import io.github.sharmanish.schemasculpt.dto.project.CreateProjectRequest;
 import io.github.sharmanish.schemasculpt.dto.project.ProjectDTO;
 import io.github.sharmanish.schemasculpt.dto.project.UpdateProjectRequest;
+import io.github.sharmanish.schemasculpt.dto.request.LinkRepositoryRequest;
 import io.github.sharmanish.schemasculpt.entity.Project;
+import io.github.sharmanish.schemasculpt.exception.ValidationException;
 import io.github.sharmanish.schemasculpt.security.CustomOAuth2User;
 import io.github.sharmanish.schemasculpt.service.ProjectService;
 import io.github.sharmanish.schemasculpt.util.LogSanitizer;
@@ -33,7 +35,13 @@ public class ProjectController {
     this.projectService = projectService;
   }
 
-  /** Create a new project */
+  /**
+   * Create a new project.
+   *
+   * @param principal the authenticated user
+   * @param request the create project request body
+   * @return 201 Created with the new project details
+   */
   @PostMapping
   public ResponseEntity<ProjectDTO> createProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -51,7 +59,12 @@ public class ProjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDTO(project));
   }
 
-  /** Get all projects for the authenticated user */
+  /**
+   * Get all projects for the authenticated user.
+   *
+   * @param principal the authenticated user
+   * @return list of projects for the user
+   */
   @GetMapping
   public ResponseEntity<List<ProjectDTO>> getUserProjects(
       @AuthenticationPrincipal CustomOAuth2User principal) {
@@ -66,7 +79,13 @@ public class ProjectController {
     return ResponseEntity.ok(projects);
   }
 
-  /** Get a specific project */
+  /**
+   * Get a specific project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to retrieve
+   * @return the project details
+   */
   @GetMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> getProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
@@ -80,7 +99,14 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /** Update a project */
+  /**
+   * Update a project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to update
+   * @param request the update project request body
+   * @return the updated project details
+   */
   @PutMapping("/{projectId}")
   public ResponseEntity<ProjectDTO> updateProject(
       @AuthenticationPrincipal CustomOAuth2User principal,
@@ -103,7 +129,13 @@ public class ProjectController {
     return ResponseEntity.ok(new ProjectDTO(project));
   }
 
-  /** Delete a project */
+  /**
+   * Delete a project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to delete
+   * @return 204 No Content on success
+   */
   @DeleteMapping("/{projectId}")
   public ResponseEntity<Void> deleteProject(
       @AuthenticationPrincipal CustomOAuth2User principal, @PathVariable Long projectId) {
@@ -115,5 +147,42 @@ public class ProjectController {
 
     projectService.deleteProject(projectId, principal.getUserId());
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Link a repository to a project.
+   *
+   * @param principal the authenticated user
+   * @param projectId the ID of the project to link to
+   * @param request the link repository request body
+   * @return the updated project details
+   */
+  @PostMapping("/{projectId}/repository")
+  public ResponseEntity<ProjectDTO> linkRepository(
+      @AuthenticationPrincipal CustomOAuth2User principal,
+      @PathVariable Long projectId,
+      @Valid @RequestBody LinkRepositoryRequest request) {
+
+    // Validate path to prevent path traversal attacks
+    if (!request.isSafePath()) {
+      log.warn(
+          "Rejected unsafe repository path '{}' for project {} by user {}",
+          LogSanitizer.sanitize(request.path()),
+          LogSanitizer.sanitize(projectId),
+          LogSanitizer.sanitize(principal.getUserId()));
+      throw new ValidationException(
+          "Invalid repository path. Must be an absolute path without path traversal sequences.");
+    }
+
+    log.info(
+        "Linking repository path '{}' to project {} for user {}",
+        LogSanitizer.sanitize(request.path()),
+        LogSanitizer.sanitize(projectId),
+        LogSanitizer.sanitize(principal.getUserId()));
+
+    Project project =
+        projectService.linkRepository(projectId, principal.getUserId(), request.path());
+
+    return ResponseEntity.ok(new ProjectDTO(project));
   }
 }

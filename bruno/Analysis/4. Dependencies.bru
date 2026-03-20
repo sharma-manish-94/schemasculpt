@@ -1,0 +1,26 @@
+meta {
+  name: Dependencies
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/dependencies
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Dependencies
+
+  Returns the reverse dependency graph — which schemas reference which,
+  and which endpoints depend on each schema.
+}
+
+assert {
+  res.status: eq 200
+}

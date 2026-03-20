@@ -8,7 +8,7 @@ must implement.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 
 @dataclass
@@ -84,12 +84,10 @@ class RepositoryProvider(ABC):
         Raises:
             MCPConnectionError: If connection fails
         """
-        pass
 
     @abstractmethod
     async def disconnect(self) -> None:
         """Disconnect from the repository provider."""
-        pass
 
     @abstractmethod
     async def list_repositories(
@@ -107,7 +105,6 @@ class RepositoryProvider(ABC):
         Raises:
             MCPOperationError: If listing fails
         """
-        pass
 
     @abstractmethod
     async def get_repository(self, owner: str, repo: str) -> RepositoryInfo:
@@ -124,7 +121,6 @@ class RepositoryProvider(ABC):
         Raises:
             MCPOperationError: If repository not found or access denied
         """
-        pass
 
     @abstractmethod
     async def list_branches(self, owner: str, repo: str) -> List[BranchInfo]:
@@ -141,7 +137,6 @@ class RepositoryProvider(ABC):
         Raises:
             MCPOperationError: If listing fails
         """
-        pass
 
     @abstractmethod
     async def browse_tree(
@@ -162,7 +157,6 @@ class RepositoryProvider(ABC):
         Raises:
             MCPOperationError: If browsing fails
         """
-        pass
 
     @abstractmethod
     async def read_file(
@@ -183,7 +177,6 @@ class RepositoryProvider(ABC):
         Raises:
             MCPOperationError: If file not found or read fails
         """
-        pass
 
     @abstractmethod
     async def search_files(
@@ -204,7 +197,6 @@ class RepositoryProvider(ABC):
         Raises:
             MCPOperationError: If search fails
         """
-        pass
 
     async def find_openapi_specs(
         self, owner: str, repo: str, branch: Optional[str] = None

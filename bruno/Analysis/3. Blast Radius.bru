@@ -1,0 +1,32 @@
+meta {
+  name: Blast Radius
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions/{{sessionId}}/analysis/blast-radius
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "schemaName": "User"
+  }
+}
+
+docs {
+  # Blast Radius
+
+  Calculates the blast radius for a given schema — which endpoints and schemas
+  would be impacted if this schema changed or was compromised.
+}
+
+assert {
+  res.status: eq 200
+}
