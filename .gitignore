@@ -131,6 +131,7 @@ celerybeat.pid
 # Local index data
 .codeindex/
 .mcp.json
+# Keep .vscode/settings.json for formatter configuration
 
 # Claude Code configuration
 .claude/
