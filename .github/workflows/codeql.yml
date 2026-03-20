@@ -40,15 +40,14 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.language == 'java' && 'manual' || 'autobuild' }}
 
     - name: Build Java project
       if: matrix.language == 'java'
       working-directory: api
-      run: ./gradlew classes testClasses -x test --no-daemon
-
-    - name: Autobuild (non-Java)
-      if: matrix.language != 'java'
-      uses: github/codeql-action/autobuild@v3
+      run: |
+        chmod +x gradlew
+        ./gradlew classes testClasses -x test --no-daemon
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

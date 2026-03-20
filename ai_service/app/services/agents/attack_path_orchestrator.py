@@ -327,37 +327,7 @@ class AttackPathOrchestrator:
 
             # STAGE 2.5: RepoMind Code Validation (optional, non-blocking)
             repo_name = getattr(request, "repo_name", None)
-            if (
-                context.attack_chains
-                and os.environ.get("REPOMIND_ENABLED", "false").lower() == "true"
-            ):
-                logger.info(
-                    "[AttackPathOrchestrator] Stage 2.5: RepoMind Code Validation"
-                )
-                context.current_activity = (
-                    "Validating attack chains against source code..."
-                )
-                if progress_callback:
-                    await progress_callback(
-                        "validating_code",
-                        context.progress_percentage,
-                        context.current_activity,
-                    )
-                chain_validations = await self._validate_chains_with_repomind(
-                    context.attack_chains, repo_name
-                )
-                if chain_validations:
-                    context.code_context_map["_chain_validations"] = chain_validations
-                    confirmed_count = sum(
-                        1
-                        for v in chain_validations.values()
-                        if v.get("overall_verdict")
-                        in ("FULLY_EXPLOITABLE", "PARTIALLY_EXPLOITABLE")
-                    )
-                    logger.info(
-                        f"[RepoMind] {confirmed_count}/{len(chain_validations)} chains "
-                        "have code-confirmed exploitability"
-                    )
+            await self._run_repomind_stage(context, repo_name, progress_callback)
 
             # STAGE 3: Report Generation
             logger.info("[AttackPathOrchestrator] Stage 3: Report Generation")
@@ -405,6 +375,43 @@ class AttackPathOrchestrator:
             if progress_callback:
                 await progress_callback("error", 0.0, f"Analysis failed: {str(e)}")
             raise
+
+    async def _run_repomind_stage(
+        self,
+        context: AttackPathContext,
+        repo_name: Optional[str],
+        progress_callback: Optional[callable],
+    ) -> None:
+        """Run optional Stage 2.5: validate attack chains against source code via RepoMind."""
+        if not context.attack_chains:
+            return
+        if os.environ.get("REPOMIND_ENABLED", "false").lower() != "true":
+            return
+
+        logger.info("[AttackPathOrchestrator] Stage 2.5: RepoMind Code Validation")
+        context.current_activity = "Validating attack chains against source code..."
+        if progress_callback:
+            await progress_callback(
+                "validating_code",
+                context.progress_percentage,
+                context.current_activity,
+            )
+
+        chain_validations = await self._validate_chains_with_repomind(
+            context.attack_chains, repo_name
+        )
+        if chain_validations:
+            context.code_context_map["_chain_validations"] = chain_validations
+            confirmed_count = sum(
+                1
+                for v in chain_validations.values()
+                if v.get("overall_verdict")
+                in ("FULLY_EXPLOITABLE", "PARTIALLY_EXPLOITABLE")
+            )
+            logger.info(
+                f"[RepoMind] {confirmed_count}/{len(chain_validations)} chains "
+                "have code-confirmed exploitability"
+            )
 
     async def _validate_chains_with_repomind(
         self,

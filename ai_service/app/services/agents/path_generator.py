@@ -84,8 +84,7 @@ class PathGeneratorAgent(LLMAgent):
                 "No entities data provided for path generation"
             )
 
-        system_prompt = self._build_system_prompt(
-            f"""
+        system_prompt = self._build_system_prompt(f"""
 You are an expert RESTful API designer specializing in creating comprehensive, production-ready API paths and operations.
 
 **API Design Principles:**
@@ -149,8 +148,7 @@ You are an expert RESTful API designer specializing in creating comprehensive, p
     {{"pattern": "pagination", "implementation": "query parameters", "paths": ["list of paths using this pattern"]}}
   ]
 }}
-"""
-        )
+""")
 
         entity_info = "\n".join(
             [
@@ -217,8 +215,7 @@ Create production-ready paths with comprehensive operation definitions.
         if not existing_paths:
             return self._create_error_result("No paths provided for enhancement")
 
-        system_prompt = self._build_system_prompt(
-            f"""
+        system_prompt = self._build_system_prompt(f"""
 You are an API enhancement specialist focused on adding advanced features to existing operations.
 
 **Enhancement Categories:**
@@ -244,8 +241,7 @@ You are an API enhancement specialist focused on adding advanced features to exi
     "documentation_improvements": 0
   }}
 }}
-"""
-        )
+""")
 
         user_message = f"""
 Enhance the following API paths with the requested features:
@@ -296,8 +292,7 @@ Focus on:
                 "No paths provided for security enhancement"
             )
 
-        system_prompt = self._build_system_prompt(
-            f"""
+        system_prompt = self._build_system_prompt(f"""
 You are a security specialist expert in API security design and implementation.
 
 **Security Scheme Types:**
@@ -334,8 +329,7 @@ You are a security specialist expert in API security design and implementation.
     "security_levels": ["public", "authenticated", "admin"]
   }}
 }}
-"""
-        )
+""")
 
         user_message = f"""
 Add comprehensive security schemes to the following API paths:
@@ -386,8 +380,7 @@ Create a secure API design that balances security with usability.
         if not paths:
             return self._create_error_result("No paths provided for optimization")
 
-        system_prompt = self._build_system_prompt(
-            f"""
+        system_prompt = self._build_system_prompt(f"""
 You are a path structure optimization expert focusing on API organization and performance.
 
 **Optimization Areas:**
@@ -413,8 +406,7 @@ You are a path structure optimization expert focusing on API organization and pe
   }},
   "recommendations": ["additional optimization suggestions"]
 }}
-"""
-        )
+""")
 
         user_message = f"""
 Optimize the structure of the following API paths:

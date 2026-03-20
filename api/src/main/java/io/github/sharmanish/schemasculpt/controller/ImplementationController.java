@@ -23,6 +23,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+/**
+ * REST controller for querying code intelligence about API operation implementations.
+ *
+ * <p>Correlates OpenAPI spec operations to their source-code handlers via RepoMind and returns
+ * implementation details, contract verification, and auth verification results.
+ */
 @RestController
 @RequestMapping("/api/v1/implementations")
 @Slf4j
@@ -39,6 +45,17 @@ public class ImplementationController {
   private static final Pattern VALID_OPERATION_ID_PATTERN =
       Pattern.compile("^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$");
 
+  /**
+   * Retrieve code intelligence for a specific API operation in a project.
+   *
+   * @param projectId the project to look up the repository for
+   * @param operationId optional OpenAPI operationId to correlate
+   * @param path optional HTTP path (e.g. {@code /pets/{id}}) for intelligent correlation
+   * @param method optional HTTP method (e.g. {@code GET}) for intelligent correlation
+   * @param repositoryPath optional override for the repository path
+   * @param principal the authenticated user
+   * @return implementation intelligence including source code, contract, and auth verification
+   */
   @GetMapping("/projects/{projectId}/operations")
   public Mono<ResponseEntity<ImplementationIntelligenceResponse>> getImplementationIntelligence(
       @PathVariable Long projectId,
@@ -94,10 +111,13 @@ public class ImplementationController {
                       correlation.matched()
                           ? correlation.best_match().qualified_name()
                           : (operationId != null ? operationId : ""))
-              .onErrorResume(e -> {
-                  log.warn("Intelligent correlation failed, falling back to operationId: {}", e.getMessage());
-                  return Mono.just(operationId != null ? operationId : "");
-              });
+              .onErrorResume(
+                  e -> {
+                    log.warn(
+                        "Intelligent correlation failed, falling back to operationId: {}",
+                        e.getMessage());
+                    return Mono.just(operationId != null ? operationId : "");
+                  });
     } else {
       symbolResolverMono = Mono.just(operationId != null ? operationId : "");
     }
@@ -106,13 +126,22 @@ public class ImplementationController {
     return symbolResolverMono.flatMap(
         resolvedSymbol -> {
           if (resolvedSymbol == null || resolvedSymbol.isBlank()) {
-            log.info("No symbol resolved for path: {} method: {}. Returning empty intelligence.", path, method);
-            return Mono.just(ResponseEntity.ok(new ImplementationIntelligenceResponse(
-                new ImplementationCodeResponse("unknown", "// Could not correlate this endpoint to any source code handler.\n// Ensure the repository is indexed and the path/method match your controller.", 0, "text"),
-                new ContractVerificationResponse(false, Collections.emptyList(), "Not analyzed - symbol not found"),
-                new AuthVerificationResponse(false, Collections.emptyList(), "N/A", "N/A"),
-                Collections.emptyList()
-            )));
+            log.info(
+                "No symbol resolved for path: {} method: {}. Returning empty intelligence.",
+                path,
+                method);
+            String noCodeMsg =
+                "// Could not correlate this endpoint to any source code handler.\n"
+                    + "// Ensure the repository is indexed and the path/method match"
+                    + " your controller.";
+            return Mono.just(
+                ResponseEntity.ok(
+                    new ImplementationIntelligenceResponse(
+                        new ImplementationCodeResponse("unknown", noCodeMsg, 0, "text"),
+                        new ContractVerificationResponse(
+                            false, Collections.emptyList(), "Not analyzed - symbol not found"),
+                        new AuthVerificationResponse(false, Collections.emptyList(), "N/A", "N/A"),
+                        Collections.emptyList())));
           }
 
           Mono<ImplementationCodeResponse> codeMono =

@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/ai/remediate", tags=["Remediation"])
 @router.post("/suggest-fix", response_model=SuggestFixResponse)
 async def suggest_code_fix(
     request: SuggestFixRequest,
-    llm_service: LLMService = Depends(get_llm_service),
+    llm_service: Annotated[LLMService, Depends(get_llm_service)],
 ):
     """
     Accepts a vulnerable code snippet and returns an AI-generated fix.

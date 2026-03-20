@@ -30,6 +30,12 @@ public class FilesystemController {
 
   private static final int MAX_ENTRIES = 500;
 
+  /**
+   * Browse a local filesystem directory and return its immediate subdirectories.
+   *
+   * @param path the directory path to browse; defaults to the user home directory if blank
+   * @return a map containing {@code currentPath}, {@code parentPath}, and {@code entries}
+   */
   @GetMapping("/browse")
   public ResponseEntity<Map<String, Object>> browse(@RequestParam(defaultValue = "") String path) {
 
@@ -67,9 +73,13 @@ public class FilesystemController {
       sorted.sort(Comparator.comparing(f -> f.getName().toLowerCase()));
 
       for (File child : sorted) {
-        if (entries.size() >= MAX_ENTRIES) break;
+        if (entries.size() >= MAX_ENTRIES) {
+          break;
+        }
         // Skip hidden dirs except on root
-        if (child.getName().startsWith(".")) continue;
+        if (child.getName().startsWith(".")) {
+          continue;
+        }
         boolean readable = Files.isReadable(child.toPath());
         entries.add(
             Map.of(

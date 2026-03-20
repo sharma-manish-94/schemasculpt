@@ -26,6 +26,8 @@ from app.services.rag_service import RAGService  # noqa: E402
 
 logger = get_logger("manage_rag")
 
+_INIT_HINT = "   Run: python manage_rag.py init"
+
 
 async def init_knowledge_bases(force: bool = False):
     """Initialize knowledge bases."""
@@ -93,7 +95,7 @@ async def show_status():
             print(f"   Description: {attacker_kb.get('description', '')}")
         else:
             print("   Status: ❌ Not initialized")
-            print("   Run: python manage_rag.py init")
+            print(_INIT_HINT)
 
         print("\n🔐 Governance Knowledge Base:")
         governance_kb = stats.get("governance_kb", {})
@@ -103,7 +105,7 @@ async def show_status():
             print(f"   Description: {governance_kb.get('description', '')}")
         else:
             print("   Status: ❌ Not initialized")
-            print("   Run: python manage_rag.py init")
+            print(_INIT_HINT)
 
         print(f"\n📊 Total documents: {stats.get('total_documents', 0)}")
 
@@ -138,7 +140,7 @@ async def test_query(query: str, kb_name: str = "attacker", n_results: int = 3):
         if results.get("total_documents", 0) == 0:
             print("\n⚠️  No results found")
             print("   Knowledge base may not be initialized")
-            print("   Run: python manage_rag.py init")
+            print(_INIT_HINT)
             return
 
         print(f"\n📚 Found {results.get('total_documents', 0)} relevant documents")
