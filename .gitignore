@@ -136,6 +136,10 @@ celerybeat.pid
 # Claude Code configuration
 .claude/
 
+# AI knowledge / workspace directories (local developer tooling, not project source)
+.ai_knowledge/
+.ai_workspace/
+
 # PM2 configuration
 .pm2/
 
@@ -156,7 +160,6 @@ pending.txt
 .env.docker.local
 !test-deployment.sh
 !test-deployment.bat
-!check-health.sh
 !/*/
 api/.env.docker
 
@@ -169,3 +172,18 @@ api/.env.docker
 SURGICAL_REPORT.txt
 SPEC_CURRENT.md
 *.patch
+check-health.sh
+
+# =============================================================================
+# AI Service — Runtime data (generated at runtime, never committed)
+# =============================================================================
+
+# ChromaDB / vector store (persisted embeddings — large binary files)
+ai_service/vector_store/
+ai_service/data/vector_store/
+ai_service/data/
+
+# RAG knowledge base — generated JSON/PDFs seeded at startup
+ai_service/knowledge_base/*.json
+ai_service/knowledge_base/*.pdf
+ai_service/knowledge_base/*.csv
